@@ -45,10 +45,10 @@ typedef int BOOL;
 	#define OUTPUTAPI __stdcall
 
 	/**
-	* @name		XJ_THREAD_ROUTINE
+	* @name		RECORD_MAN_THREAD_ROUTINE
 	* @brief	线程处理函数类型的定义
 	*/
-	typedef unsigned int(OUTPUTAPI *XJ_THREAD_ROUTINE)(void *);
+	typedef unsigned int(OUTPUTAPI *RECORD_MAN_THREAD_ROUTINE)(void *);
 
 	typedef SYSTEMTIME xj_systime;
 
@@ -65,7 +65,7 @@ typedef int BOOL;
 	* @name		XJ_THREAD_ROUTINE
 	* @brief	线程处理函数类型的定义
 	*/
-	typedef void *(*XJ_THREAD_ROUTINE)(void *);
+	typedef void *(*RECORD_MAN_THREAD_ROUTINE)(void *);
 
 	/**	
 	* @brief	时间结构体。
@@ -97,7 +97,7 @@ typedef int BOOL;
 * @return	0为成功；其它为具体错误码。
 * @note 
 */
-int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param, UINT stacksize = XJTHREAD_DEFAULT_STACK_SIZE);
+int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param, UINT stacksize = XJTHREAD_DEFAULT_STACK_SIZE);
 
 /**
 * @name		xj_thread_detach
@@ -127,7 +127,7 @@ int xj_thread_join(THREAD_HANDLE phandle, void **pretcode);
 */
 void xj_thread_exit(unsigned int retval);
 
-int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param);
+int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param);
 //互斥锁
 
 /**

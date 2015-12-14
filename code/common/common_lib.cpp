@@ -7,7 +7,7 @@
 //thread
 
 //0 success; -1 error
-int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param, UINT stacksize)
+int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param, UINT stacksize)
 {
 	unsigned int dwId = 0;
 	
@@ -64,7 +64,7 @@ void xj_thread_exit(unsigned int retval)
 }
 
 //创建线程，默认detach状态。//0:成功;    其他:失败
-int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param)
+int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param)
 {
 	int nRet=0;
 
@@ -386,7 +386,7 @@ BOOL xj_create_local_dir(char *szPath)
 //thread
 
 //0 success; -1 error
-int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param, UINT stacksize)
+int xj_thread_create(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param, UINT stacksize)
 {
 	pthread_t t;
 
@@ -427,7 +427,7 @@ void xj_thread_exit(unsigned int retval)
 }
 
 //创建线程，默认detach状态。//0:成功;    其他:失败
-int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, XJ_THREAD_ROUTINE routine, void *param)
+int pro_create_thread(THREAD_HANDLE *phandle, THREAD_ID *pid, RECORD_MAN_THREAD_ROUTINE routine, void *param)
 {
 	int nRet=0;
 	
