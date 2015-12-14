@@ -1,6 +1,6 @@
 #include "Comtrade.h"
 #include "../../../common/GECodeConvert.h"
-#include "../../../common/xjlib.h"
+#include "../../../common/common_lib.h"
 
 //  载入波形文件 
 LoadFileFUN m_LoadFileFUN;

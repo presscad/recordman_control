@@ -138,10 +138,10 @@ int CCOMTRADEParser::LoadCfgData(CStrongString& strError)
 	CFileEx std_File;
     try
 	{
-		if(!std_File.Open(lpszPathName,CXJFile::modeRead))//增加强制关闭
+		if(!std_File.Open(lpszPathName,CCommonFile::modeRead))//增加强制关闭
 		{
 			lpszPathName.Format("%s.CFG", m_strName.c_str());
-			if(!std_File.Open(lpszPathName,CXJFile::modeRead))
+			if(!std_File.Open(lpszPathName,CCommonFile::modeRead))
 			{
 				strError.Format("打开文件失败，文件路径为:%s", lpszPathName.c_str());
 				return -1;

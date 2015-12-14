@@ -5,7 +5,7 @@
 #include "./include/jni.h" 
 //#include "../XJComtrade/XJComtrade.h"
 #include "../../../Interface/ComtradeDefine.h"
-#include "../../../common/define.h"
+#include "../../../common/sys_define.h"
 
 
 //  载入波形文件 
