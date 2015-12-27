@@ -19,10 +19,10 @@ CRecordmanThread::~CRecordmanThread()
 // Access:    public 
 // Returns:   bool
 // Qualifier: //
-// Parameter: XJ_THREAD_ROUTINE threadfun
+// Parameter: RECORD_MAN_THREAD_ROUTINE threadfun
 // Parameter: LPVOID lpParameter
 //************************************
-bool CRecordmanThread::Start(XJ_THREAD_ROUTINE threadfun, LPVOID lpParameter)//
+bool CRecordmanThread::Start(RECORD_MAN_THREAD_ROUTINE threadfun, LPVOID lpParameter)//
 {
 	int nRet =0;
 	
@@ -30,7 +30,7 @@ bool CRecordmanThread::Start(XJ_THREAD_ROUTINE threadfun, LPVOID lpParameter)//
 	{
 		// begine create sttp listen thread
 		nRet = xj_thread_create(
-			&m_hHande, &m_hId, (XJ_THREAD_ROUTINE) threadfun, 
+			&m_hHande, &m_hId, (RECORD_MAN_THREAD_ROUTINE) threadfun, 
 			lpParameter, 0);
 
 		if(0 != nRet)

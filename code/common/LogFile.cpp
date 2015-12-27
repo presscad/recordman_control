@@ -96,7 +96,7 @@ BOOL CLogFile::Open(const char * pszFileName)
 	sprintf(chFullPath,"%s%s",m_szLogPath,pszFileName);
 
 	// new memory	
-	m_File = new CXJFile;
+	m_File = new CCommonFile;
 	if(m_File == NULL){
 		m_Lock.unlock();
 		fprintf(stderr,"allocate memory for CXJFile failed when open '%s'\n",m_FileName);
@@ -104,7 +104,7 @@ BOOL CLogFile::Open(const char * pszFileName)
 	}
 
     // open file
-	if (!m_File->Open(chFullPath,CXJFile::modeWrite|CXJFile::modeCreate))
+	if (!m_File->Open(chFullPath, CCommonFile::modeWrite|CCommonFile::modeCreate))
     {	
 		// failed to open file
         fprintf(stderr,"can't open log file'%s'\n",m_FileName);
@@ -713,7 +713,7 @@ bool CLogFile::Clear()
 	*/
 
     // open file
-	if (!m_File->Open(chFullPath,CXJFile::modeCreate))
+	if (!m_File->Open(chFullPath, CCommonFile::modeCreate))
     {	
 		// failed to open file
         fprintf(stderr,"can't open log file'%s'\n",m_FileName);

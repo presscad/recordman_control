@@ -1,7 +1,7 @@
 //
-// define.h
+// sys_define.h
 //
-// This is a define and include file
+// This is a sys_define and include file
 //
 // Copyright (C) 2015
 // Version 1.0
@@ -272,8 +272,6 @@ typedef double							float64;
 
 #define TIMEOUT                 -2                         //从socket接收数据超时时返回值
 
-#define XJ_STTP_CMD_AUTOCALL_FLAG 2                       //自动巡检标志
-
 
 /**
  * @brief       数据库类型
@@ -283,15 +281,17 @@ typedef double							float64;
  *
  */
 /** @brief        MYSQL数据库*/
-const int DATABASE_MYSQL          = 1;
+const int RECORD_DB_TYPE_MYSQL = 1;
 /** @brief        ORACLE数据库*/
-const int DATABASE_ORACLE         = 2;
+const int RECORD_DB_TYPE_ORACLE = 2;
 /** @brief        SQLSERVER数据库*/
-const int DATABASE_SQLSERVER      = 3;
+const int RECORD_DB_TYPE_SQLSERVER = 3;
 /** @brief        达梦数据库*/
-const int DATABASE_DAMENG = 4;
+const int RECORD_DB_TYPE_DAMENG = 4;
 /** @brief        金仓数据库*/
-const int DATABASE_KINGBASE = 5;
+const int RECORD_DB_TYPE_KINGBASE = 5;
+/** @brief        mongodb数据库*/
+const int RECORD_DB_TYPE_MONGODB = 6;
 
 /**
  * @brief       设备类型
@@ -323,30 +323,6 @@ const int TYPE_DEVICE_GROUP  = 51;  //装置组标题
 const int TYPE_BREAKER_DEVICE = 53; //开关与一次设备关联
 const int TYPE_STATION_SVG = 54;    //厂站SVG
 const int TYPE_CPU         = 99;    //CPU类型
-
-//挂接在二次设备下
-const int TYPE_STATION_STATUS = 1002;//厂站通讯状态
-const int TYPE_AChannel    = 1000;
-const int TYPE_OrderSetting = 1001;
-const int TYPE_ZONE_BASE = 1002;//区号基本信息
-const int TYPE_ALARM_DEF = 1003;//告警基本信息
-const int TYPE_ACTION_DEF = 1004;//动作基本信息
-const int TYPE_SETTING_DEF = 1005;//定值基本信息
-const int TYPE_AI_DEF = 1006; //模拟量基本信息
-const int TYPE_DI_DEF = 1007; //开关量基本信息
-const int TYPE_SOFTBOARD_DEF = 1008; //软压板基本信息
-const int TYPE_OSC_AI_DEF = 1009;//保护录波模拟量通道配置信息
-const int TYPE_OSC_DI_DEF = 1010;//保护录波开关量通道配置信息
-const int TYPE_FRONT_COMMU_GROUP = 1011; //保护通用分类服务配置
-const int TYPE_PT_CHARACTER_DEF = 1012; //单个保护特征量
-const int TYPE_ZONE_DATA = 1013; //定值最新区号数据
-const int TYPE_SETTING_DATA = 1014; //定值最新数据
-const int TYPE_PT_DEVICE_GROUP = 1015; //装置组标题
-const int TYPE_PT_SETTING_DATA = 1016; //定值最新数据
-const int TYPE_PT_ZONE_DATA = 1017; //定值区号数据
-const int TYPE_PT_GROUP = 1018; //装置组标题
-const int TYPE_UPLOADATUO_CONFIG = 1019; //按信息种类定制配置信息
-const int TYPE_DEVMAINSTATION_CONFIG = 1020; //按设备定制信息
 
 //用字符型标识的设备分类
 #define STRING_BUS		"母线"		//母线
@@ -457,49 +433,42 @@ typedef struct _TIMEOUTS
 const UINT MAX_STTP_MSG_LEN = 0x2000; 
 
 /**
- * @brief       STTP报文头结构
+ * @brief       工控板通讯规约头
  * @author      pengl
  * @version     ver1.0
- * @date        03/09/2008
+ * @date        
  *
  */
-
-typedef struct _STTPMSGHDR
+#pragma pack(1)
+typedef struct _RECORD_DFU_MSG_HEADER
 {
-	BYTE m_byteMsgSubsetId[3] ;              //返回信息标识符RII
-	BYTE m_byteMsgID[5] ;                    //报文ID
-	BYTE m_byteMsgType ;                     //报文类别
-	BYTE m_byteMsgLength[5] ;                //报文长度
-	BYTE m_byteMsgLengthType ;               //长度类别
-	BYTE m_byteMsgVersion ;                  //结束标志
-}STTPMSGHDR;
+	BYTE byteStartMask[2];//启动码
+	BYTE byteTransMark[2];//事务标识符
+	BYTE byteProtocolMark[2];//协议标识符
+	BYTE byteReserve[2];//备用字段，默认0
+	BYTE byteMsgLen[2];//报文长度
+	BYTE byteFunMask[2];//功能码
+	BYTE byteCommandMask[2];//命令码
+	BYTE byteFrameSeq[4];//帧序号
+	BYTE byteEndMask[2];
+}RECORD_DFU_MSG_HEADER;
+#pragma pack()
 
 
 /**
- * @brief       STTP全报文结构
+ * @brief       报文结构
  * @author      pengl
  * @version     ver1.0
  * @date        03/09/2008
  *
  */
-
-typedef struct _STTPMSG
+typedef struct _RECORD_DFU_MSG
 {
-    STTPMSGHDR   MsgHdr;                     //消息头
-	char         MsgBody[MAX_STTP_MSG_LEN] ; //消息体
-}STTPMSG;
-
-typedef vector<STTPMSG> STTPMSG_QUEUE;
+    RECORD_DFU_MSG_HEADER   DfuMsgHdr;//报文头
+	char MsgBody[MAX_STTP_MSG_LEN] ; //消息体
+}RECORD_DFU_MSG;
 
 /** @} */ //OVER
-
-//DATAMSG 结果(加入到CSttpDeque队列的结果)
-typedef struct _STTP_DEQUE_MSG
-{
-	STTPMSG        msg;
-	UINT           nTimes;              //用于记录该消息在队列中被扫描到的次数
-	bool           bTreat;              //是否清楚标志(规定时间内没有取走按费数据处理)
-}STTP_DEQUE_MSG;
 
 typedef struct _FILE_STATUS_STRUCT
 {
@@ -507,182 +476,6 @@ typedef struct _FILE_STATUS_STRUCT
 	time_t stWriteTime;
 	int   nFileSize;
 }FILE_STATUS_STRUCT;
-
-#ifdef MFC_MODELING
-#else
-
-//字段结构
-typedef struct _Field
-{
-	_Field()
-	{
-		FieldType = -1;
-		bzero(FieldName, MAX_FIELD_NAME_LEN);
-		bzero(FieldValue, MAX_FIELD_VALE_LEN);
-	}
-
-	int  FieldType;       //字段类型
-	char FieldName[MAX_FIELD_NAME_LEN];  //字段名
-	char FieldValue[MAX_FIELD_VALE_LEN]; //字段值
-}Field;
-
-//条件结构
-typedef struct _Condition
-{
-	_Condition()
-	{
-		ConditionType = -1;
-		bzero(ConditionContent, MAX_CONDITION_LEN);
-	}
-
-	UINT ConditionType; //是否为常规字段 为0为where 为1为order或者group
-	char ConditionContent[MAX_CONDITION_LEN]; //条件内容
-}Condition;
-
-//SQL语句结构
-typedef struct _SQL_DATA
-{
-	vector <Field> Fieldlist;          //字段链表
-	vector <Condition> Conditionlist;  //条件链表
-}SQL_DATA;
-
-#endif
-
-
-/**	\brief	The _MutiSQL_DATA struct 直接执行SQL语句结构体
-
-*/
-const int MAX_SQL_LENGTH = 0x1C00; //7K
-typedef struct _MutiSQL_DATA
-{
-	_MutiSQL_DATA()
-	{
-		Funtype = -1;
-		bzero(SQL_BODY_Content, MAX_SQL_LENGTH);
-	}
-
-	int  Funtype;//功能类型标识为查询(需要返回结果内容),其它操作只返回执行结果(执行成功失败)
-	char SQL_BODY_Content[MAX_SQL_LENGTH];//sql语句内容
-}MutiSQL_DATA;
-
-typedef struct _REALDATA_CONDITION
-{
-	//add constructors for default value
-	//2014-10-09 pengl
-	_REALDATA_CONDITION()
-	{
-		IsUse = false;
-		station_id = "";
-		pt_id = "";
-		cpu_code = "";
-		breaker_id = "";
-		reverse1 = "";
-		reverse2 = "";
-	}
-
-	/** @brief             是否根据station_id,pt_id,cpu_code等条件查询*/
-	bool      IsUse;
-
-	/** @brief             厂站ID*/
-	string station_id;
-
-	/** @brief             保护ID*/
-	string pt_id;
-
-	/** @brief             CPU号*/
-	string cpu_code;
-
-	/** @brief             开关编号*/
-	string breaker_id;//查找开关与一次设备关联时用
-
-	/** @brief             备用*/
-	string reverse1;
-
-	/** @brief             备用*/
-	string reverse2;
-
-}REALDATA_CONDITION;
-
-
-/**
- * @brief       用于存储大长度数据时用到的字段值结构
- * @author      pengl
- * @version     ver1.0
- * @date        14/11/2009
- *
- */
-//字段结构
-typedef struct _BLOB_FIELD
-{
-	//add constructors for default value
-	//2014-10-09 pengl
-	_BLOB_FIELD()
-	{
-		nBlobFieldType = -1;
-		strBlobFieldName = "";
-		strBlobFieldValue = "";
-	}
-
-	int    nBlobFieldType;       //字段类型
-	string strBlobFieldName;     //字段名
-	string strBlobFieldValue;    //字段值
-}BLOB_FIELD;
-
-/**
- * @brief       用于存储大长度数据时用到的条件结构
- * @author      pengl
- * @version     ver1.0
- * @date        14/11/2009
- *
- */
-//条件结构
-typedef struct _BLOB_CONDITION
-{
-	//add constructors for default value
-	//2014-10-09 pengl
-	_BLOB_CONDITION()
-	{
-		nBlobConditionType = -1;
-		strBlobConditionContent = "";
-	}
-
-	UINT   nBlobConditionType;       //是否为常规字段 为0为where 为1为order或者group
-	string strBlobConditionContent; //条件内容
-}BLOB_CONDITION;
-
-/**
- * @brief       用于存储大长度数据时用到的SQL结构
- * @author      pengl
- * @version     ver1.0
- * @date        14/11/2009
- *
- */
-//SQL语句结构
-typedef struct BLOB_SQL_DATA
-{
-	vector <BLOB_FIELD>     BlobFieldlist;       //字段链表
-	vector <BLOB_CONDITION> Blob_Conditionlist;  //条件链表
-}BLOB_DATA;
-
-/**	\brief	The _MutiSQL_DATA struct 直接执行SQL语句结构体适用于大长度语句的SQL结构
-  * @author      pengl
-  * @version     ver1.0
-  * @date        23/11/2009
-  *
-*/
-typedef struct BLOB_MutiSQL_DATA
-{
-	//add constructors for default value
-	//2014-10-09 pengl
-	BLOB_MutiSQL_DATA()
-	{
-		nFuntype = -1;
-		strSqlBodyContent = "";
-	}
-
-	int     nFuntype;//功能类型标识为查询(需要返回结果内容),其它操作只返回执行结果(执行成功失败)
-	string  strSqlBodyContent;//sql语句内容
-}BLOB_MUTISQL_DATA;
 
 /*  全局函数声明  */
 extern void GetSysTime(SYSTIME & curTime);
@@ -715,15 +508,5 @@ extern void GetGatewayFromList(string pGatewayList, string& pGatewayA, string& p
 		*/
 extern 	bool GetFileExFileName(const string& pSrcFileName,string& strExtName);
 
-#ifdef MFC_MODELING
-#else
-
-extern void AddField(SQL_DATA& sql, const char* pFieldName, int nType, const char* pFieldValue = NULL);
-extern void AddCondition(SQL_DATA& sql, const char* pContent, int nType = 0);
-extern void Zero_SQL_DATA(SQL_DATA& pSqlData);
-
-#endif
-
-extern void Zero_RealData_Condition(REALDATA_CONDITION& pRealDataCondition);
 #endif
 

@@ -1,8 +1,8 @@
 #pragma warning(disable : 4275)
 #pragma warning(disable : 4786)
 
-#include "define.h"
-#include "XJString.h"
+#include "sys_define.h"
+#include "StrongString.h"
 
 /*  全局函数实现  */
 /*************************************************************
@@ -48,7 +48,7 @@ void GetSysTime(SYSTIME & curTime)
 void CreateSavePath(char * szPath)  
 {
 	int nStart=0,nReturn = 0;
-	CXJString strFilePath,strTempPath;
+	CStrongString strFilePath,strTempPath;
 
 	strFilePath = szPath;
 
@@ -526,113 +526,6 @@ int  GetFileStatus(char *filename, FILE_STATUS_STRUCT *pFileStatusStruct)
 #endif
 
 	return 0;
-}
-
-
-/*************************************************************
- 函 数 名:   AddField
- 功能概要:	 向指定的SQL_DATA中添加一个字段
- 返 回 值:   void
- 参    数:   SQL_DATA & sql
- 参    数:   const char * pFieldName 字段名
- 参    数:   int nType 字段类型
-**************************************************************/
-void AddField(SQL_DATA& sql, const char* pFieldName, int nType, const char* pFieldValue /*= NULL*/)
-
-{
-	Field field;
-    bzero(&field, sizeof(Field));
-	
-    field.FieldType = nType;
-
-    CXJString str(pFieldName);
-    str.MakeUpper();
-    strncpy(field.FieldName, str.c_str(), str.GetLength());
-	
-	if (NULL != pFieldValue){
-		CXJString strValue(pFieldValue);
-		//strValue.MakeUpper();
-		strncpy(field.FieldValue, strValue.c_str(), strValue.GetLength());
-	}
-	
-    sql.Fieldlist.push_back(field);
-	
-}
-
-/*************************************************************
- 函 数 名:   AddCondition
- 功能概要:	 向指定的SQL_DATA中添加一个条件
- 返 回 值:   void
- 参    数:   SQL_DATA & sql
- 参    数:   const char * pContent 条件内容
- 参    数:   int nType 条件类型
-**************************************************************/
-void AddCondition(SQL_DATA& sql, const char* pContent, int nType /*= 0*/)
-
-{
-	Condition con;
-    bzero(&con, sizeof(Condition));
-	
-    CXJString str(pContent);
-	
-    strncpy(con.ConditionContent, str.c_str(), str.GetLength());
-	
-	con.ConditionType = nType;
-
-    sql.Conditionlist.push_back(con);
-	
-}
-
-/*************************************************************
- 函 数 名：Zero_SQL_DATA()
- 功能概要：清空SQL_DATA
- 返 回 值: 返回值说明
- 参    数：param1   SQL_DATA引用
-**************************************************************/
-void Zero_SQL_DATA(SQL_DATA& pSqlData)
-{
-	int i = 0;
-	//Field
-	int FieldNum = pSqlData.Fieldlist.size();
-	if (FieldNum > 0)
-	{
-		for (i = 0; i<FieldNum; i++)
-		{
-			pSqlData.Fieldlist[i].FieldType = 0;
-			bzero(pSqlData.Fieldlist[i].FieldName,sizeof(pSqlData.Fieldlist[i].FieldName));
-			bzero(pSqlData.Fieldlist[i].FieldValue,sizeof(pSqlData.Fieldlist[i].FieldValue));
-		}
-	}
-	pSqlData.Fieldlist.clear();
-
-	//Condition
-	int ConditionNum = pSqlData.Conditionlist.size();
-	if (ConditionNum > 0)
-	{
-		for (i= 0 ; i< ConditionNum; i++)
-		{
-			pSqlData.Conditionlist[i].ConditionType = 0;
-			bzero(pSqlData.Conditionlist[i].ConditionContent,sizeof(pSqlData.Conditionlist[i].ConditionContent));
-		}
-	}
-	pSqlData.Conditionlist.clear();
-}
-
-/*************************************************************
- 函 数 名：Zero_RealData_Condition()
- 功能概要：清空结构
- 返 回 值: 无
- 参    数：param1   结构引用
-**************************************************************/
-void Zero_RealData_Condition(REALDATA_CONDITION& pRealDataCondition)
-{
-	pRealDataCondition.IsUse      = false;//是否使用
-	pRealDataCondition.station_id = "";//厂站ID
-	pRealDataCondition.pt_id      = "";//保护ID
-	pRealDataCondition.cpu_code   = "";//CPU号
-	pRealDataCondition.breaker_id = "";//开关ID
-	pRealDataCondition.reverse1   = "";//备用
-	pRealDataCondition.reverse2   = "";//备用
 }
 
 /*************************************************************

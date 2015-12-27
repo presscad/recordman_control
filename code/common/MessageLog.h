@@ -11,9 +11,10 @@
 #ifndef MessageLog_h__
 #define MessageLog_h__
 #pragma warning (disable   :   4275)
+
 #include "LogFile.h"
-#include "XJLock.h"
-#include "XJString.h"
+#include "SafeLock.h"
+#include "StrongString.h"
 
 typedef struct _FILE_DES_STRUCT
 {
@@ -167,7 +168,7 @@ private:
   	string m_strRelativePath;
 
 	/** @brief ÎÄ¼þËø */
-	CXJLock	m_Lock;
+	CSafeLock	m_Lock;
 };
 /** @} */ //OVER
 #endif // MessageLog_h__

@@ -13,7 +13,7 @@
 #ifndef INCLUDED_SOCKETS_H
 #define INCLUDED_SOCKETS_H
 
-#include "define.h"
+#include "sys_define.h"
 #include "Lock.h"
 #include "LogFile.h"
 
