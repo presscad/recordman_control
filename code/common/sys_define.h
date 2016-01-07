@@ -430,7 +430,17 @@ typedef struct _TIMEOUTS
  */
 
 /** @brief           STTP报文体最大长度(8192)*/
-const UINT MAX_STTP_MSG_LEN = 0x2000; 
+const UINT MAX_STTP_MSG_LEN = 0x2000;
+
+/**
+ * @brief       commu protocol define
+ * @author      pengl
+ * @version     ver1.0
+ * @date        
+ *
+ */
+/*  record private commu protocol  */
+const int DEFINE_COMMU_PROTOCOL_RECORD_SELF = 1;
 
 /**
  * @brief       工控板通讯规约头

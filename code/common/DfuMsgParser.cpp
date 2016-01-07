@@ -46,8 +46,8 @@ void CDfuMsgParser::Attach(RECORD_DFU_MSG *pMsg)
 
 void CDfuMsgParser::SetMsgStartMark()
 {
-	m_pMsgHdr->byteStartMask[0] = '0xA8';
-	m_pMsgHdr->byteStartMask[1] = '0xA8';
+	m_pMsgHdr->byteStartMask[0] = 0xA8;
+	m_pMsgHdr->byteStartMask[1] = 0xA8;
 }
 
 UINT CDfuMsgParser::GetMsgTransMark()
@@ -73,8 +73,15 @@ int CDfuMsgParser::GetMsgProtocolMark()
 
 void CDfuMsgParser::SetMsgProtocolMark(int nProtocol)
 {
-	m_pMsgHdr->byteProtocolMark[0] = '0x61';
-	m_pMsgHdr->byteProtocolMark[1] = '0x01';
+	switch (nProtocol)
+	{
+	case DEFINE_COMMU_PROTOCOL_RECORD_SELF:
+		{
+			m_pMsgHdr->byteProtocolMark[0] = 0x61;
+			m_pMsgHdr->byteProtocolMark[1] = 0x01;
+		}
+		break;
+	}
 }
 
 void CDfuMsgParser::SetMsgReserve()
@@ -119,11 +126,11 @@ void CDfuMsgParser::SetMsgEndFlag(bool bEndFlag)
 {
 	if(bEndFlag)
 	{
-		m_pMsgHdr->byteFrameSeq[0] = '0';
+		m_pMsgHdr->byteFrameSeq[0] = 0x00;
 	}
 	else
 	{
-		m_pMsgHdr->byteFrameSeq[0] = '1';
+		m_pMsgHdr->byteFrameSeq[0] = 0x01;
 	}
 }
 

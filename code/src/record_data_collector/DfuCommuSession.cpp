@@ -199,11 +199,11 @@ int CDfuCommuSession::DfuCommuOperationLoop()
 			msg_parser.Attach(pMsg);
 			msg_parser.SetMsgStartMark();
 			msg_parser.SetMsgTransMark(1);
-			msg_parser.SetMsgProtocolMark(1);
+			msg_parser.SetMsgProtocolMark(DEFINE_COMMU_PROTOCOL_RECORD_SELF);
 			msg_parser.SetMsgLength(8);
-			pMsg->DfuMsgHdr.byteCommandMask[0] = '0x01';
-			pMsg->DfuMsgHdr.byteEndMask[0] = '0x5F';
-			pMsg->DfuMsgHdr.byteEndMask[1] = '0x5F';
+			pMsg->DfuMsgHdr.byteCommandMask[0] = 0x01;
+			pMsg->DfuMsgHdr.byteEndMask[0] = 0x5F;
+			pMsg->DfuMsgHdr.byteEndMask[1] = 0x5F;
 			msg_parser.SetMsgEndFlag(true);
 
 			int nRet = m_pNetSocket->write(&pMsg->DfuMsgHdr, 20);
