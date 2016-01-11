@@ -429,8 +429,8 @@ typedef struct _TIMEOUTS
  * @{
  */
 
-/** @brief           STTP报文体最大长度(8192)*/
-const UINT MAX_STTP_MSG_LEN = 0x2000;
+/** @brief           报文体最大长度(1400)*/
+const UINT MAX_RECORD_MSG_LEN = 0x578;
 
 /**
  * @brief       commu protocol define
@@ -441,6 +441,116 @@ const UINT MAX_STTP_MSG_LEN = 0x2000;
  */
 /*  record private commu protocol  */
 const int DEFINE_COMMU_PROTOCOL_RECORD_SELF = 1;
+
+/** @brief           启动码*/
+const BYTE RECORD_COMMU_CHAR_START_VAR = 0xA8;
+/** @brief           结束码*/
+const BYTE RECORD_COMMU_CHAR_END_VAR = 0x5F;
+/** @brief           协议码第一位*/
+const BYTE RECORD_COMMU_CHAR_PROTOCOL_START_VAR = 0x61;
+/** @brief           协议码第二位*/
+const BYTE RECORD_COMMU_CHAR_PROTOCOL_END_VAR = 0x01;
+
+/** @brief           BYTE定义*/
+/** @brief           巡检命令*/
+const BYTE RECORD_COMMAND_CHAR_PATROL_VAR = 0x01;
+/** @brief           配置命令*/
+const BYTE RECORD_COMMAND_CHAR_CONFIG_SEND_VAR = 0x11;
+/** @brief           配置命令*/
+const BYTE RECORD_COMMAND_CHAR_CONFIG_RECV_VAR = 0x12;
+/** @brief           定值整定*/
+const BYTE RECORD_COMMAND_CHAR_SETTING_ADJUST_VAR = 0x21;
+/** @brief           定值读取*/
+const BYTE RECORD_COMMAND_CHAR_SETTING_READ_VAR = 0x22;
+/** @brief           定值区切换*/
+const BYTE RECORD_COMMAND_CHAR_SETZONE_CHANGE_VAR = 0x23;
+/** @brief           活动定值区读取*/
+const BYTE RECORD_COMMAND_CHAR_CURZONE_READ_VAR = 0x24;
+/** @brief           新录波查询*/
+const BYTE RECORD_COMMAND_CHAR_NEW_OSC_QUERY_VAR = 0x31;
+/** @brief           录波索引读取*/
+const BYTE RECORD_COMMAND_CHAR_OSC_INDEX_READ_VAR = 0x32;
+/** @brief           录波读取*/
+const BYTE RECORD_COMMAND_CHAR_OSC_FILE_READ_VAR = 0x33;
+/** @brief           手动录波*/
+const BYTE RECORD_COMMAND_CHAR_MANUAL_OSC_VAR = 0x3A;
+/** @brief           实时波形读取*/
+const BYTE RECORD_COMMAND_CHAR_REALTIME_OSC_READ_VAR = 0x41;
+/** @brief           实时数据读取*/
+const BYTE RECORD_COMMAND_CHAR_REALTIME_DATA_READ_VAR = 0x42;
+/** @brief           自检查询*/
+const BYTE RECORD_COMMAND_CHAR_SELF_CHECK_VAR = 0x91;
+/** @brief           版本查询*/
+const BYTE RECORD_COMMAND_CHAR_VERSION_QUERY_VAR = 0x92;
+/** @brief           时间查询*/
+const BYTE RECORD_COMMAND_CHAR_TIME_QUERY_VAR = 0x93;
+/** @brief           子模块信息查询*/
+const BYTE RECORD_COMMAND_CHAR_SUB_MODULE_QUERY_VAR = 0x94;
+/** @brief           装置复位*/
+const BYTE RECORD_COMMAND_CHAR_RESET_VAR = 0xA0;
+/** @brief           写ip地址*/
+const BYTE RECORD_COMMAND_CHAR_IP_SET_VAR = 0xA1;
+/** @brief           时间设置*/
+const BYTE RECORD_COMMAND_CHAR_TIME_SET_VAR = 0xA2;
+/** @brief           时区设置*/
+const BYTE RECORD_COMMAND_CHAR_TIMEZONE_SET_VAR = 0xA3;
+
+/** @brief           INT定义*/
+/** @brief           巡检命令*/
+const int RECORD_DFU_COMMAND_INT_PATROL = 1;
+/** @brief           配置命令*/
+const int RECORD_DFU_COMMAND_INT_CONFIG_SEND = 17;
+/** @brief           配置命令*/
+const int RECORD_DFU_COMMAND_INT_CONFIG_RECV = 18;
+/** @brief           定值整定*/
+const int RECORD_DFU_COMMAND_INT_SETTING_ADJUST = 33;
+/** @brief           定值读取*/
+const int RECORD_DFU_COMMAND_INT_SETTING_READ = 34;
+/** @brief           定值区切换*/
+const int RECORD_DFU_COMMAND_INT_SETZONE_CHANGE = 35;
+/** @brief           活动定值区读取*/
+const int RECORD_DFU_COMMAND_INT_CURZONE_READ = 36;
+/** @brief           新录波查询*/
+const int RECORD_DFU_COMMAND_INT_NEW_OSC_QUERY = 49;
+/** @brief           录波索引读取*/
+const int RECORD_DFU_COMMAND_INT_OSC_INDEX_READ = 50;
+/** @brief           录波读取*/
+const int RECORD_DFU_COMMAND_INT_OSC_FILE_READ = 51;
+/** @brief           手动录波*/
+const int RECORD_DFU_COMMAND_INT_MANUAL_OSC = 58;
+/** @brief           实时波形读取*/
+const int RECORD_DFU_COMMAND_INT_REALTIME_OSC_READ = 65;
+/** @brief           实时数据读取*/
+const int RECORD_DFU_COMMAND_INT_REALTIME_DATA_READ = 66;
+/** @brief           自检查询*/
+const int RECORD_DFU_COMMAND_INT_SELF_CHECK = 145;
+/** @brief           版本查询*/
+const int RECORD_DFU_COMMAND_INT_VERSION_QUERY = 146;
+/** @brief           时间查询*/
+const int RECORD_DFU_COMMAND_INT_TIME_QUERY = 147;
+/** @brief           子模块信息查询*/
+const int RECORD_DFU_COMMAND_INT_SUB_MODULE_QUERY = 148;
+/** @brief           装置复位*/
+const int RECORD_DFU_COMMAND_INT_RESET = 160;
+/** @brief           写ip地址*/
+const int RECORD_DFU_COMMAND_INT_IP_SET = 161;
+/** @brief           时间设置*/
+const int RECORD_DFU_COMMAND_INT_TIME_SET = 162;
+/** @brief           时区设置*/
+const int RECORD_DFU_COMMAND_INT_TIMEZONE_SET = 163;
+
+/**
+ * @brief       报文发送方向定义
+ * @author      pengl
+ * @version     ver1.0
+ * @date        03/09/2008
+ *
+ */
+/** @brief            发送*/
+const UINT MSG_SEND = 1;
+
+/** @brief            接收*/
+const UINT MSG_RECV = 2;
 
 /**
  * @brief       工控板通讯规约头
@@ -460,7 +570,7 @@ typedef struct _RECORD_DFU_MSG_HEADER
 	BYTE byteFunMask[2];//功能码
 	BYTE byteCommandMask[2];//命令码
 	BYTE byteFrameSeq[4];//帧序号
-	BYTE byteEndMask[2];
+    BYTE byteEndMask[2];//结束码
 }RECORD_DFU_MSG_HEADER;
 #pragma pack()
 
@@ -474,8 +584,8 @@ typedef struct _RECORD_DFU_MSG_HEADER
  */
 typedef struct _RECORD_DFU_MSG
 {
-    RECORD_DFU_MSG_HEADER   DfuMsgHdr;//报文头
-	char MsgBody[MAX_STTP_MSG_LEN] ; //消息体
+    RECORD_DFU_MSG_HEADER DfuMsgHdr;//报文头
+	BYTE MsgBody[MAX_RECORD_MSG_LEN]; //消息体
 }RECORD_DFU_MSG;
 
 /** @} */ //OVER
@@ -486,6 +596,31 @@ typedef struct _FILE_STATUS_STRUCT
 	time_t stWriteTime;
 	int   nFileSize;
 }FILE_STATUS_STRUCT;
+
+/**
+ * @brief       打印报文结构头
+ * @author      pengl
+ * @version     ver1.0
+ * @date        
+ *
+ * example
+ * @code
+ *
+ *
+ *
+ * @endcode
+ */
+typedef struct _LOG_BUFFER_HEAD
+{
+	/** @brief   对端网络地址*/
+	NETADDR addr;
+	
+	/** @brief   数据传输方向*/
+	int nWay;
+		
+	/** @brief   串口名称*/
+	char ch_port_name[32];
+}LOG_BUFFER_HEAD;
 
 /*  全局函数声明  */
 extern void GetSysTime(SYSTIME & curTime);
@@ -516,7 +651,7 @@ extern void GetGatewayFromList(string pGatewayList, string& pGatewayA, string& p
 		* @notes	无
 		* @sample	无
 		*/
-extern 	bool GetFileExFileName(const string& pSrcFileName,string& strExtName);
+extern bool GetFileExFileName(const string& pSrcFileName,string& strExtName);
 
 #endif
 

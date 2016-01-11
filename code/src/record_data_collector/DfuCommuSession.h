@@ -37,7 +37,16 @@ public:
 private:
 	//从socket读取报文
 	//读取到的字节数
-	int ReceiveMsg(RECORD_DFU_MSG * pMsg);
+	int ReceiveMsg(RECORD_DFU_MSG* pMsg);
+
+	//发送报文
+	int WriteRecordMsg(RECORD_DFU_MSG* pMsg);
+
+	//打印输出
+	void LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_HEAD& pHead);
+
+	//拷贝报文字符
+	void CopyMessageToString(BYTE bMsg, char*& pChar);
 
 private:
 /**	\brief 配置参数对象*/

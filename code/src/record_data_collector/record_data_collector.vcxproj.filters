@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\common\DfuMsgParser.cpp">
       <Filter>common</Filter>
     </ClCompile>
+    <ClCompile Include="GlobalFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -118,6 +121,9 @@
     </ClInclude>
     <ClInclude Include="..\..\common\DfuMsgParser.h">
       <Filter>common</Filter>
+    </ClInclude>
+    <ClInclude Include="GlobalFunction.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

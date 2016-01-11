@@ -13,6 +13,7 @@
 #include "../../common/MessageLog.h"
 #include "../../common/RecordmanThread.h"
 #include "../../common/DfuMsgParser.h"
+#include "GlobalFunction.h"
 
 /**	\brief 日志默认保存天数*/
 const int COLLECTOR_LOG_SAVE_DEFAULT_DAYS = 5;

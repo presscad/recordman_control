@@ -10,8 +10,8 @@
 class CDfuMsgParser
 {
 private:
-	RECORD_DFU_MSG* m_pMsg ;
-	RECORD_DFU_MSG_HEADER * m_pMsgHdr ;
+	RECORD_DFU_MSG* m_pMsg;
+	RECORD_DFU_MSG_HEADER * m_pMsgHdr;
 
 public:
 	CDfuMsgParser() ;
@@ -19,20 +19,23 @@ public:
 	virtual ~CDfuMsgParser();
 
 public:
-	char* GetMsgHdr();
-	void SetMsgHdr(char* pMsgHdr);
-	char* GetMsgBody();
-	void SetMsgBody(char* pMsgBody);
 	void Attach(RECORD_DFU_MSG* pMsg);
 
+	RECORD_DFU_MSG_HEADER* GetMsgHdr();
+
+	BYTE* GetMsgBody();
+	void SetMsgBody(BYTE* pMsgBody);
+
 public:	
-	void SetMsgStartMark();
+	void SetMsgStartMask();
+	bool CheckStartMask();
 
-	UINT GetMsgTransMark();
-	void SetMsgTransMark(UINT nTransMark);
+	UINT GetMsgTransMask();
+	void SetMsgTransMask(UINT nTransMark);
 
-	int GetMsgProtocolMark();
-	void SetMsgProtocolMark(int nProtocol);
+	int GetMsgProtocolMask();
+	void SetMsgProtocolMask(int nProtocol = DEFINE_COMMU_PROTOCOL_RECORD_SELF);
+	bool CheckMsgProtocolMask();
 
 	void SetMsgReserve();
 
@@ -43,6 +46,16 @@ public:
 
 	bool GetMsgEndFlag();
 	void SetMsgEndFlag(bool bEndFlag);
+
+	//获得命令码
+	int GetMsgCommand();
+	//设置命令码
+	void SetMsgCommand(int nMsgCommand);
+
+	//根据规约设置结束码，目前支持录波器内部规约
+	void SetEndMask(int nProtocol = DEFINE_COMMU_PROTOCOL_RECORD_SELF);
+	//检查收到的报文中结束码是否正确
+	bool CheckEndMask();
 
 public:
 	char*  Strrev(char* szT);

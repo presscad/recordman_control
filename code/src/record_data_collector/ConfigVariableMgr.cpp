@@ -32,6 +32,7 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 	}
 	catch (...)
 	{
+		printf("[InitCollectorSysparam]init system param find unknown exception£¡\n");
 		return false;
 	}
 

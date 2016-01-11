@@ -18,44 +18,60 @@ CDfuMsgParser::~CDfuMsgParser()
 
 }
 
-char* CDfuMsgParser::GetMsgHdr()
+RECORD_DFU_MSG_HEADER* CDfuMsgParser::GetMsgHdr()
 {
-	return (char*)m_pMsgHdr ;
+	if (NULL == m_pMsgHdr)
+	{
+		return NULL;
+	}
+
+	return m_pMsgHdr ;
 }
 
-void CDfuMsgParser::SetMsgHdr(char* pMsgHdr)
+void CDfuMsgParser::SetMsgBody(BYTE* pMsgBody)
 {
-	memcpy(m_pMsgHdr, pMsgHdr, sizeof(RECORD_DFU_MSG_HEADER)) ;
+	memcpy(m_pMsg->MsgBody, pMsgBody, (GetMsgLength() - 8));
 }
 
-void CDfuMsgParser::SetMsgBody(char* pMsgBody)
-{
-	memcpy(m_pMsg->MsgBody, pMsgBody, GetMsgLength()) ;
-}
-
-char* CDfuMsgParser::GetMsgBody()
+BYTE* CDfuMsgParser::GetMsgBody()
 {
 	return m_pMsg->MsgBody ;
 }
 
 void CDfuMsgParser::Attach(RECORD_DFU_MSG *pMsg)
 {
-	m_pMsg = pMsg ;
+	m_pMsg = pMsg;
 	m_pMsgHdr = &pMsg->DfuMsgHdr;
 }
 
-void CDfuMsgParser::SetMsgStartMark()
+void CDfuMsgParser::SetMsgStartMask()
 {
-	m_pMsgHdr->byteStartMask[0] = 0xA8;
-	m_pMsgHdr->byteStartMask[1] = 0xA8;
+	m_pMsgHdr->byteStartMask[0] = RECORD_COMMU_CHAR_START_VAR;
+	m_pMsgHdr->byteStartMask[1] = RECORD_COMMU_CHAR_START_VAR;
 }
 
-UINT CDfuMsgParser::GetMsgTransMark()
+bool CDfuMsgParser::CheckStartMask()
+{
+	if (NULL == m_pMsgHdr)
+	{
+		return false;
+	}
+
+	if ((RECORD_COMMU_CHAR_START_VAR != m_pMsgHdr->byteStartMask[0]) || 
+		(RECORD_COMMU_CHAR_START_VAR != m_pMsgHdr->byteStartMask[1]))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+UINT CDfuMsgParser::GetMsgTransMask()
 {
     return ArrayToInt((char*)m_pMsgHdr->byteTransMark, 2);
 }
 
-void CDfuMsgParser::SetMsgTransMark(UINT nTransMark)
+void CDfuMsgParser::SetMsgTransMask(UINT nTransMark)
 {
 	if(nTransMark > 99)
 	{
@@ -66,22 +82,38 @@ void CDfuMsgParser::SetMsgTransMark(UINT nTransMark)
 	memcpy(m_pMsgHdr->byteTransMark, &nTransMark, 2);
 }
 
-int CDfuMsgParser::GetMsgProtocolMark()
+int CDfuMsgParser::GetMsgProtocolMask()
 {
 	return 1;
 }
 
-void CDfuMsgParser::SetMsgProtocolMark(int nProtocol)
+void CDfuMsgParser::SetMsgProtocolMask(int nProtocol)
 {
 	switch (nProtocol)
 	{
 	case DEFINE_COMMU_PROTOCOL_RECORD_SELF:
 		{
-			m_pMsgHdr->byteProtocolMark[0] = 0x61;
-			m_pMsgHdr->byteProtocolMark[1] = 0x01;
+			m_pMsgHdr->byteProtocolMark[0] = RECORD_COMMU_CHAR_PROTOCOL_START_VAR;
+			m_pMsgHdr->byteProtocolMark[1] = RECORD_COMMU_CHAR_PROTOCOL_END_VAR;
 		}
 		break;
 	}
+}
+
+bool CDfuMsgParser::CheckMsgProtocolMask()
+{
+	if (NULL == m_pMsgHdr)
+	{
+		return false;
+	}
+
+	if ((RECORD_COMMU_CHAR_PROTOCOL_START_VAR != m_pMsgHdr->byteProtocolMark[0]) || 
+		(0x00 != m_pMsgHdr->byteProtocolMark[1]))
+	{
+		printf("recv wrong protocol code msg！\n");
+	}
+
+	return true;
 }
 
 void CDfuMsgParser::SetMsgReserve()
@@ -91,7 +123,9 @@ void CDfuMsgParser::SetMsgReserve()
 
 UINT CDfuMsgParser::GetMsgLength()
 {
-	return strtol((char*)m_pMsgHdr->byteMsgLen, NULL, 10);
+	int nMsgLeng = 0;
+	nMsgLeng = m_pMsgHdr->byteMsgLen[0] * 256 + m_pMsgHdr->byteMsgLen[1];
+	return nMsgLeng;
 }
 
 void CDfuMsgParser::SetMsgLength(UINT nLeng)
@@ -132,6 +166,82 @@ void CDfuMsgParser::SetMsgEndFlag(bool bEndFlag)
 	{
 		m_pMsgHdr->byteFrameSeq[0] = 0x01;
 	}
+}
+
+//************************************
+// 函 数 名： GetMsgCommand
+// 功能概要： get command mask
+// 访问权限： public 
+// 返 回 值： int 
+//************************************
+int CDfuMsgParser::GetMsgCommand()
+{
+	int nMsgCommand = -1;
+
+	nMsgCommand = m_pMsgHdr->byteCommandMask[0] + m_pMsgHdr->byteCommandMask[1];
+
+	return nMsgCommand;
+}
+
+//************************************
+// 函 数 名： SetMsgCommand
+// 功能概要： set command mask
+// 访问权限： public 
+// 返 回 值： void 
+// 参    数： int nMsgCommand 
+//************************************
+void CDfuMsgParser::SetMsgCommand(int nMsgCommand)
+{
+	int nCommand = nMsgCommand;
+	SWAP_16(nCommand);
+	memcpy(m_pMsgHdr->byteCommandMask, &nCommand, 2);
+}
+
+//************************************
+// 函 数 名： SetEndMask
+// 功能概要： set msg end mask，support record internal protocol
+// 访问权限： public 
+// 返 回 值： void 
+// 参    数： int nProtocol protocol id，default DEFINE_COMMU_PROTOCOL_RECORD_SELF
+//************************************
+void CDfuMsgParser::SetEndMask(int nProtocol /*= DEFINE_COMMU_PROTOCOL_RECORD_SELF*/)
+{
+	if (NULL == m_pMsgHdr)
+	{
+		return;
+	}
+
+	switch (nProtocol)
+	{
+	case DEFINE_COMMU_PROTOCOL_RECORD_SELF:
+		{
+			m_pMsgHdr->byteEndMask[0] = RECORD_COMMU_CHAR_END_VAR;
+			m_pMsgHdr->byteEndMask[1] = RECORD_COMMU_CHAR_END_VAR;
+		}
+		break;
+	}
+}
+
+//************************************
+// 函 数 名： CheckEndMask
+// 功能概要： check end mask from recved msg
+// 访问权限： public 
+// 返 回 值： bool true：right false：wrong
+//************************************
+bool CDfuMsgParser::CheckEndMask()
+{
+	if (NULL == m_pMsgHdr)
+	{
+		return false;
+	}
+
+	if ((RECORD_COMMU_CHAR_END_VAR != m_pMsgHdr->byteEndMask[0]) || 
+		(RECORD_COMMU_CHAR_END_VAR != m_pMsgHdr->byteEndMask[1]))
+	{
+		return false;
+	}
+
+	return true;
 }
 
 double CDfuMsgParser::ArrayToDouble(char *szByte, int iLength)

@@ -728,3 +728,4 @@ bool GetFileExFileName(const string& pSrcFileName,string& strExtName)
 	}
 	return bReturn;
 }
+
