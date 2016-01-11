@@ -6,7 +6,7 @@
 #include "../../../common/StrongString.h"
  #include "../../../common/LogFile.h"
 
-#include "../../../Interface/ComtradeDefine.h"
+#include "../../../interface/ComtradeDefine.h"
 
 #define MAX_FILE_LENGTH          1024
 #define MAX_PATH		260

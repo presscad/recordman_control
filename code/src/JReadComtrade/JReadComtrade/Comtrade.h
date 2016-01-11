@@ -4,7 +4,7 @@
  
 #include "./include/jni.h" 
 //#include "../XJComtrade/XJComtrade.h"
-#include "../../../Interface/ComtradeDefine.h"
+#include "../../../interface/ComtradeDefine.h"
 #include "../../../common/sys_define.h"
 
 

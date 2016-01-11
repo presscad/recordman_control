@@ -5,7 +5,7 @@
 #pragma   warning   (disable   :   4275) 
 
 #include "constant.h"
-#include "../../../Interface/ComtradeDefine.h"
+#include "../../../interface/ComtradeDefine.h"
 
 #ifdef __cplusplus
 extern "C" {
