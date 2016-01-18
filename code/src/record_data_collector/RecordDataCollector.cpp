@@ -4,7 +4,9 @@
 CRecordDataCollector::CRecordDataCollector(void)
 {
 	m_pConfigvarialemgr = NULL;
-	m_pDfuCommuSession = NULL;
+	m_pRecordApciHandler = NULL;
+	m_pCommandHandlerMgr = NULL;
+	m_pCommandMonitorHandler = NULL;
 }
 
 
@@ -28,13 +30,14 @@ bool CRecordDataCollector::InitRecordDataColletor()
 			return false;
 		}
 
-		if (false == InitDfuCommuSession())
+		if (false == InitApciHandler())
 		{
 			return false;
 		}
 	}
 	catch (...)
 	{
+		printf("[InitRecordDataColletor]init record dataCollector find exception£¡\n");
 		return false;
 	}
 
@@ -52,13 +55,14 @@ bool CRecordDataCollector::StartRecordDataColletor()
 {
 	try
 	{
-		if (false == m_pDfuCommuSession->StartCommuSession())
+		if (false == m_pRecordApciHandler->StartRecordApciHandler())
 		{
 			return false;
 		}
 	}
 	catch (...)
 	{
+		printf("[StartRecordDataColletor]start record dataCollector find exception£¡\n");
 		return false;
 	}
 	return true;
@@ -75,13 +79,14 @@ bool CRecordDataCollector::EndRecordDataColletor()
 {
 	try
 	{
-		if (NULL != m_pDfuCommuSession)
+		if (NULL != m_pRecordApciHandler)
 		{
-			m_pDfuCommuSession->StopCommuSession();
+			m_pRecordApciHandler->StopRecordApciHandler();
 		}
 	}
 	catch (...)
 	{
+		printf("[EndRecordDataColletor]end record dataCollector find exception£¡\n");
 		return false;
 	}
 	return true;
@@ -98,10 +103,10 @@ bool CRecordDataCollector::ExitRecordDataColletor()
 {
 	try
 	{
-		if (NULL != m_pDfuCommuSession)
+		if (NULL != m_pRecordApciHandler)
 		{
-			delete m_pDfuCommuSession;
-			m_pDfuCommuSession = NULL;
+			delete m_pRecordApciHandler;
+			m_pRecordApciHandler = NULL;
 		}
 
 		if (NULL != m_pConfigvarialemgr)
@@ -112,6 +117,7 @@ bool CRecordDataCollector::ExitRecordDataColletor()
 	}
 	catch (...)
 	{
+		printf("[ExitRecordDataColletor]exit record dataCollector find exception£¡\n");
 		return false;
 	}
 	return true;
@@ -151,6 +157,7 @@ bool CRecordDataCollector::InitSysConfigVariable()
 	}
 	catch (...)
 	{
+		printf("[InitSysConfigVariable]init collector system param find exception£¡\n");
 		return false;
 	}
 
@@ -158,30 +165,30 @@ bool CRecordDataCollector::InitSysConfigVariable()
 }
 
 //************************************
-// Method:    InitDfuCommuSession
-// FullName:  CRecordDataCollector::InitDfuCommuSession
+// Method:    InitApciHandler
+// FullName:  CRecordDataCollector::InitApciHandler
 // Access:    private 
 // Returns:   bool
 // Qualifier:
 //************************************
-bool CRecordDataCollector::InitDfuCommuSession()
+bool CRecordDataCollector::InitApciHandler()
 {
 	try
 	{
-		if (NULL == m_pDfuCommuSession)
+		if (NULL == m_pRecordApciHandler)
 		{
-			m_pDfuCommuSession = new CDfuCommuSession;
+			m_pRecordApciHandler = new CRecordAPCIHandler;
 		}
 
-		if (NULL == m_pDfuCommuSession)
+		if (NULL == m_pRecordApciHandler)
 		{
-			printf("new class CDfuCommuSession failed£¡\n");
+			printf("new class CRecordAPCIHandler failed£¡\n");
 			return false;
 		}
 
-		m_pDfuCommuSession->SetCollectorSysParam(&m_pConfigvarialemgr->m_collector_sys_param);
+		m_pRecordApciHandler->SetCollectorSysParam(&m_pConfigvarialemgr->m_collector_sys_param);
 
-		if (false == m_pDfuCommuSession->InitDfuCommuSession())
+		if (false == m_pRecordApciHandler->InitRecordApciHandler())
 		{
 			return false;
 		}
@@ -190,6 +197,38 @@ bool CRecordDataCollector::InitDfuCommuSession()
 	}
 	catch (...)
 	{
+		printf("[InitApciHandler]init apci handler find exception£¡\n");
+		return false;
+	}
+	
+	return true;
+}
+
+//************************************
+// Method:    InitCommandHandlerMgr
+// FullName:  CRecordDataCollector::InitCommandHandlerMgr
+// Access:    private 
+// Returns:   bool true£ºsuccess false£ºfail
+// Qualifier: 
+//************************************
+bool CRecordDataCollector::InitCommandHandlerMgr()
+{
+	try
+	{
+		if (NULL == m_pCommandHandlerMgr)
+		{
+			m_pCommandHandlerMgr = new CCommandHandlerMgr;
+		}
+
+		if (NULL == m_pCommandHandlerMgr)
+		{
+			printf("new class CCommandHandlerMgr failed£¡\n");
+			return false;
+		}
+	}
+	catch (...)
+	{
+		printf("[InitCommandHandlerMgr]init command handler manager find exception£¡\n");
 		return false;
 	}
 	

@@ -60,13 +60,22 @@
     <ClCompile Include="..\..\common\StrongString.cpp">
       <Filter>common</Filter>
     </ClCompile>
-    <ClCompile Include="DfuCommuSession.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\DfuMsgParser.cpp">
       <Filter>common</Filter>
     </ClCompile>
     <ClCompile Include="GlobalFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RecordAPCIHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandHandlerMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandHandlerSession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CommandMonitorHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,13 +125,22 @@
     <ClInclude Include="..\..\common\RecordmanThread.h">
       <Filter>common</Filter>
     </ClInclude>
-    <ClInclude Include="DfuCommuSession.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\DfuMsgParser.h">
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="GlobalFunction.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RecordAPCIHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandHandlerMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandHandlerSession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CommandMonitorHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

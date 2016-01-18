@@ -7,7 +7,9 @@
 
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
-#include "DfuCommuSession.h"
+#include "CommandHandlerMgr.h"
+#include "RecordAPCIHandler.h"
+#include "CommandMonitorHandler.h"
 
 class CRecordDataCollector
 {
@@ -39,14 +41,24 @@ private:
 	
 	//初始化dfu通讯类对象
 	//true：成功 false：失败
-	bool InitDfuCommuSession();
+	bool InitApciHandler();
+
+	//初始化命令处理会话管理类对象
+	//true：成功 false：失败
+	bool InitCommandHandlerMgr();
 
 private:
 /**	\brief 配置维护类对象*/
 	CConfigVariableMgr* m_pConfigvarialemgr;
 
-/**	\brief dfu通讯类对象*/
-	CDfuCommuSession* m_pDfuCommuSession;
+/**	\brief 命令处理管理类*/
+	CCommandHandlerMgr* m_pCommandHandlerMgr;
+
+/**	\brief 与dfu通信管理类*/
+	CRecordAPCIHandler* m_pRecordApciHandler;
+
+/**	\brief 外部命令监视*/
+	CCommandMonitorHandler* m_pCommandMonitorHandler;
 };
 
 #endif

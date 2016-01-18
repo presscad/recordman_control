@@ -642,15 +642,7 @@ extern int ReverseIntEndian(int pSourse);
 extern float ReverseFloatEndian(float pSourse);
 extern string FormatGatewayList(string pGatewayA, string pGatewayB);
 extern void GetGatewayFromList(string pGatewayList, string& pGatewayA, string& pGatewayB);
-
-		/**
-		* @brief	GetFileExFileName	取得.分隔的文件扩展名
-		* @param 	[In]const string& pSrcFileName	文件名
-		* @param 	[In]string& strExtName	返回的扩展名
-		* @return	bool	true:成功 false:失败
-		* @notes	无
-		* @sample	无
-		*/
+//取得.分隔的文件扩展名
 extern bool GetFileExFileName(const string& pSrcFileName,string& strExtName);
 
 #endif

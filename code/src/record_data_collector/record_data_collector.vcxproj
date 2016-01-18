@@ -89,10 +89,13 @@
     <ClCompile Include="..\..\common\RecordmanThread.cpp" />
     <ClCompile Include="..\..\common\SafeLock.cpp" />
     <ClCompile Include="..\..\common\StrongString.cpp" />
+    <ClCompile Include="CommandHandlerMgr.cpp" />
+    <ClCompile Include="CommandHandlerSession.cpp" />
+    <ClCompile Include="CommandMonitorHandler.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
-    <ClCompile Include="DfuCommuSession.cpp" />
     <ClCompile Include="GlobalFunction.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RecordAPCIHandler.cpp" />
     <ClCompile Include="RecordDataCollector.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -109,10 +112,13 @@
     <ClInclude Include="..\..\common\SafeLock.h" />
     <ClInclude Include="..\..\common\StrongString.h" />
     <ClInclude Include="..\..\common\sys_define.h" />
+    <ClInclude Include="CommandHandlerMgr.h" />
+    <ClInclude Include="CommandHandlerSession.h" />
+    <ClInclude Include="CommandMonitorHandler.h" />
     <ClInclude Include="ConfigVariableMgr.h" />
     <ClInclude Include="const_define.h" />
-    <ClInclude Include="DfuCommuSession.h" />
     <ClInclude Include="GlobalFunction.h" />
+    <ClInclude Include="RecordAPCIHandler.h" />
     <ClInclude Include="RecordDataCollector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

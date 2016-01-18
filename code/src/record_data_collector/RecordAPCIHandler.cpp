@@ -1,37 +1,36 @@
-#include "DfuCommuSession.h"
+#include "RecordAPCIHandler.h"
 
 //************************************
-// Method:    DFU_OPERATION_THREAD_PROC
-// FullName:  DFU_OPERATION_THREAD_PROC
+// Method:    DFU_APCI_OPERATION_THREAD_PROC
+// FullName:  DFU_APCI_OPERATION_THREAD_PROC
 // Access:    public 
 // Returns:   THREAD_FUNC WINAPI
 // Qualifier: 与dfu的业务处理线程
 // Parameter: LPVOID param
 //************************************
-THREAD_FUNC WINAPI DFU_OPERATION_THREAD_PROC(LPVOID param)
+THREAD_FUNC WINAPI DFU_APCI_OPERATION_THREAD_PROC(LPVOID param)
 {
-	CDfuCommuSession* pDfuCommuSession = (CDfuCommuSession*)param;
+	CRecordAPCIHandler* pRecordApciHandler = (CRecordAPCIHandler*)param;
 
 	try
 	{
-		if (NULL == pDfuCommuSession)
+		if (NULL == pRecordApciHandler)
 		{
 			return THREAD_RETURN;
 		}
 
-		pDfuCommuSession->DfuCommuOperationLoop();
+		pRecordApciHandler->DfuCommuOperationLoop();
 	}
 	catch (...)
 	{
-		printf("DFU_OPERATION_THREAD_PROC thread exit abnormal！\n");
+		printf("DFU_APCI_OPERATION_THREAD_PROC thread exit abnormal！\n");
 		return THREAD_RETURN;
 	}
 
 	return THREAD_RETURN;
 }
 
-
-CDfuCommuSession::CDfuCommuSession(void)
+CRecordAPCIHandler::CRecordAPCIHandler(void)
 {
 	m_bExitFlag = true;
 	m_pCollectorSysParam = NULL;
@@ -39,7 +38,7 @@ CDfuCommuSession::CDfuCommuSession(void)
 }
 
 
-CDfuCommuSession::~CDfuCommuSession(void)
+CRecordAPCIHandler::~CRecordAPCIHandler(void)
 {
 	if (NULL != m_pNetSocket)
 	{
@@ -57,7 +56,7 @@ CDfuCommuSession::~CDfuCommuSession(void)
 // Qualifier: 设置参数访问对象指针
 // Parameter: COLLECTOR_DATA_SYS_PARAM * pParam 参数访问对象指针
 //************************************
-void CDfuCommuSession::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam)
+void CRecordAPCIHandler::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam)
 {
 	m_pCollectorSysParam = pParam;
 }
@@ -69,7 +68,7 @@ void CDfuCommuSession::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam)
 // Returns:   bool true：成功 false：失败
 // Qualifier: 初始化
 //************************************
-bool CDfuCommuSession::InitDfuCommuSession()
+bool CRecordAPCIHandler::InitRecordApciHandler()
 {
 	try
 	{
@@ -107,7 +106,7 @@ bool CDfuCommuSession::InitDfuCommuSession()
 // Returns:   bool true：成功 false：失败
 // Qualifier: 启动
 //************************************
-bool CDfuCommuSession::StartCommuSession()
+bool CRecordAPCIHandler::StartRecordApciHandler()
 {
 	bool bRet = false;
 
@@ -128,7 +127,7 @@ bool CDfuCommuSession::StartCommuSession()
 
 		m_bExitFlag = false;
 
-		if (false == m_DfuOperationThread.Start(DFU_OPERATION_THREAD_PROC, this))
+		if (false == m_DfuOperationThread.Start(DFU_APCI_OPERATION_THREAD_PROC, this))
 		{
 			printf("start dfu operation thread failed！\n");
 			return false;
@@ -150,7 +149,7 @@ bool CDfuCommuSession::StartCommuSession()
 // Returns:   bool true：成功 false：失败
 // Qualifier: 停止
 //************************************
-bool CDfuCommuSession::StopCommuSession()
+bool CRecordAPCIHandler::StopRecordApciHandler()
 {
 	m_bExitFlag = true;
 
@@ -171,7 +170,7 @@ bool CDfuCommuSession::StopCommuSession()
 // Returns:   int
 // Qualifier:
 //************************************
-int CDfuCommuSession::DfuCommuOperationLoop()
+int CRecordAPCIHandler::DfuCommuOperationLoop()
 {
 	RECORD_DFU_MSG* pMsg = NULL;
 
@@ -230,7 +229,7 @@ int CDfuCommuSession::DfuCommuOperationLoop()
 // 返 回 值： int 
 // 参    数： RECORD_DFU_MSG * pMsg 
 //************************************
-int CDfuCommuSession::ReceiveMsg(RECORD_DFU_MSG* pMsg)
+int CRecordAPCIHandler::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 {
 	if(pMsg == NULL)
 	{
@@ -347,7 +346,7 @@ int CDfuCommuSession::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 // 返 回 值： int -1：failed other：send bytes length
 // 参    数： RECORD_DFU_MSG * pMsg 
 //************************************
-int CDfuCommuSession::WriteRecordMsg(RECORD_DFU_MSG* pMsg)
+int CRecordAPCIHandler::WriteRecordMsg(RECORD_DFU_MSG* pMsg)
 {
 	if (NULL == pMsg)
 	{
@@ -428,7 +427,7 @@ int CDfuCommuSession::WriteRecordMsg(RECORD_DFU_MSG* pMsg)
 // 参    数： const RECORD_DFU_MSG * pMsg msg struct
 // 参    数： const LOG_BUFFER_HEAD & pHead log header
 //************************************
-void CDfuCommuSession::LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_HEAD& pHead)
+void CRecordAPCIHandler::LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_HEAD& pHead)
 {
 	if(NULL == pMsg)
 		return ;
@@ -518,7 +517,7 @@ void CDfuCommuSession::LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_H
 // 参    数： BYTE bMsg byte msg
 // 参    数： char * & pChar string buffer
 //************************************
-void CDfuCommuSession::CopyMessageToString(BYTE bMsg, char*& pChar)
+void CRecordAPCIHandler::CopyMessageToString(BYTE bMsg, char*& pChar)
 {
 	char temp[3] = "";
 	char temp1[2] = "";
@@ -541,4 +540,3 @@ void CDfuCommuSession::CopyMessageToString(BYTE bMsg, char*& pChar)
 	memcpy(pChar, " ", 1);
 	pChar += 1;
 }
-
