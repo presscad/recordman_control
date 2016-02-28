@@ -5,11 +5,22 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "const_define.h"
+#include "ConfigVariableMgr.h"
+
 class CCommandMonitorHandler
 {
 public:
 	CCommandMonitorHandler(void);
 	~CCommandMonitorHandler(void);
+
+public:
+	//设置配置类访问句柄
+	void SetConfigVariableHandle(CConfigVariableMgr* pObj);
+
+private:
+/**	\brief 配置维护类对象*/
+	CConfigVariableMgr* m_pConfigVariableObj;
 };
 
 #endif
