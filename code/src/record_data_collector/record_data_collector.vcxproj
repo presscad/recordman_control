@@ -55,7 +55,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>../../bin/Debug/$(TargetName)/$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>ws2_32.lib;../../common_open_source/rabbitmq/lib/win32/librabbitmq.4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;../../common_open_source/rabbitmq/lib/win32/debug/librabbitmq.4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

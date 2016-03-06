@@ -34,6 +34,11 @@ bool CRecordDataCollector::InitRecordDataColletor()
 		{
 			return false;
 		}
+
+		if (false == InitCommandMonitorHandler())
+		{
+			return false;
+		}
 	}
 	catch (...)
 	{
@@ -201,6 +206,39 @@ bool CRecordDataCollector::InitApciHandler()
 		return false;
 	}
 	
+	return true;
+}
+
+bool CRecordDataCollector::InitCommandMonitorHandler()
+{
+	try
+	{
+		if (NULL == m_pCommandMonitorHandler)
+		{
+			m_pCommandMonitorHandler = new CCommandMonitorHandler;
+		}
+
+		if (NULL == m_pCommandMonitorHandler)
+		{
+			printf("new class CCommandMonitorHandler failed£¡\n");
+			return false;
+		}
+
+		m_pCommandMonitorHandler->SetConfigVariableHandle(m_pConfigvarialemgr);
+
+		if (false == m_pCommandMonitorHandler->InitCommandMonitorHandler())
+		{
+			return false;
+		}
+
+		printf("InitCommandMonitorHandler succeed£¡\n");
+	}
+	catch (...)
+	{
+		printf("[InitCommandMonitorHandler]init command monitor find exception£¡\n");
+		return false;
+	}
+
 	return true;
 }
 

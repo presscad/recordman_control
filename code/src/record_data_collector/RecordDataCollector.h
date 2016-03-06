@@ -43,6 +43,8 @@ private:
 	//true：成功 false：失败
 	bool InitApciHandler();
 
+	bool InitCommandMonitorHandler();
+
 	//初始化命令处理会话管理类对象
 	//true：成功 false：失败
 	bool InitCommandHandlerMgr();

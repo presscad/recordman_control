@@ -29,6 +29,11 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 		m_collector_sys_param.nSendTimeout = COLLECTOR_COMMU_SEND_TIMEOUT;
 		sprintf(m_collector_sys_param.chDfuAddr, "%s", "10.123.16.56");
 		sprintf(m_collector_sys_param.chLogpath, "%s", "./data_collector_log/");
+
+		m_rabbit_mq_param.nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
+		sprintf(m_rabbit_mq_param.chhostname, "%s", "10.123.16.100");
+		sprintf(m_rabbit_mq_param.chusrname, "%s", "admin");
+		sprintf(m_rabbit_mq_param.chpassword, "%s", "admin");
 	}
 	catch (...)
 	{

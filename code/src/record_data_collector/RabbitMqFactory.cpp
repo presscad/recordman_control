@@ -5,6 +5,7 @@ CRabbitMqFactory::CRabbitMqFactory(void)
 {
 	m_pConfigVariableObj = NULL;
 	m_pRabbitMqConn = NULL;
+	m_pRabbitMqSocketHandler = NULL;
 	m_nSockfd = -1;
 	m_nChannelid = -1;
 }
@@ -39,7 +40,14 @@ bool CRabbitMqFactory::ConnectRabbitMqServer(int nchannelid)
 			return false;
 		}
 
-		m_nSockfd = amqp_open_socket(
+		m_pRabbitMqSocketHandler = amqp_tcp_socket_new(m_pRabbitMqConn);
+		if (NULL == m_pRabbitMqSocketHandler)
+		{
+			return false;
+		}
+
+		m_nSockfd = amqp_socket_open(
+			m_pRabbitMqSocketHandler, 
 			m_pConfigVariableObj->m_rabbit_mq_param.chhostname, 
 			m_pConfigVariableObj->m_rabbit_mq_param.nserver_port);
 
@@ -49,7 +57,6 @@ bool CRabbitMqFactory::ConnectRabbitMqServer(int nchannelid)
 		}
 		else
 		{
-			amqp_set_sockfd(m_pRabbitMqConn, m_nSockfd);
 			bRet = LoginAndOpenChannel(nchannelid);
 		}
 	}
@@ -58,7 +65,25 @@ bool CRabbitMqFactory::ConnectRabbitMqServer(int nchannelid)
 		bRet = false;
 	}
 
+	if (false == bRet)
+	{
+		CloseRabbitMqConn();
+	}
+
 	return bRet;
+}
+
+bool CRabbitMqFactory::CloseRabbitMqConn()
+{
+	if (NULL != m_pRabbitMqConn)
+	{
+		amqp_connection_close(m_pRabbitMqConn, AMQP_REPLY_SUCCESS);
+		amqp_destroy_connection(m_pRabbitMqConn);
+	}
+
+	m_pRabbitMqConn = NULL;
+
+	return true;
 }
 
 bool CRabbitMqFactory::LoginAndOpenChannel(int nchannelid)

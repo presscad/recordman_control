@@ -10,6 +10,8 @@
 #include "ConfigVariableMgr.h"
 #include "../../common_open_source/rabbitmq/include/amqp.h"
 #include "../../common_open_source/rabbitmq/include/amqp_framing.h"
+#include "../../common_open_source/rabbitmq/include/amqp_tcp_socket.h"
+#include "../../common_open_source/rabbitmq/include/amqp_ssl_socket.h"
 
 class CRabbitMqFactory
 {
@@ -23,6 +25,8 @@ public:
 
 public:
 	bool ConnectRabbitMqServer(int nchannelid);
+
+	bool CloseRabbitMqConn();
 
 private:
 
@@ -45,6 +49,8 @@ private:
 
 	/**	\brief Á¬½Ó¾ä±ú*/
 	amqp_connection_state_t m_pRabbitMqConn;
+
+	amqp_socket_t* m_pRabbitMqSocketHandler;
 };
 
 #endif
