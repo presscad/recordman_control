@@ -1,0 +1,40 @@
+#define the path of search
+VPATH = -I../../common \
+		-I../../common_open_source/rabbitmq/include \
+		-I./
+
+#define compile obj
+common_obj = CCommonFile.o common_lib.o common_time.o DfuMsgParser.o globalfun.o Lock.o \
+				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o
+
+cur_objects = CommandHandlerMgr.o CommandHandlerSession.o CommandMonitorHandler.o ConfigVariableMgr.o \
+				GlobalFunction.o Main.o RabbitMqFactory.o RecordAPCIHandler.o RecordDataCollector.o
+
+AllOBJ =  $(common_obj) $(cur_objects)
+
+#define compile param
+LIBS = -rdynamic
+CFLAGS = -g -w -DOS_LINUX
+LINK_FLAGS = -lpthread -ldl -L../../common_open_source/rabbitmq/lib/linux-x86-64/ -lrabbitmq
+
+#define compile program param
+VERSION = D1.0.1
+TARGETFILENAME = record_data_collector
+TARGETPATH = ../../bin/record_data_collector/
+
+$(TARGETFILENAME)-$(VERSION) : $(AllOBJ) mkxjtargetdir
+	g++ -o $(TARGETPATH)$(TARGETFILENAME)-$(VERSION) $(AllOBJ) $(LIBS) $(CFLAGS) $(VPATH) $(LINK_FLAGS)
+
+$(common_obj):%.o: ../../../common_mstation/%.cpp
+	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
+
+$(cur_objects):%.o: %.cpp
+	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
+
+.PHONY : mkxjtargetdir clean
+
+mkxjtargetdir :
+	if [ ! -d $(TARGETPATH) ]; then mkdir -p $(TARGETPATH); fi
+
+clean :
+	-rm $(TARGETPATH)$(TARGETFILENAME)-$(VERSION) $(AllOBJ)

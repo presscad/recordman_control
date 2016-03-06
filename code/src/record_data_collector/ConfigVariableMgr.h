@@ -17,6 +17,9 @@ public:
 /**	\brief 系统参数*/
 	COLLECTOR_DATA_SYS_PARAM m_collector_sys_param;
 
+/**	\brief rabbit参数*/
+	COLLECTOR_RABBIT_MQ_PARAM m_rabbit_mq_param;
+
 public:
 	//初始化参数
 	//true：成功 false：失败

@@ -78,6 +78,9 @@
     <ClCompile Include="CommandMonitorHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="RabbitMqFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -143,5 +146,12 @@
     <ClInclude Include="CommandMonitorHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="RabbitMqFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile_debug" />
+    <None Include="Makefile_release" />
   </ItemGroup>
 </Project>
