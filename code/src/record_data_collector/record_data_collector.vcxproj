@@ -50,6 +50,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;_BIG_ENDIAN_CPU_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../common_open_source/mongo/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -85,17 +86,18 @@
     <ClCompile Include="..\..\common\Lock.cpp" />
     <ClCompile Include="..\..\common\LogFile.cpp" />
     <ClCompile Include="..\..\common\MessageLog.cpp" />
+    <ClCompile Include="..\..\common\MongodbAccess.cpp" />
     <ClCompile Include="..\..\common\Net.cpp" />
+    <ClCompile Include="..\..\common\RabbitmqAccess.cpp" />
     <ClCompile Include="..\..\common\RecordmanThread.cpp" />
     <ClCompile Include="..\..\common\SafeLock.cpp" />
     <ClCompile Include="..\..\common\StrongString.cpp" />
     <ClCompile Include="CommandHandlerMgr.cpp" />
     <ClCompile Include="CommandHandlerSession.cpp" />
-    <ClCompile Include="CommandMonitorHandler.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
     <ClCompile Include="GlobalFunction.cpp" />
+    <ClCompile Include="InternalCommuMgr.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="RabbitMqFactory.cpp" />
     <ClCompile Include="RecordAPCIHandler.cpp" />
     <ClCompile Include="RecordDataCollector.cpp" />
   </ItemGroup>
@@ -108,18 +110,19 @@
     <ClInclude Include="..\..\common\Lock.h" />
     <ClInclude Include="..\..\common\LogFile.h" />
     <ClInclude Include="..\..\common\MessageLog.h" />
+    <ClInclude Include="..\..\common\MongodbAccess.h" />
     <ClInclude Include="..\..\common\Net.h" />
+    <ClInclude Include="..\..\common\RabbitmqAccess.h" />
     <ClInclude Include="..\..\common\RecordmanThread.h" />
     <ClInclude Include="..\..\common\SafeLock.h" />
     <ClInclude Include="..\..\common\StrongString.h" />
     <ClInclude Include="..\..\common\sys_define.h" />
     <ClInclude Include="CommandHandlerMgr.h" />
     <ClInclude Include="CommandHandlerSession.h" />
-    <ClInclude Include="CommandMonitorHandler.h" />
     <ClInclude Include="ConfigVariableMgr.h" />
     <ClInclude Include="const_define.h" />
     <ClInclude Include="GlobalFunction.h" />
-    <ClInclude Include="RabbitMqFactory.h" />
+    <ClInclude Include="InternalCommuMgr.h" />
     <ClInclude Include="RecordAPCIHandler.h" />
     <ClInclude Include="RecordDataCollector.h" />
   </ItemGroup>

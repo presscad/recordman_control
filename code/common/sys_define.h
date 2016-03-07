@@ -552,6 +552,13 @@ const UINT MSG_SEND = 1;
 /** @brief            接收*/
 const UINT MSG_RECV = 2;
 
+
+/**	\brief rabbitmq默认访问端口*/
+const int RABBIT_MQ_DEFAULT_ACCESS_PORT = 5672;
+const int RABBIT_MQ_DEFAULT_CHANNEL_MAX = 0;
+const int RABBIT_MQ_DEFAULT_FRAME_MAX = 131072;
+const char RABBIT_MQ_DEFAULT_V_HOST[] = "/";
+
 /**
  * @brief       工控板通讯规约头
  * @author      pengl
@@ -621,6 +628,23 @@ typedef struct _LOG_BUFFER_HEAD
 	/** @brief   串口名称*/
 	char ch_port_name[32];
 }LOG_BUFFER_HEAD;
+
+//rabbitmq参数
+typedef struct _RABBIT_MQ_ACCESS_PARAM
+{
+	int nserver_port;
+	char chhostname[MAX_FIELD_NAME_LEN];
+	char chusrname[MAX_FIELD_NAME_LEN];
+	char chpassword[MAX_FIELD_NAME_LEN];
+
+	_RABBIT_MQ_ACCESS_PARAM()
+	{
+		nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
+		bzero(chhostname, sizeof(chhostname));
+		bzero(chusrname, sizeof(chusrname));
+		bzero(chpassword, sizeof(chpassword));
+	}
+}RABBIT_MQ_ACCESS_PARAM;
 
 /*  全局函数声明  */
 extern void GetSysTime(SYSTIME & curTime);

@@ -75,10 +75,13 @@
     <ClCompile Include="CommandHandlerSession.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CommandMonitorHandler.cpp">
+    <ClCompile Include="..\..\common\RabbitmqAccess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RabbitMqFactory.cpp">
+    <ClCompile Include="InternalCommuMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\MongodbAccess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -143,10 +146,13 @@
     <ClInclude Include="CommandHandlerSession.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CommandMonitorHandler.h">
+    <ClInclude Include="..\..\common\RabbitmqAccess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RabbitMqFactory.h">
+    <ClInclude Include="InternalCommuMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MongodbAccess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

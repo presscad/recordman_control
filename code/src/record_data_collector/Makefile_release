@@ -5,10 +5,11 @@ VPATH = -I../../common \
 
 #define compile obj
 common_obj = CCommonFile.o common_lib.o common_time.o DfuMsgParser.o globalfun.o Lock.o \
-				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o
+				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o \
+				RabbitmqAccess.o
 
-cur_objects = CommandHandlerMgr.o CommandHandlerSession.o CommandMonitorHandler.o ConfigVariableMgr.o \
-				GlobalFunction.o Main.o RabbitMqFactory.o RecordAPCIHandler.o RecordDataCollector.o
+cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o ConfigVariableMgr.o \
+				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o
 
 AllOBJ =  $(common_obj) $(cur_objects)
 

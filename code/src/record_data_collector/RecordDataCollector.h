@@ -9,7 +9,7 @@
 #include "ConfigVariableMgr.h"
 #include "CommandHandlerMgr.h"
 #include "RecordAPCIHandler.h"
-#include "CommandMonitorHandler.h"
+#include "InternalCommuMgr.h"
 
 class CRecordDataCollector
 {
@@ -43,7 +43,7 @@ private:
 	//true：成功 false：失败
 	bool InitApciHandler();
 
-	bool InitCommandMonitorHandler();
+	bool InitInternalCommuMgr();
 
 	//初始化命令处理会话管理类对象
 	//true：成功 false：失败
@@ -59,8 +59,8 @@ private:
 /**	\brief 与dfu通信管理类*/
 	CRecordAPCIHandler* m_pRecordApciHandler;
 
-/**	\brief 外部命令监视*/
-	CCommandMonitorHandler* m_pCommandMonitorHandler;
+/**	\brief 系统内部消息管理*/
+	CInternalCommuMgr* m_pInternalCommuMgr;
 };
 
 #endif

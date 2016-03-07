@@ -33,12 +33,6 @@ const int COLLECTOR_COMMU_SEND_TIMEOUT = 90*1000;
 /**	\brief 日志默认路径*/
 #define COLLECTOR_LOG_DEFAULT_PATH "./default_log/"
 
-/**	\brief rabbitmq默认访问端口*/
-const int RABBIT_MQ_DEFAULT_ACCESS_PORT = 5672;
-const int RABBIT_MQ_DEFAULT_CHANNEL_MAX = 0;
-const int RABBIT_MQ_DEFAULT_FRAME_MAX = 131072;
-const char RABBIT_MQ_DEFAULT_V_HOST[] = "/";
-
 /**
 * @brief       数据库访问动态库名定义
 * @author      pengl
@@ -91,23 +85,6 @@ typedef struct _COLLECTOR_DATA_SYS_PARAM
 	}
 
 }COLLECTOR_DATA_SYS_PARAM;
-
-//rabbitmq参数
-typedef struct _COLLECTOR_RABBIT_MQ_PARAM
-{
-	int nserver_port;
-	char chhostname[MAX_FIELD_NAME_LEN];
-	char chusrname[MAX_FIELD_NAME_LEN];
-	char chpassword[MAX_FIELD_NAME_LEN];
-
-	_COLLECTOR_RABBIT_MQ_PARAM()
-	{
-		nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
-		bzero(chhostname, sizeof(chhostname));
-		bzero(chusrname, sizeof(chusrname));
-		bzero(chpassword, sizeof(chpassword));
-	}
-}COLLECTOR_RABBIT_MQ_PARAM;
 
 /////////////////////////////////////////////////////////////////////////
 #endif

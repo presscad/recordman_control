@@ -6,7 +6,7 @@ CRecordDataCollector::CRecordDataCollector(void)
 	m_pConfigvarialemgr = NULL;
 	m_pRecordApciHandler = NULL;
 	m_pCommandHandlerMgr = NULL;
-	m_pCommandMonitorHandler = NULL;
+	m_pInternalCommuMgr = NULL;
 }
 
 
@@ -35,7 +35,7 @@ bool CRecordDataCollector::InitRecordDataColletor()
 			return false;
 		}
 
-		if (false == InitCommandMonitorHandler())
+		if (false == InitInternalCommuMgr())
 		{
 			return false;
 		}
@@ -112,6 +112,12 @@ bool CRecordDataCollector::ExitRecordDataColletor()
 		{
 			delete m_pRecordApciHandler;
 			m_pRecordApciHandler = NULL;
+		}
+		
+		if (NULL != m_pInternalCommuMgr)
+		{
+			delete m_pInternalCommuMgr;
+			m_pInternalCommuMgr = NULL;
 		}
 
 		if (NULL != m_pConfigvarialemgr)
@@ -209,24 +215,24 @@ bool CRecordDataCollector::InitApciHandler()
 	return true;
 }
 
-bool CRecordDataCollector::InitCommandMonitorHandler()
+bool CRecordDataCollector::InitInternalCommuMgr()
 {
 	try
 	{
-		if (NULL == m_pCommandMonitorHandler)
+		if (NULL == m_pInternalCommuMgr)
 		{
-			m_pCommandMonitorHandler = new CCommandMonitorHandler;
+			m_pInternalCommuMgr = new CInternalCommuMgr;
 		}
 
-		if (NULL == m_pCommandMonitorHandler)
+		if (NULL == m_pInternalCommuMgr)
 		{
-			printf("new class CCommandMonitorHandler failed£¡\n");
+			printf("new class CInternalCommuMgr failed£¡\n");
 			return false;
 		}
 
-		m_pCommandMonitorHandler->SetConfigVariableHandle(m_pConfigvarialemgr);
+		m_pInternalCommuMgr->SetConfigVariableHandle(m_pConfigvarialemgr);
 
-		if (false == m_pCommandMonitorHandler->InitCommandMonitorHandler())
+		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
 			return false;
 		}
@@ -235,7 +241,7 @@ bool CRecordDataCollector::InitCommandMonitorHandler()
 	}
 	catch (...)
 	{
-		printf("[InitCommandMonitorHandler]init command monitor find exception£¡\n");
+		printf("[InitInternalCommuMgr]init command monitor find exception£¡\n");
 		return false;
 	}
 
