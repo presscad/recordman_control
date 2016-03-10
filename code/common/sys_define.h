@@ -157,7 +157,7 @@ using namespace std;
 #endif
 
 #ifdef OS_WINDOWS
-    #define  sleep(x)                  Sleep(x*1000)  //采用与Linux下相同的形式  
+    //#define  sleep(x)                  Sleep(x*1000)  //采用与Linux下相同的形式  
     #include <Winsock2.h>
     #include <process.h>
     #include <conio.h>
