@@ -196,7 +196,7 @@ void WINAPI KServiceMain(DWORD argc, LPTSTR * argv)
 
 		try
 		{
-			sleep(2);//µÈ´ý2Ãë
+			MySleep(2000);//µÈ´ý2Ãë
 		}
 		catch(...)
 		{

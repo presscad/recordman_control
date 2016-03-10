@@ -22,13 +22,21 @@
 // #undef MONGO_SASL
 
 // Define to 1 if unistd.h is available
-#define MONGO_HAVE_HEADER_UNISTD_H 1
+#ifndef OS_WINDOWS
+	#define MONGO_HAVE_HEADER_UNISTD_H 1
+#else
+	// #undef MONGO_HAVE_HEADER_UNISTD_H
+#endif
 
 // Define to 1 if C++11 <atomic> is available
 // #undef MONGO_HAVE_CXX11_ATOMICS
 
 // Define to 1 if GCC style __atomic functions are available
-#define MONGO_HAVE_GCC_ATOMIC_BUILTINS 1
+#ifndef OS_WINDOWS
+	#define MONGO_HAVE_GCC_ATOMIC_BUILTINS 1
+#else
+	// #undef MONGO_HAVE_GCC_ATOMIC_BUILTINS
+#endif
 
 // Define to 1 if GCC style __sync functions are available
 // #undef MONGO_HAVE_GCC_SYNC_BUILTINS
