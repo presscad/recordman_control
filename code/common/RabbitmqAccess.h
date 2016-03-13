@@ -6,6 +6,10 @@
 #include "../common_open_source/rabbitmq/include/amqp_framing.h"
 #include "../common_open_source/rabbitmq/include/amqp_tcp_socket.h"
 #include "../common_open_source/rabbitmq/include/amqp_ssl_socket.h"
+#include "RecordmanThread.h"
+#include "../common_open_source/cJSON/cJSON.h"
+
+typedef int (*PAMQPRECVFUNCALLBACK)(amqp_envelope_t* pAmqp_envelope_t, void* pReserved);
 
 class CRabbitmqAccess
 {
@@ -17,14 +21,28 @@ public:
 	//设置配置类访问句柄
 	void SetRabbitAccessParam(RABBIT_MQ_ACCESS_PARAM* pObj);
 
+	void RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, void* pReserved);
+
 public:
 	bool ConnectRabbitMqServer(int nchannelid);
 
 	bool CloseRabbitMqConn();
 
-private:
+	bool StartAmqpRecv(string strQueue = "queue.test");
 
+	bool StopAmqpRecv();
+
+	bool SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties);
+
+	bool FreeAmqpEnveloptObj(amqp_envelope_t* pAmqpEnveloptObj);
+
+public:
+	int RecvAmqpMsgLoop();
+
+private:
 	bool LoginAndOpenChannel(int nchannelid);
+
+	bool SetAmqpQos(short nPrefetchCount);
 
 	bool find_operation_server_error(int nErrorNo, const char* pContext);
 
@@ -41,10 +59,19 @@ private:
 	/**	\brief channel id*/
 	int m_nChannelid;
 
+	bool m_bExit;
+
 	/**	\brief 连接句柄*/
 	amqp_connection_state_t m_pRabbitMqConn;
 
 	amqp_socket_t* m_pRabbitMqSocketHandler;
+
+	CRecordmanThread m_MsgRecvThread;
+
+private:
+	PAMQPRECVFUNCALLBACK m_pAmqpRecvFun;
+	
+	void* m_pAmqpRecvReserved;
 };
 
 #endif

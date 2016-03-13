@@ -33,6 +33,11 @@ const int COLLECTOR_COMMU_SEND_TIMEOUT = 90*1000;
 /**	\brief 日志默认路径*/
 #define COLLECTOR_LOG_DEFAULT_PATH "./default_log/"
 
+/**	\brief 命令接收通道号*/
+const int DATA_COLLECTOR_COMMAND_CHANNEL = 1;
+/**	\brief 命令接收队列名*/
+const char DATA_COLLECTOR_RECV_QUEUE_NAME[] = "DATA_COLLECTOR_COMMAND_QUEUE";
+
 /**
 * @brief       数据库访问动态库名定义
 * @author      pengl

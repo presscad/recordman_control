@@ -84,6 +84,9 @@
     <ClCompile Include="..\..\common\MongodbAccess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common_open_source\cJSON\cJSON.c">
+      <Filter>common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -154,6 +157,9 @@
     </ClInclude>
     <ClInclude Include="..\..\common\MongodbAccess.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common_open_source\cJSON\cJSON.h">
+      <Filter>common</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

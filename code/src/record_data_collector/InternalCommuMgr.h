@@ -20,14 +20,34 @@ public:
 	void SetConfigVariableHandle(CConfigVariableMgr* pObj);
 
 public:
+	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
+
+	int AmqpCommandOperationLoop();
+
+public:
 	bool InitCommandMonitorHandler();
 
+	bool StartCommandMonitorHandler();
+
+	bool StopCommandMonitorHandler();
+
+private:
+	bool GetAmqpCommand(amqp_envelope_t* pAmqpComand);
 
 private:
 /**	\brief 配置维护类对象*/
 	CConfigVariableMgr* m_pConfigVariableObj;
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;
+
+	CSafeLock m_LockAmqpRecvMsg;
+
+	CRecordmanThread m_IdlerMqCommandThread;
+
+private:
+	bool m_bExit;
+
+	vector<amqp_envelope_t*> m_veAmqpCommand;
 };
 
 #endif

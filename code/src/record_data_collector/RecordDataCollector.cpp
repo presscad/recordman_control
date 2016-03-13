@@ -64,6 +64,11 @@ bool CRecordDataCollector::StartRecordDataColletor()
 		{
 			return false;
 		}
+
+		if (false == m_pInternalCommuMgr->StartCommandMonitorHandler())
+		{
+			return false;
+		}
 	}
 	catch (...)
 	{
@@ -87,6 +92,11 @@ bool CRecordDataCollector::EndRecordDataColletor()
 		if (NULL != m_pRecordApciHandler)
 		{
 			m_pRecordApciHandler->StopRecordApciHandler();
+		}
+
+		if (NULL != m_pInternalCommuMgr)
+		{
+			m_pInternalCommuMgr->StopCommandMonitorHandler();
 		}
 	}
 	catch (...)
