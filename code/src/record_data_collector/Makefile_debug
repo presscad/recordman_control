@@ -8,10 +8,12 @@ common_obj = CCommonFile.o common_lib.o common_time.o DfuMsgParser.o globalfun.o
 				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o \
 				RabbitmqAccess.o
 
+json_objcts = cJSON.o
+
 cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o ConfigVariableMgr.o \
 				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o
 
-AllOBJ =  $(common_obj) $(cur_objects)
+AllOBJ =  $(common_obj) $(json_objcts) $(cur_objects)
 
 #define compile param
 LIBS = -rdynamic
@@ -27,6 +29,9 @@ $(TARGETFILENAME)-$(VERSION) : $(AllOBJ) mkxjtargetdir
 	g++ -o $(TARGETPATH)$(TARGETFILENAME)-$(VERSION) $(AllOBJ) $(LIBS) $(CFLAGS) $(VPATH) $(LINK_FLAGS)
 
 $(common_obj):%.o: ../../../common_mstation/%.cpp
+	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
+
+$(json_objcts):%.o: ../../common_open_source/cJSON/%.cpp
 	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
 
 $(cur_objects):%.o: %.cpp

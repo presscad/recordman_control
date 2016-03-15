@@ -86,6 +86,7 @@
     <ClCompile Include="..\..\common\common_time.cpp" />
     <ClCompile Include="..\..\common\DfuMsgParser.cpp" />
     <ClCompile Include="..\..\common\globalfun.cpp" />
+    <ClCompile Include="..\..\common\JsonMsgParser.cpp" />
     <ClCompile Include="..\..\common\Lock.cpp" />
     <ClCompile Include="..\..\common\LogFile.cpp" />
     <ClCompile Include="..\..\common\MessageLog.cpp" />
@@ -111,6 +112,7 @@
     <ClInclude Include="..\..\common\common_time.h" />
     <ClInclude Include="..\..\common\DfuMsgParser.h" />
     <ClInclude Include="..\..\common\include.h" />
+    <ClInclude Include="..\..\common\JsonMsgParser.h" />
     <ClInclude Include="..\..\common\Lock.h" />
     <ClInclude Include="..\..\common\LogFile.h" />
     <ClInclude Include="..\..\common\MessageLog.h" />

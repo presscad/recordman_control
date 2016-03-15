@@ -210,6 +210,12 @@ int CRecordAPCIHandler::DfuCommuOperationLoop()
 			bzero(pMsg, sizeof(RECORD_DFU_MSG));
 			ReceiveMsg(pMsg);
 
+			if (NULL != pMsg)
+			{
+				delete pMsg;
+				pMsg = NULL;
+			}
+
 			MySleep(100);
 		}
 		catch (...)

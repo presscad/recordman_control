@@ -8,6 +8,7 @@
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "../../common/RabbitmqAccess.h"
+#include "../../common/JsonMsgParser.h"
 
 class CInternalCommuMgr
 {
@@ -32,7 +33,9 @@ public:
 	bool StopCommandMonitorHandler();
 
 private:
-	bool GetAmqpCommand(amqp_envelope_t* pAmqpComand);
+	bool GetAmqpCommand(amqp_envelope_t*& pAmqpComand);
+
+	bool ProcessAmqpCommand(amqp_envelope_t* pAmqpComand);
 
 private:
 /**	\brief 配置维护类对象*/

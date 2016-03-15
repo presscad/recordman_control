@@ -263,7 +263,7 @@ int CRabbitmqAccess::RecvAmqpMsgLoop()
 			{
 				m_pAmqpRecvFun(envelope, m_pAmqpRecvReserved);
 			}
-
+			
 			if(amqp_basic_ack(m_pRabbitMqConn, m_nChannelid, envelope->delivery_tag, false) > 0)
 			{
 				printf("failing to send the ack to the broker...\n");

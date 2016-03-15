@@ -76,7 +76,6 @@ void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
 int CInternalCommuMgr::AmqpCommandOperationLoop()
 {
 	amqp_envelope_t* pAmqpEnveLop = NULL;
-	cJSON* pRecvRootJson = NULL;
 
 	while (!m_bExit)
 	{
@@ -90,25 +89,8 @@ int CInternalCommuMgr::AmqpCommandOperationLoop()
 			MySleep(300);
 			continue;
 		}
-		
-		char* messageBody = new char[pAmqpEnveLop->message.body.len];
-		bzero(messageBody, pAmqpEnveLop->message.body.len);
 
-		memcpy(messageBody, pAmqpEnveLop->message.body.bytes, pAmqpEnveLop->message.body.len);
-
-		pRecvRootJson = cJSON_Parse(messageBody);
-		if (NULL != pRecvRootJson)
-		{
-			printf("recv msg is£º%s \n", 
-				(NULL == cJSON_Print(pRecvRootJson))?NULL:cJSON_Print(pRecvRootJson));
-
-			m_pInterRabbitCommuHandler->SendMsg(pRecvRootJson, pAmqpEnveLop->message.properties);
-
-			cJSON_Delete(pRecvRootJson);
-			pRecvRootJson = NULL;
-		}
-
-		free(messageBody);
+		ProcessAmqpCommand(pAmqpEnveLop);
 		m_pInterRabbitCommuHandler->FreeAmqpEnveloptObj(pAmqpEnveLop);
 	}
 
@@ -186,7 +168,7 @@ bool CInternalCommuMgr::StopCommandMonitorHandler()
 	return true;
 }
 
-bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t* pAmqpComand)
+bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
 {
 	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
@@ -196,8 +178,40 @@ bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t* pAmqpComand)
 	}
 
 	vector<amqp_envelope_t*>::iterator it = m_veAmqpCommand.begin();
-	amqp_envelope_t* pAmqpEnvelope = *it;
+	pAmqpComand = *it;
 	m_veAmqpCommand.erase(it);
 
 	return true;
+}
+
+bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
+{
+	int nCommandID = 0;
+	cJSON* pRecvRootJson = NULL;
+	CJsonMsgParser jsonMsgparser;
+	char* messageBody = NULL;
+	
+	messageBody = new char[pAmqpComand->message.body.len];
+	bzero(messageBody, pAmqpComand->message.body.len);
+
+	memcpy(messageBody, pAmqpComand->message.body.bytes, pAmqpComand->message.body.len);
+
+	pRecvRootJson = cJSON_Parse(messageBody);
+	if (NULL == pRecvRootJson)
+	{
+		return false;
+	}
+
+	jsonMsgparser.Attach(pRecvRootJson);
+	nCommandID = jsonMsgparser.GetCommandID();
+
+	printf("recv msg is£º%s£¬msgid is£º%d \n", 
+		cJSON_Print(pRecvRootJson), nCommandID);
+
+	m_pInterRabbitCommuHandler->SendMsg(pRecvRootJson, pAmqpComand->message.properties);
+
+	cJSON_Delete(pRecvRootJson);
+	pRecvRootJson = NULL;
+
+	free(messageBody);
 }
