@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<recordman_manager>
+	<system_log_config>
+		<log_path>/var/record_run/</log_path>
+		<log_level des="0:not output log 1:error log 2:alarm log 3:trace log">3</log_level>
+	</system_log_config>
+	<mongo_db_config>
+		<addr>10.123.16.100</addr>
+		<port>27018</port>
+		<name>recordman</name>
+		<user>recordman</user>
+		<pwd>Don0tpanic42</pwd>
+	</mongo_db_config>
+	<rabbit_mq_base_config>
+		<addr>10.123.16.100</addr>
+		<port>5672</port>
+		<user>admin</user>
+		<pwd>admin</pwd>
+	</rabbit_mq_base_config>
+	<rabbit_mq_advance_config>
+		<collector_recv_queue>DATA_COLLECTOR_COMMAND_QUEUE</collector_recv_queue>
+		<web_result_queue>WEB_RECEIVE_RESULT_QUEUE</web_result_queue>
+	</rabbit_mq_advance_config>
+	<dfu_commu_config>
+		<addr>10.123.16.56</addr>
+		<port>3309</port>
+	</dfu_commu_config>
+	<record_file_config>
+		<fault_file_save_path>/fault_record_data/</fault_file_save_path>
+		<fault_file_save_days des="unit is day">365</fault_file_save_days>
+		<contin_file_save_path>/contin_record_data/</contin_file_save_path>
+		<contin_file_save_days des="unit is day">365</contin_file_save_days>
+	</record_file_config>
+	<outward_commu_protocol_config>
+		<protocol>
+			<id>1</id>
+			<name>zj103</name>
+			<interface>record_zj_103</interface>
+			<net_card>eth0</net_card>
+			<addr>10.123.16.100</addr>
+			<net_mask>255.255.255.0</net_mask>
+			<port>2404</port>
+			<gateway>127.0.0.1</gateway>
+			<instance_num>1</instance_num>
+			<use_flag>1</use_flag>
+		</protocol>
+	</outward_commu_protocol_config>
+</recordman_manager>
