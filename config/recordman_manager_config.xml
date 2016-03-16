@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <recordman_manager>
 	<system_log_config>
 		<log_path>/var/record_run/</log_path>
 		<log_level des="0:not output log 1:error log 2:alarm log 3:trace log">3</log_level>
 	</system_log_config>
 	<mongo_db_config>
-		<addr>10.123.16.100</addr>
+		<addr>pengl5555.vicp.cc</addr>
 		<port>27018</port>
 		<name>recordman</name>
 		<user>recordman</user>
 		<pwd>Don0tpanic42</pwd>
 	</mongo_db_config>
 	<rabbit_mq_base_config>
-		<addr>10.123.16.100</addr>
+		<addr>pengl5555.vicp.cc</addr>
 		<port>5672</port>
 		<user>admin</user>
 		<pwd>admin</pwd>
