@@ -96,6 +96,9 @@ const int RECORD_DATA_MSG_ID_UPLOAD_NEW_OSC_FILE = 20090;
 	#define LIBSTTPXMLTRANSFORM "libXJSttpXmlTransform.so"//sttp与xml互转动态库
 #endif
 
+//配置文件
+#define RECORD_MANAGEMENT_BOARD_CONFIG_FILE "../../conf/recordman_manager_config.xml"
+
 //系统参数
 typedef struct _COLLECTOR_DATA_SYS_PARAM
 {

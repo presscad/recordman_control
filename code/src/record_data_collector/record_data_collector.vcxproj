@@ -97,6 +97,7 @@
     <ClCompile Include="..\..\common\SafeLock.cpp" />
     <ClCompile Include="..\..\common\StrongString.cpp" />
     <ClCompile Include="..\..\common_open_source\cJSON\cJSON.c" />
+    <ClCompile Include="..\..\common_open_source\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="CommandHandlerMgr.cpp" />
     <ClCompile Include="CommandHandlerSession.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
@@ -124,6 +125,7 @@
     <ClInclude Include="..\..\common\StrongString.h" />
     <ClInclude Include="..\..\common\sys_define.h" />
     <ClInclude Include="..\..\common_open_source\cJSON\cJSON.h" />
+    <ClInclude Include="..\..\common_open_source\tinyxml2\tinyxml2.h" />
     <ClInclude Include="CommandHandlerMgr.h" />
     <ClInclude Include="CommandHandlerSession.h" />
     <ClInclude Include="ConfigVariableMgr.h" />
