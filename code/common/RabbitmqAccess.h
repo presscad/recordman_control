@@ -19,20 +19,20 @@ public:
 
 public:
 	//设置配置类访问句柄
-	void SetRabbitAccessParam(RABBIT_MQ_ACCESS_PARAM* pObj);
+	void SetRabbitAccessParam(RABBIT_MQ_BASIC_ACCESS_PARAM* pObj);
 
 	void RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, void* pReserved);
 
 public:
-	bool ConnectRabbitMqServer(int nchannelid);
+	bool ConnectRabbitMqServer();
 
 	bool CloseRabbitMqConn();
 
-	bool StartAmqpRecv(string strQueue = "queue.test");
+	bool StartAmqpRecv(RABBIT_RECV_PARAM& rabbitmq_recv_param);
 
 	bool StopAmqpRecv();
 
-	bool SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties);
+	bool SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties, amqp_channel_t ampq_channel);
 
 	bool FreeAmqpEnveloptObj(amqp_envelope_t* pAmqpEnveloptObj);
 
@@ -40,7 +40,7 @@ public:
 	int RecvAmqpMsgLoop();
 
 private:
-	bool LoginAndOpenChannel(int nchannelid);
+	bool LoginAndOpenChannel();
 
 	bool SetAmqpQos(short nPrefetchCount);
 
@@ -49,15 +49,12 @@ private:
 	bool find_amqp_error(amqp_rpc_reply_t replay, const char* pContext);
 
 private:
-	/**	\brief rabbit访问参数*/
-	RABBIT_MQ_ACCESS_PARAM* m_pRabbitAccessParam;
+	/**	\brief rabbitmq 基本访问参数*/
+	RABBIT_MQ_BASIC_ACCESS_PARAM* m_pRabbitBasicParam;
 
 private:
 	/**	\brief socket handle*/
 	int m_nSockfd;
-
-	/**	\brief channel id*/
-	int m_nChannelid;
 
 	bool m_bExit;
 

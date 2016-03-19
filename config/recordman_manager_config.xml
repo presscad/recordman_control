@@ -3,6 +3,7 @@
 	<system_log_config>
 		<log_path>/var/record_run/</log_path>
 		<log_level des="0:not output log 1:error log 2:alarm log 3:trace log">3</log_level>
+		<log_days des="log save days">3</log_days>
 	</system_log_config>
 	<mongo_db_config>
 		<addr>pengl5555.vicp.cc</addr>
@@ -25,6 +26,10 @@
 		<addr>10.123.16.56</addr>
 		<port>3309</port>
 	</dfu_commu_config>
+	<continue_dfu_commu_config>
+		<addr>10.123.16.57</addr>
+		<port>3309</port>
+	</continue_dfu_commu_config>
 	<record_file_config>
 		<fault_file_save_path>/fault_record_data/</fault_file_save_path>
 		<fault_file_save_days des="unit is day">365</fault_file_save_days>

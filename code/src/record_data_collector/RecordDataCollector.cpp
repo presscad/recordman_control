@@ -240,8 +240,7 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 			return false;
 		}
 
-		m_pInternalCommuMgr->SetConfigVariableHandle(m_pConfigvarialemgr);
-
+		m_pInternalCommuMgr->SetRabbitmqAccessParam(&m_pConfigvarialemgr->m_rabbit_mq_param);
 		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
 			return false;

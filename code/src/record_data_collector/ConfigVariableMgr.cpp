@@ -23,17 +23,28 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 	{
 		m_collector_sys_param.nLoglevel = CLogFile::trace;
 		m_collector_sys_param.nLogDays = COLLECTOR_LOG_SAVE_DEFAULT_DAYS;
-		m_collector_sys_param.nDfuPort = COLLECTOR_DFU_LISTEN_PORT;
 		m_collector_sys_param.nIdleCheckTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		m_collector_sys_param.nRecvTimeout = COLLECTOR_COMMU_RECV_TIMEOUT;
 		m_collector_sys_param.nSendTimeout = COLLECTOR_COMMU_SEND_TIMEOUT;
-		sprintf(m_collector_sys_param.chDfuAddr, "%s", "10.123.16.56");
 		sprintf(m_collector_sys_param.chLogpath, "%s", "./data_collector_log/");
 
-		m_rabbit_mq_param.nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
-		sprintf(m_rabbit_mq_param.chhostname, "%s", "10.123.16.100");
-		sprintf(m_rabbit_mq_param.chusrname, "%s", "admin");
-		sprintf(m_rabbit_mq_param.chpassword, "%s", "admin");
+		m_collector_sys_param.fault_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
+		sprintf(m_collector_sys_param.fault_dfu_param.chDfuAddr, "%s", "10.123.16.56");
+
+		m_collector_sys_param.contin_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
+		sprintf(m_collector_sys_param.contin_dfu_param.chDfuAddr, "%s", "10.123.16.57");
+
+		m_rabbit_mq_param.nCollectorRecvChannel = RABBIT_MQ_DEFAULT_CHANNEL_ID;
+		sprintf(m_rabbit_mq_param.chCollectorRecvQueName, "%s", DATA_COLLECTOR_RECV_QUEUE_NAME);
+		m_rabbit_mq_param.rabbitmq_basick_param.nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
+		m_rabbit_mq_param.rabbitmq_basick_param.nChannelID = RABBIT_MQ_DEFAULT_CHANNEL_ID;
+		m_rabbit_mq_param.rabbitmq_basick_param.nChannelMax = RABBIT_MQ_DEFAULT_CHANNEL_MAX;
+		m_rabbit_mq_param.rabbitmq_basick_param.nFrameMax = RABBIT_MQ_DEFAULT_FRAME_MAX;
+		m_rabbit_mq_param.rabbitmq_basick_param.nHeartbeatTime = 0;
+		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chhostname, "%s", "10.123.16.100");
+		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chusrname, "%s", "admin");
+		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chpassword, "%s", "admin");
+		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chVhost, "%s", RABBIT_MQ_DEFAULT_V_HOST);
 	}
 	catch (...)
 	{
@@ -87,7 +98,17 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 			return false;
 		}
 
+		if (false == LoadRabbitMqAdvanceConfig(pRootXmlElement))
+		{
+			return false;
+		}
+
 		if (false == LoadDfuCommuConfig(pRootXmlElement))
+		{
+			return false;
+		}
+
+		if (false == LoadContinDfuCommuConfig(pRootXmlElement))
 		{
 			return false;
 		}
@@ -119,6 +140,8 @@ bool CConfigVariableMgr::LoadSystemLogConfig(TiXmlElement* pRootXmlElement)
 			m_collector_sys_param.chLogpath, sizeof(m_collector_sys_param.chLogpath));
 		GetCopyNodeValue(pXmlElement, "log_level", 
 			m_collector_sys_param.nLoglevel);
+		GetCopyNodeValue(pXmlElement, "log_days", 
+			m_collector_sys_param.nLogDays);
 	}
 	catch (...)
 	{
@@ -144,17 +167,54 @@ bool CConfigVariableMgr::LoadRabbitMqConfig(TiXmlElement* pRootXmlElement)
 		}
 
 		GetCopyNodeValue(pXmlElement, "addr", 
-			m_rabbit_mq_param.chhostname, sizeof(m_rabbit_mq_param.chhostname));
+			m_rabbit_mq_param.rabbitmq_basick_param.chhostname, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chhostname));
+
 		GetCopyNodeValue(pXmlElement, "port", 
-			m_rabbit_mq_param.nserver_port);
+			m_rabbit_mq_param.rabbitmq_basick_param.nserver_port);
+
 		GetCopyNodeValue(pXmlElement, "user", 
-			m_rabbit_mq_param.chusrname, sizeof(m_rabbit_mq_param.chusrname));
+			m_rabbit_mq_param.rabbitmq_basick_param.chusrname, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chusrname));
+		
 		GetCopyNodeValue(pXmlElement, "pwd", 
-			m_rabbit_mq_param.chpassword, sizeof(m_rabbit_mq_param.chpassword));
+			m_rabbit_mq_param.rabbitmq_basick_param.chpassword, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chpassword));
 	}
 	catch (...)
 	{
 		printf("[LoadRabbitMqConfig]get rabbitmq param find exception£¡\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool CConfigVariableMgr::LoadRabbitMqAdvanceConfig(TiXmlElement* pRootXmlElement)
+{
+	TiXmlElement* pXmlElement = NULL;
+
+	try
+	{
+		pXmlElement = pRootXmlElement->FirstChildElement("rabbit_mq_advance_config");
+		if (NULL == pXmlElement)
+		{
+			printf("[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config node from config file£º%s failed£¡\n", 
+				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
+			return false;
+		}
+
+		GetCopyNodeValue(pXmlElement, "collector_recv_queue", 
+			m_rabbit_mq_param.chCollectorRecvQueName, 
+			sizeof(m_rabbit_mq_param.chCollectorRecvQueName));
+
+		GetCopyNodeValue(pXmlElement, "web_result_queue", 
+			m_rabbit_mq_param.chWebResultQueName, 
+			sizeof(m_rabbit_mq_param.chWebResultQueName));
+	}
+	catch (...)
+	{
+		printf("[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config param find exception£¡\n");
 		return false;
 	}
 
@@ -176,13 +236,45 @@ bool CConfigVariableMgr::LoadDfuCommuConfig(TiXmlElement* pRootXmlElement)
 		}
 
 		GetCopyNodeValue(pXmlElement, "addr", 
-			m_collector_sys_param.chDfuAddr, sizeof(m_collector_sys_param.chDfuAddr));
+			m_collector_sys_param.fault_dfu_param.chDfuAddr, 
+			sizeof(m_collector_sys_param.fault_dfu_param.chDfuAddr));
+
 		GetCopyNodeValue(pXmlElement, "port", 
-			m_collector_sys_param.nDfuPort);
+			m_collector_sys_param.fault_dfu_param.nDfuport);
 	}
 	catch (...)
 	{
 		printf("[LoadDfuCommuConfig]get dfu_commu_config param find exception£¡\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool CConfigVariableMgr::LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement)
+{
+	TiXmlElement* pXmlElement = NULL;
+
+	try
+	{
+		pXmlElement = pRootXmlElement->FirstChildElement("continue_dfu_commu_config");
+		if (NULL == pXmlElement)
+		{
+			printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config node from config file£º%s failed£¡\n", 
+				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
+			return false;
+		}
+
+		GetCopyNodeValue(pXmlElement, "addr", 
+			m_collector_sys_param.contin_dfu_param.chDfuAddr, 
+			sizeof(m_collector_sys_param.contin_dfu_param.chDfuAddr));
+
+		GetCopyNodeValue(pXmlElement, "port", 
+			m_collector_sys_param.contin_dfu_param.nDfuport);
+	}
+	catch (...)
+	{
+		printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡\n");
 		return false;
 	}
 

@@ -118,6 +118,7 @@ bool CDfuMsgParser::CheckMsgProtocolMask()
 
 void CDfuMsgParser::SetMsgReserve()
 {
+	m_pMsgHdr->byteReserve[0] = '0';
 	m_pMsgHdr->byteReserve[1] = '0';
 }
 

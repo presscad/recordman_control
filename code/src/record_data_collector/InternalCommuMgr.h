@@ -18,7 +18,7 @@ public:
 
 public:
 	//设置配置类访问句柄
-	void SetConfigVariableHandle(CConfigVariableMgr* pObj);
+	void SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj);
 
 public:
 	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
@@ -39,7 +39,7 @@ private:
 
 private:
 /**	\brief 配置维护类对象*/
-	CConfigVariableMgr* m_pConfigVariableObj;
+	COLLECTOR_ADVANCE_RABBITMQ_PARAM* m_pRabbitmqParm;
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;
 

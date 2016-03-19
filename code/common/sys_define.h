@@ -558,6 +558,8 @@ const int RABBIT_MQ_DEFAULT_ACCESS_PORT = 5672;
 const int RABBIT_MQ_DEFAULT_CHANNEL_MAX = 0;
 const int RABBIT_MQ_DEFAULT_FRAME_MAX = 131072;
 const char RABBIT_MQ_DEFAULT_V_HOST[] = "/";
+const int RABBIT_MQ_DEFAULT_CHANNEL_ID = 1;
+const int RABBIT_MQ_DEFAULT_RECV_FETCH_COUNT = 1000;
 
 /**
  * @brief       工控板通讯规约头
@@ -630,21 +632,60 @@ typedef struct _LOG_BUFFER_HEAD
 }LOG_BUFFER_HEAD;
 
 //rabbitmq参数
-typedef struct _RABBIT_MQ_ACCESS_PARAM
+typedef struct _RABBIT_MQ_BASIC_ACCESS_PARAM
 {
-	int nserver_port;
-	char chhostname[MAX_FIELD_NAME_LEN];
-	char chusrname[MAX_FIELD_NAME_LEN];
-	char chpassword[MAX_FIELD_NAME_LEN];
+	int nserver_port;	//rabbitmq listen port,default 5672
+	int nChannelID;	//create channel id,default 1
+	int nChannelMax;	//channel max,default 0
+	int nFrameMax;	//frame max,default 131072
+	int nHeartbeatTime;	//heartbeat time,default 0 disable
+	char chhostname[64];	//rabbitmq server ip addr
+	char chusrname[128];	//rabbitmq access username
+	char chpassword[128];	//rabbitmq access user password
+	char chVhost[MAX_FIELD_NAME_LEN];	//access vhost,default '/'
 
-	_RABBIT_MQ_ACCESS_PARAM()
+	_RABBIT_MQ_BASIC_ACCESS_PARAM()
 	{
 		nserver_port = RABBIT_MQ_DEFAULT_ACCESS_PORT;
+		nChannelID = RABBIT_MQ_DEFAULT_CHANNEL_ID;
+		nChannelMax = RABBIT_MQ_DEFAULT_CHANNEL_MAX;
+		nFrameMax = RABBIT_MQ_DEFAULT_FRAME_MAX;
+		nHeartbeatTime = 0;
 		bzero(chhostname, sizeof(chhostname));
 		bzero(chusrname, sizeof(chusrname));
 		bzero(chpassword, sizeof(chpassword));
+		bzero(chVhost, sizeof(chVhost));
+
+		sprintf(chVhost, "%s", RABBIT_MQ_DEFAULT_V_HOST);
 	}
-}RABBIT_MQ_ACCESS_PARAM;
+}RABBIT_MQ_BASIC_ACCESS_PARAM;
+
+typedef struct _RABBIT_RECV_PARAM
+{
+	int perfetchcount;
+	int channelid;
+	int passive;
+	int durable;
+	int exclusive;
+	int autoDelete;
+	int no_ack;
+	char chQueueName[MAX_FIELD_NAME_LEN];	//recv queue name
+	char chRouteKey[MAX_FIELD_NAME_LEN];	//access route key,default null
+	
+	_RABBIT_RECV_PARAM()
+	{
+		perfetchcount = RABBIT_MQ_DEFAULT_RECV_FETCH_COUNT;
+		channelid = RABBIT_MQ_DEFAULT_CHANNEL_ID;
+		passive = 0;
+		durable = 0;
+		exclusive = 0;
+		autoDelete = 0;
+		no_ack = 0;
+		bzero(chQueueName, sizeof(chQueueName));
+		bzero(chRouteKey, sizeof(chRouteKey));
+	}
+
+}RABBIT_RECV_PARAM;
 
 /*  全局函数声明  */
 extern void GetSysTime(SYSTIME & curTime);

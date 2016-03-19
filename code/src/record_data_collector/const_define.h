@@ -33,8 +33,6 @@ const int COLLECTOR_COMMU_SEND_TIMEOUT = 90*1000;
 /**	\brief 日志默认路径*/
 #define COLLECTOR_LOG_DEFAULT_PATH "./default_log/"
 
-/**	\brief 命令接收通道号*/
-const int DATA_COLLECTOR_COMMAND_CHANNEL = 1;
 /**	\brief 命令接收队列名*/
 const char DATA_COLLECTOR_RECV_QUEUE_NAME[] = "DATA_COLLECTOR_COMMAND_QUEUE";
 
@@ -69,61 +67,74 @@ const int RECORD_DATA_MSG_ID_DOWN_MGR_CONFIG = 20070;
 const int RECORD_DATA_MSG_ID_RESULT_DOWN_MGR_CONFIG = 20071;
 const int RECORD_DATA_MSG_ID_UPLOAD_NEW_OSC_FILE = 20090;
 
-/**
-* @brief       数据库访问动态库名定义
-* @author      pengl
-* @version     ver1.0
-* @date        07/13/2008
-*
-*/
-#ifdef OS_WINDOWS
-	#define LIBMYSAL      "DBAccessMysql.dll"//mysql数据库访问动态库
-	#define LIBSQLSERVER  "DBAccessSqlserver.dll"//sqlserver数据库访问动态库
-	#define LIBORACLE     "DBAccessOracle.dll"//oracle数据库访问动态库
-	#define LIBDAMENG     "DBAccessDaMeng.dll"//达梦数据库访问动态库
-	#define LIBKINGBASE   "DBAccessKingbase.dll"//金仓数据库访问动态库
-	#define LIBFTPCLIENTMANAGER "XJFtpClientManager.dll"//ftp客户端操作库
-	#define LIBXJSTTPNET  "XJSttpNet.dll"//sttpnet动态库
-	#define LIBSTTPXMLTRANSFORM "XJSttpXmlTransform.dll"//sttp与xml互转动态库
-#else
-	#define LIBMYSAL      "libDBAccessMysql.so"
-	#define LIBSQLSERVER  "libDBAccessSqlserver.so"
-	#define LIBORACLE     "libDBAccessOracle.so"
-	#define LIBDAMENG     "libDBAccessDaMeng.so"//达梦数据库访问动态库
-	#define LIBKINGBASE   "libDBAccessKingbase.so"//达梦数据库访问动态库
-	#define LIBFTPCLIENTMANAGER "libXJFtpClientManager.so"//ftp客户端操作库
-	#define LIBXJSTTPNET  "libXJSttpNet.so"//sttpnet动态库
-	#define LIBSTTPXMLTRANSFORM "libXJSttpXmlTransform.so"//sttp与xml互转动态库
-#endif
-
 //配置文件
 #define RECORD_MANAGEMENT_BOARD_CONFIG_FILE "../../conf/recordman_manager_config.xml"
+
+//dfu配置
+typedef struct _COLLECTOR_DFU_COMMU_PARAM
+{
+	char chDfuAddr[MAX_FIELD_NAME_LEN];//dfu监听端口
+	int nDfuport;
+
+	_COLLECTOR_DFU_COMMU_PARAM()
+	{
+		bzero(chDfuAddr, sizeof(chDfuAddr));
+		nDfuport = COLLECTOR_DFU_LISTEN_PORT;
+	}
+
+}COLLECTOR_DFU_COMMU_PARAM;
 
 //系统参数
 typedef struct _COLLECTOR_DATA_SYS_PARAM
 {
-	int nLoglevel;//日志级别
-	int nLogDays;//日志保留天数
-	int nDfuPort;//dfu监听端口
-	int nIdleCheckTime;//空闲巡检时间
-	int nRecvTimeout;//接收超时
-	int nSendTimeout;//发送超时
-	char chLogpath[MAX_LINE_LENGTH];//日志保存路径
-	char chDfuAddr[MAX_FIELD_NAME_LEN];//dfu监听端口
+	//日志级别
+	int nLoglevel;
+	//日志保留天数
+	int nLogDays;
+	//空闲巡检时间
+	int nIdleCheckTime;
+	//接收超时
+	int nRecvTimeout;
+	//发送超时
+	int nSendTimeout;
+	//日志保存路径
+	char chLogpath[MAX_LINE_LENGTH];
+	//故障dfu参数
+	COLLECTOR_DFU_COMMU_PARAM fault_dfu_param;
+	//连续录波dfu参数
+	COLLECTOR_DFU_COMMU_PARAM contin_dfu_param;
 
 	_COLLECTOR_DATA_SYS_PARAM()
 	{
 		nLoglevel = CLogFile::trace;
 		nLogDays = COLLECTOR_LOG_SAVE_DEFAULT_DAYS;
-		nDfuPort = COLLECTOR_DFU_LISTEN_PORT;
 		nIdleCheckTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		nRecvTimeout = COLLECTOR_COMMU_RECV_TIMEOUT;
 		nSendTimeout = COLLECTOR_COMMU_SEND_TIMEOUT;
 		bzero(chLogpath, sizeof(chLogpath));
-		bzero(chDfuAddr, sizeof(chDfuAddr));
 	}
 
 }COLLECTOR_DATA_SYS_PARAM;
+
+typedef struct _COLLECTOR_ADVANCE_RABBITMQ_PARAM
+{
+	//接收通道号
+	int nCollectorRecvChannel;
+	//采集进程接收队列名称
+	char chCollectorRecvQueName[FILE_NAME_MAX_LEN];
+	//web结果队列名称
+	char chWebResultQueName[FILE_NAME_MAX_LEN];
+	//基本参数
+	RABBIT_MQ_BASIC_ACCESS_PARAM rabbitmq_basick_param;
+
+	_COLLECTOR_ADVANCE_RABBITMQ_PARAM()
+	{
+		nCollectorRecvChannel = RABBIT_MQ_DEFAULT_CHANNEL_ID;
+		bzero(chCollectorRecvQueName, sizeof(chCollectorRecvQueName));
+		bzero(chWebResultQueName, sizeof(chWebResultQueName));
+	}
+
+}COLLECTOR_ADVANCE_RABBITMQ_PARAM;
 
 /////////////////////////////////////////////////////////////////////////
 #endif

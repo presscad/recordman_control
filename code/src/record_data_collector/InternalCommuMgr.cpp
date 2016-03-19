@@ -50,7 +50,7 @@ CInternalCommuMgr::CInternalCommuMgr(void):
 m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
 {
 	m_bExit = true;
-	m_pConfigVariableObj = NULL;
+	m_pRabbitmqParm = NULL;
 	m_pInterRabbitCommuHandler = NULL;
 
 	m_veAmqpCommand.clear();
@@ -61,18 +61,93 @@ CInternalCommuMgr::~CInternalCommuMgr(void)
 {
 }
 
-void CInternalCommuMgr::SetConfigVariableHandle(CConfigVariableMgr* pObj)
+//set rabbitmq access basic param
+void CInternalCommuMgr::SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj)
 {
-	m_pConfigVariableObj = pObj;
+	m_pRabbitmqParm = pObj;
 }
 
-void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
+//init class member or other class
+bool CInternalCommuMgr::InitCommandMonitorHandler()
 {
-	CLockUp lockUp(&m_LockAmqpRecvMsg);
+	try
+	{
+		if (NULL == m_pInterRabbitCommuHandler)
+		{
+			m_pInterRabbitCommuHandler = new CRabbitmqAccess;
+		}
 
-	m_veAmqpCommand.push_back(pAmqpEnvelope);
+		if (NULL == m_pInterRabbitCommuHandler)
+		{
+			printf("new class CRabbitMqFactory failed！\n");
+			return false;
+		}
+
+		m_pInterRabbitCommuHandler->SetRabbitAccessParam(
+			&m_pRabbitmqParm->rabbitmq_basick_param);
+
+		if (false == m_pInterRabbitCommuHandler->ConnectRabbitMqServer())
+		{
+			return false;
+		}
+
+		printf("InitCommandMonitorHandler succeed！\n");
+	}
+	catch (...)
+	{
+		printf("[InitCommandMonitorHandler]init command monitor handler find exception！\n");
+		return false;
+	}
+
+	return true;
 }
 
+//start recv thread and msg process thread
+bool CInternalCommuMgr::StartCommandMonitorHandler()
+{
+	RABBIT_RECV_PARAM rabbit_rcv_param;
+	sprintf(rabbit_rcv_param.chQueueName, "%s", m_pRabbitmqParm->chCollectorRecvQueName);
+
+	m_pInterRabbitCommuHandler->RegisterRecvHandler(AmqpCommandRecvFun, this);//注册接收回调函数
+	if (false == m_pInterRabbitCommuHandler->StartAmqpRecv(rabbit_rcv_param))
+	{
+		return false;
+	}
+
+	m_IdlerMqCommandThread.Stop();
+	m_bExit = false;
+	if (false == m_IdlerMqCommandThread.Start(AmqpCommandOperationProc, this))
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//stop monitor
+bool CInternalCommuMgr::StopCommandMonitorHandler()
+{
+	if (NULL == m_pInterRabbitCommuHandler)
+	{
+		return false;
+	}
+
+	m_bExit = true;
+
+	m_pInterRabbitCommuHandler->StopAmqpRecv();
+	m_IdlerMqCommandThread.Stop();
+
+	if (NULL != m_pInterRabbitCommuHandler)
+	{
+		delete m_pInterRabbitCommuHandler;
+		m_pInterRabbitCommuHandler = NULL;
+	}
+
+	return true;
+}
+
+//process msg from rabbitmq
+//get a msg from queue one by one
 int CInternalCommuMgr::AmqpCommandOperationLoop()
 {
 	amqp_envelope_t* pAmqpEnveLop = NULL;
@@ -97,93 +172,7 @@ int CInternalCommuMgr::AmqpCommandOperationLoop()
 	return 0;
 }
 
-bool CInternalCommuMgr::InitCommandMonitorHandler()
-{
-	try
-	{
-		if (NULL == m_pInterRabbitCommuHandler)
-		{
-			m_pInterRabbitCommuHandler = new CRabbitmqAccess;
-		}
-
-		if (NULL == m_pInterRabbitCommuHandler)
-		{
-			printf("new class CRabbitMqFactory failed！\n");
-			return false;
-		}
-
-		m_pInterRabbitCommuHandler->SetRabbitAccessParam(&m_pConfigVariableObj->m_rabbit_mq_param);
-		if (false == m_pInterRabbitCommuHandler->ConnectRabbitMqServer(DATA_COLLECTOR_COMMAND_CHANNEL))
-		{
-			return false;
-		}
-
-		printf("InitCommandMonitorHandler succeed！\n");
-	}
-	catch (...)
-	{
-		printf("[InitCommandMonitorHandler]init command monitor handler find exception！\n");
-		return false;
-	}
-
-	return true;
-}
-
-bool CInternalCommuMgr::StartCommandMonitorHandler()
-{
-	m_IdlerMqCommandThread.Stop();
-	m_bExit = false;
-	if (false == m_IdlerMqCommandThread.Start(AmqpCommandOperationProc, this))
-	{
-		return false;
-	}
-
-	m_pInterRabbitCommuHandler->RegisterRecvHandler(AmqpCommandRecvFun, this);//注册接收回调函数
-	if (false == m_pInterRabbitCommuHandler->StartAmqpRecv(DATA_COLLECTOR_RECV_QUEUE_NAME))
-	{
-		return false;
-	}
-
-	return true;
-}
-
-bool CInternalCommuMgr::StopCommandMonitorHandler()
-{
-	if (NULL == m_pInterRabbitCommuHandler)
-	{
-		return false;
-	}
-
-	m_bExit = true;
-
-	m_pInterRabbitCommuHandler->StopAmqpRecv();
-	m_IdlerMqCommandThread.Stop();
-
-	if (NULL != m_pInterRabbitCommuHandler)
-	{
-		delete m_pInterRabbitCommuHandler;
-		m_pInterRabbitCommuHandler = NULL;
-	}
-
-	return true;
-}
-
-bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
-{
-	CLockUp lockUp(&m_LockAmqpRecvMsg);
-
-	if (0 >= m_veAmqpCommand.size())
-	{
-		return false;
-	}
-
-	vector<amqp_envelope_t*>::iterator it = m_veAmqpCommand.begin();
-	pAmqpComand = *it;
-	m_veAmqpCommand.erase(it);
-
-	return true;
-}
-
+//process msg function
 bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 {
 	int nCommandID = 0;
@@ -205,13 +194,35 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 	jsonMsgparser.Attach(pRecvRootJson);
 	nCommandID = jsonMsgparser.GetCommandID();
 
-	printf("recv msg is：%s，msgid is：%d \n", 
-		cJSON_Print(pRecvRootJson), nCommandID);
-
-	m_pInterRabbitCommuHandler->SendMsg(pRecvRootJson, pAmqpComand->message.properties);
+	m_pInterRabbitCommuHandler->SendMsg(pRecvRootJson, pAmqpComand->message.properties, pAmqpComand->channel);
 
 	cJSON_Delete(pRecvRootJson);
 	pRecvRootJson = NULL;
 
 	free(messageBody);
+}
+
+//add msg from rabbitmq to msg queue
+void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
+{
+	CLockUp lockUp(&m_LockAmqpRecvMsg);
+
+	m_veAmqpCommand.push_back(pAmqpEnvelope);
+}
+
+//get msg fron queue
+bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
+{
+	CLockUp lockUp(&m_LockAmqpRecvMsg);
+
+	if (0 >= m_veAmqpCommand.size())
+	{
+		return false;
+	}
+
+	vector<amqp_envelope_t*>::iterator it = m_veAmqpCommand.begin();
+	pAmqpComand = *it;
+	m_veAmqpCommand.erase(it);
+
+	return true;
 }

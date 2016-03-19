@@ -31,7 +31,7 @@ public:
 	COLLECTOR_DATA_SYS_PARAM m_collector_sys_param;
 
 /**	\brief rabbit参数*/
-	RABBIT_MQ_ACCESS_PARAM m_rabbit_mq_param;
+	COLLECTOR_ADVANCE_RABBITMQ_PARAM m_rabbit_mq_param;
 
 public:
 	//初始化参数
@@ -47,7 +47,11 @@ private:
 
 	bool LoadRabbitMqConfig(TiXmlElement* pRootXmlElement);
 
+	bool LoadRabbitMqAdvanceConfig(TiXmlElement* pRootXmlElement);
+
 	bool LoadDfuCommuConfig(TiXmlElement* pRootXmlElement);
+
+	bool LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement);
 
 private:
 /*

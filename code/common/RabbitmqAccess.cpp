@@ -23,13 +23,12 @@ THREAD_FUNC WINAPI AmqpMsgRecvProc(LPVOID pParam)
 
 CRabbitmqAccess::CRabbitmqAccess(void)
 {
-	m_pRabbitAccessParam = NULL;
+	m_pRabbitBasicParam = NULL;
 	m_pRabbitMqConn = NULL;
 	m_pRabbitMqSocketHandler = NULL;
 	m_pAmqpRecvFun = NULL;
 	m_pAmqpRecvReserved = NULL;
 	m_nSockfd = -1;
-	m_nChannelid = -1;
 	m_bExit = true;
 }
 
@@ -39,9 +38,9 @@ CRabbitmqAccess::~CRabbitmqAccess(void)
 	CloseRabbitMqConn();
 }
 
-void CRabbitmqAccess::SetRabbitAccessParam(RABBIT_MQ_ACCESS_PARAM* pObj)
+void CRabbitmqAccess::SetRabbitAccessParam(_RABBIT_MQ_BASIC_ACCESS_PARAM* pObj)
 {
-	m_pRabbitAccessParam = pObj;
+	m_pRabbitBasicParam = pObj;
 }
 
 void CRabbitmqAccess::RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, void* pReserved)
@@ -56,14 +55,12 @@ void CRabbitmqAccess::RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, void* p
 // 访问权限： public 
 // 返 回 值： bool true:succeed false:failed
 //************************************
-bool CRabbitmqAccess::ConnectRabbitMqServer(int nchannelid)
+bool CRabbitmqAccess::ConnectRabbitMqServer()
 {
 	bool bRet = true;
 
 	try
 	{
-		m_nChannelid = nchannelid;
-
 		m_pRabbitMqConn = amqp_new_connection();
 		if (NULL == m_pRabbitMqConn)
 		{
@@ -78,8 +75,8 @@ bool CRabbitmqAccess::ConnectRabbitMqServer(int nchannelid)
 
 		m_nSockfd = amqp_socket_open(
 			m_pRabbitMqSocketHandler, 
-			m_pRabbitAccessParam->chhostname, 
-			m_pRabbitAccessParam->nserver_port);
+			m_pRabbitBasicParam->chhostname, 
+			m_pRabbitBasicParam->nserver_port);
 
 		if (true == find_operation_server_error(m_nSockfd, "Opening socket"))
 		{
@@ -87,7 +84,7 @@ bool CRabbitmqAccess::ConnectRabbitMqServer(int nchannelid)
 		}
 		else
 		{
-			bRet = LoginAndOpenChannel(nchannelid);
+			bRet = LoginAndOpenChannel();
 		}
 	}
 	catch (...)
@@ -110,9 +107,12 @@ bool CRabbitmqAccess::CloseRabbitMqConn()
 		return true;
 	}
 
-	find_amqp_error(amqp_channel_close(m_pRabbitMqConn, m_nChannelid, AMQP_REPLY_SUCCESS), "Closing channel");
-	find_amqp_error(amqp_connection_close(m_pRabbitMqConn, AMQP_REPLY_SUCCESS), "Closing connection");
-	find_operation_server_error(amqp_destroy_connection(m_pRabbitMqConn), "Ending connection");
+	find_amqp_error(
+		amqp_channel_close(m_pRabbitMqConn, m_pRabbitBasicParam->nChannelID, AMQP_REPLY_SUCCESS), "Closing channel");
+	find_amqp_error(
+		amqp_connection_close(m_pRabbitMqConn, AMQP_REPLY_SUCCESS), "Closing connection");
+	find_operation_server_error(
+		amqp_destroy_connection(m_pRabbitMqConn), "Ending connection");
 
 	m_pRabbitMqConn = NULL;
 
@@ -126,18 +126,58 @@ bool CRabbitmqAccess::SetAmqpQos(short nPrefetchCount)
 		return false;
 	}
 
-	amqp_basic_qos(m_pRabbitMqConn, m_nChannelid, 0, nPrefetchCount, false);
+	amqp_basic_qos(
+		m_pRabbitMqConn, m_pRabbitBasicParam->nChannelID, 0, nPrefetchCount, false);
 
 	return true;
 }
 
-bool CRabbitmqAccess::StartAmqpRecv(string strQueue /*= "queue.test"*/)
+bool CRabbitmqAccess::StartAmqpRecv(RABBIT_RECV_PARAM& rabbitmq_recv_param)
 {
-	SetAmqpQos(1000);//set qos
+
+	amqp_queue_declare(
+		m_pRabbitMqConn, 
+		rabbitmq_recv_param.channelid, 
+		amqp_cstring_bytes(rabbitmq_recv_param.chQueueName), 
+		rabbitmq_recv_param.passive, 
+		rabbitmq_recv_param.durable, 
+		rabbitmq_recv_param.exclusive, 
+		rabbitmq_recv_param.autoDelete, 
+		amqp_empty_table
+		);
+
+	if (true == find_amqp_error(amqp_get_rpc_reply(m_pRabbitMqConn), "Declaring queue"))
+	{
+		return false;
+	}
+
+	/*
+	amqp_queue_bind(
+		m_pRabbitMqConn, 
+		m_nChannelid, 
+		amqp_cstring_bytes(strQueue.c_str()), 
+		amqp_cstring_bytes(""), 
+		amqp_cstring_bytes(""), 
+		amqp_empty_table);
+
+	if (true == find_amqp_error(amqp_get_rpc_reply(m_pRabbitMqConn)))
+	{
+		return true;
+	}
+	*/
+
+	SetAmqpQos(rabbitmq_recv_param.perfetchcount);//set qos
+
 	amqp_basic_consume(
-		m_pRabbitMqConn, m_nChannelid, 
-		amqp_cstring_bytes(strQueue.c_str()), amqp_empty_bytes, 
-		0, false, 0, amqp_empty_table);
+		m_pRabbitMqConn, 
+		rabbitmq_recv_param.channelid, 
+		amqp_cstring_bytes(rabbitmq_recv_param.chQueueName), 
+		amqp_empty_bytes, 
+		0, 
+		rabbitmq_recv_param.no_ack, 
+		0, 
+		amqp_empty_table);
+	
 	amqp_get_rpc_reply(m_pRabbitMqConn);
 
 	m_bExit = false;
@@ -159,7 +199,7 @@ bool CRabbitmqAccess::StopAmqpRecv()
 	return true;
 }
 
-bool CRabbitmqAccess::SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties)
+bool CRabbitmqAccess::SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties, amqp_channel_t ampq_channel)
 {
 	if (NULL == pSendJsonContent)
 	{
@@ -175,12 +215,22 @@ bool CRabbitmqAccess::SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& 
 	amqp_basic_properties_t props;
 	props = send_basic_properties;
 
+	char* preplay_to = new char[send_basic_properties.reply_to.len + 1];
+	bzero(preplay_to, (send_basic_properties.reply_to.len + 1));
+	memcpy(preplay_to, send_basic_properties.reply_to.bytes, send_basic_properties.reply_to.len);
+
 	amqp_basic_publish(
 		m_pRabbitMqConn, 
-		m_nChannelid, 
+		ampq_channel, 
 		amqp_cstring_bytes(""), 
-		amqp_cstring_bytes("WEB_RECEIVE_RESULT_QUEUE"), 
+		amqp_cstring_bytes(preplay_to), 
 		0, 0, &props, amqp_cstring_bytes(pSendMsg));
+
+	if (NULL != preplay_to)
+	{
+		delete[] preplay_to;
+		preplay_to = NULL;
+	}
 
 	return true;
 }
@@ -203,7 +253,7 @@ bool CRabbitmqAccess::FreeAmqpEnveloptObj(amqp_envelope_t* pAmqpEnveloptObj)
 	return true;
 }
 
-bool CRabbitmqAccess::LoginAndOpenChannel(int nchannelid)
+bool CRabbitmqAccess::LoginAndOpenChannel()
 {
 	if (NULL == m_pRabbitMqConn)
 	{
@@ -217,23 +267,21 @@ bool CRabbitmqAccess::LoginAndOpenChannel(int nchannelid)
 		amqp_rpc_reply_t login_replay;
 		login_replay = amqp_login(
 			m_pRabbitMqConn, 
-			RABBIT_MQ_DEFAULT_V_HOST, 
-			RABBIT_MQ_DEFAULT_CHANNEL_MAX, 
-			RABBIT_MQ_DEFAULT_FRAME_MAX, 
-			0, 
+			m_pRabbitBasicParam->chVhost, 
+			m_pRabbitBasicParam->nChannelMax, 
+			m_pRabbitBasicParam->nFrameMax, 
+			m_pRabbitBasicParam->nHeartbeatTime, 
 			AMQP_SASL_METHOD_PLAIN, 
-			m_pRabbitAccessParam->chusrname, 
-			m_pRabbitAccessParam->chpassword);
+			m_pRabbitBasicParam->chusrname, 
+			m_pRabbitBasicParam->chpassword);
 
 		if (true == find_amqp_error(login_replay, "Logging in"))
 		{
 			return false;
 		}
 
-		amqp_rpc_reply_t open_channel_replay;
-		amqp_channel_open(m_pRabbitMqConn, m_nChannelid);
-		open_channel_replay = amqp_get_rpc_reply(m_pRabbitMqConn);
-		if (true == find_amqp_error(open_channel_replay, "Opening channel"))
+		amqp_channel_open(m_pRabbitMqConn, m_pRabbitBasicParam->nChannelID);
+		if (true == find_amqp_error(amqp_get_rpc_reply(m_pRabbitMqConn), "Opening channel"))
 		{
 			bRet = false;
 		}
@@ -255,6 +303,7 @@ int CRabbitmqAccess::RecvAmqpMsgLoop()
 		amqp_rpc_reply_t ret;
 		amqp_maybe_release_buffers(m_pRabbitMqConn);
 		envelope = new amqp_envelope_t;
+		bzero(envelope, sizeof(amqp_envelope_t));
 
 		ret = amqp_consume_message(m_pRabbitMqConn, envelope, NULL, 0);
 		if(ret.reply_type == AMQP_RESPONSE_NORMAL)
@@ -264,13 +313,14 @@ int CRabbitmqAccess::RecvAmqpMsgLoop()
 				m_pAmqpRecvFun(envelope, m_pAmqpRecvReserved);
 			}
 			
-			if(amqp_basic_ack(m_pRabbitMqConn, m_nChannelid, envelope->delivery_tag, false) > 0)
+			if(amqp_basic_ack(m_pRabbitMqConn, envelope->channel, envelope->delivery_tag, false) > 0)
 			{
 				printf("failing to send the ack to the broker...\n");
 			}
 		}
 		else if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION)
 		{
+			FreeAmqpEnveloptObj(envelope);
 			printf("amqp_consume_message faild!\n");
 		}
 	}

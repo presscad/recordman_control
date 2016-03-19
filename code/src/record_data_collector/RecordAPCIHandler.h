@@ -35,18 +35,33 @@ public:
 	int DfuCommuOperationLoop();
 
 private:
-	//从socket读取报文
-	//读取到的字节数
+	//process command
+	int ProcessCommand(RECORD_DFU_MSG* pCommandMsg, vector<RECORD_DFU_MSG*> veResultMsg);
+	
+	//read msg from socket
+	//return readed msg bytes num
 	int ReceiveMsg(RECORD_DFU_MSG* pMsg);
 
-	//发送报文
+	//send msg
 	int WriteRecordMsg(RECORD_DFU_MSG* pMsg);
 
-	//打印输出
+	//create poling command
+	void CreatePolingCommand(RECORD_DFU_MSG* pCommandMsg);
+
+	//query new osc file from dfu
+	void CreateQueryNewOscCommand(RECORD_DFU_MSG* pCommandMsg);
+
+	void CreateGetOscFileCommand(RECORD_DFU_MSG* pCommandMsg, int nFileIndex);
+
+private:
+	//print msg
 	void LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_HEAD& pHead);
 
-	//拷贝报文字符
+	//copy string
 	void CopyMessageToString(BYTE bMsg, char*& pChar);
+
+	//get msg trans mask
+	UINT GetMsgTransMask();
 
 private:
 	/**	\brief 配置参数对象*/
@@ -61,6 +76,16 @@ private:
 
 	/**	\brief net对象*/
 	CNet* m_pNetSocket;
+
+private:
+	//msg process lock
+	CSafeLock m_LockApciMsgHandler;
+
+	//link last active time
+	time_t m_tLinkActive;
+
+	//transmask
+	UINT m_utTransMask;
 };
 
 #endif
