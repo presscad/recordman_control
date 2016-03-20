@@ -52,6 +52,7 @@ m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
 	m_bExit = true;
 	m_pRabbitmqParm = NULL;
 	m_pInterRabbitCommuHandler = NULL;
+	m_pRecordApciHandler = NULL;
 
 	m_veAmqpCommand.clear();
 }
@@ -65,6 +66,11 @@ CInternalCommuMgr::~CInternalCommuMgr(void)
 void CInternalCommuMgr::SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj)
 {
 	m_pRabbitmqParm = pObj;
+}
+
+void CInternalCommuMgr::SetRecordApciHandler(CRecordAPCIHandler* pApciHandler)
+{
+	m_pRecordApciHandler = pApciHandler;
 }
 
 //init class member or other class
@@ -177,6 +183,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 {
 	int nCommandID = 0;
 	cJSON* pRecvRootJson = NULL;
+	cJSON* pResultJson = NULL;
 	CJsonMsgParser jsonMsgparser;
 	char* messageBody = NULL;
 	
@@ -194,12 +201,30 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 	jsonMsgparser.Attach(pRecvRootJson);
 	nCommandID = jsonMsgparser.GetCommandID();
 
-	m_pInterRabbitCommuHandler->SendMsg(pRecvRootJson, pAmqpComand->message.properties, pAmqpComand->channel);
+	if (true == m_pRecordApciHandler->ProcessJsonCommand(pRecvRootJson, pResultJson))
+	{
+		m_pInterRabbitCommuHandler->SendMsg(pResultJson, pAmqpComand->message.properties, pAmqpComand->channel);
+	}
 
-	cJSON_Delete(pRecvRootJson);
-	pRecvRootJson = NULL;
+	if (NULL != pRecvRootJson)
+	{
+		cJSON_Delete(pRecvRootJson);
+		pRecvRootJson = NULL;
+	}
 
-	free(messageBody);
+	if (NULL != pResultJson)
+	{
+		cJSON_Delete(pResultJson);
+		pResultJson = NULL;
+	}
+
+	if (NULL != messageBody)
+	{
+		free(messageBody);
+		messageBody = NULL;
+	}
+
+	return true;
 }
 
 //add msg from rabbitmq to msg queue

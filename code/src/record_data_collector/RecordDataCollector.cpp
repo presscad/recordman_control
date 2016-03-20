@@ -207,7 +207,12 @@ bool CRecordDataCollector::InitApciHandler()
 			return false;
 		}
 
-		m_pRecordApciHandler->SetCollectorSysParam(&m_pConfigvarialemgr->m_collector_sys_param);
+		m_pRecordApciHandler->SetCollectorSysParam(
+			&m_pConfigvarialemgr->m_collector_sys_param, 
+			&m_pConfigvarialemgr->m_fault_dfu_param);
+
+		m_pRecordApciHandler->SetMongoAccessParam(
+			&m_pConfigvarialemgr->m_mongo_access_param);
 
 		if (false == m_pRecordApciHandler->InitRecordApciHandler())
 		{
@@ -241,6 +246,7 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 		}
 
 		m_pInternalCommuMgr->SetRabbitmqAccessParam(&m_pConfigvarialemgr->m_rabbit_mq_param);
+		m_pInternalCommuMgr->SetRecordApciHandler(m_pRecordApciHandler);
 		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
 			return false;

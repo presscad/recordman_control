@@ -33,6 +33,15 @@ public:
 /**	\brief rabbit参数*/
 	COLLECTOR_ADVANCE_RABBITMQ_PARAM m_rabbit_mq_param;
 
+	//fault osc dfu
+	COLLECTOR_DFU_COMMU_PARAM m_fault_dfu_param;
+
+	//continue osc dfu
+	COLLECTOR_DFU_COMMU_PARAM m_contin_dfu_param;
+
+	//mogodb access param
+	RECORD_MONGO_BASIC_PARAM m_mongo_access_param;
+
 public:
 	//初始化参数
 	//true：成功 false：失败
@@ -52,6 +61,8 @@ private:
 	bool LoadDfuCommuConfig(TiXmlElement* pRootXmlElement);
 
 	bool LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement);
+
+	bool LoadMongoDbConfig(TiXmlElement* pRootXmlElement);
 
 private:
 /*

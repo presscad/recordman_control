@@ -25,10 +25,14 @@
 	<dfu_commu_config>
 		<addr>10.123.16.56</addr>
 		<port>3309</port>
+		<idle_time des='idle second'>10</idle_time>
+		<newfile_check_time des='check new file second'>2</newfile_check_time>
 	</dfu_commu_config>
 	<continue_dfu_commu_config>
 		<addr>10.123.16.57</addr>
 		<port>3309</port>
+		<idle_time des='idle second'>10</idle_time>
+		<newfile_check_time des='check new file second'>2</newfile_check_time>
 	</continue_dfu_commu_config>
 	<record_file_config>
 		<fault_file_save_path>/fault_record_data/</fault_file_save_path>

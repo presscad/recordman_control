@@ -73,7 +73,7 @@ UINT CDfuMsgParser::GetMsgTransMask()
 
 void CDfuMsgParser::SetMsgTransMask(UINT nTransMark)
 {
-	if(nTransMark > 99)
+	if(nTransMark > 255)
 	{
 		return;
 	}
@@ -122,6 +122,92 @@ void CDfuMsgParser::SetMsgReserve()
 	m_pMsgHdr->byteReserve[1] = '0';
 }
 
+void CDfuMsgParser::SetMsgDirection(int nDircetion)
+{
+	if (nDircetion == 0)
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] & 0xBF;
+	}
+	else
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] | 0x40;
+	}
+}
+
+int CDfuMsgParser::GetMsgdirection()
+{
+	int nDriection = 0;
+	BYTE bMask = m_pMsgHdr->byteFunMask[0] & 0x40;
+	if (bMask == 0)
+	{
+		nDriection = 0;
+	}
+	else
+	{
+		nDriection = 1;
+	}
+
+	return nDriection;
+}
+
+void CDfuMsgParser::SetMsgErrorFlag(int nErrorFlag)
+{
+	if (0 == nErrorFlag)
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] & 0x7F;
+	}
+	else
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] | 0x80;
+	}
+}
+
+bool CDfuMsgParser::GetMsgErrorFlag()
+{
+	bool bError = false;
+	BYTE bMask = m_pMsgHdr->byteFunMask[0] & 0x80;
+
+	if (bMask == 0)
+	{
+		bError = false;
+	}
+	else
+	{
+		bError = true;
+	}
+
+	return bError;
+}
+
+void CDfuMsgParser::SetMsgMutiFrameConfirmFlag(int nFlag)
+{
+	if (nFlag == 0)
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] & 0xDF;
+	}
+	else
+	{
+		m_pMsgHdr->byteFunMask[0] = m_pMsgHdr->byteFunMask[0] | 0x20;
+	}
+}
+
+int CDfuMsgParser::GetMsgMutiFrameConfirmFlag()
+{
+	int nMutiFrameConfirmFlag = 0;
+	BYTE bMask = m_pMsgHdr->byteFunMask[0] & 0x20;
+
+	if (bMask == 0)
+	{
+		nMutiFrameConfirmFlag = 0;
+	}
+	else
+	{
+		nMutiFrameConfirmFlag = 1;
+	}
+
+	return nMutiFrameConfirmFlag;
+}
+
 UINT CDfuMsgParser::GetMsgLength()
 {
 	int nMsgLeng = 0;
@@ -135,21 +221,11 @@ void CDfuMsgParser::SetMsgLength(UINT nLeng)
 	memcpy(m_pMsgHdr->byteMsgLen, &nLeng, 2);
 }
 
-void CDfuMsgParser::SetMsgFunMask(int nFunMask)
-{
-	SWAP_16(nFunMask);
-	memcpy(m_pMsgHdr->byteFunMask, &nFunMask, 2);
-}
-
 bool CDfuMsgParser::GetMsgEndFlag()
 {
-	if(m_pMsgHdr->byteFrameSeq[0] == '0')
+	if(m_pMsgHdr->byteFrameSeq[3] == 0x01)
 	{
 		return true;
-	}
-	else if(m_pMsgHdr->byteFrameSeq[0] == '1')
-	{
-		return false;
 	}
 	else
 	{
@@ -243,6 +319,13 @@ bool CDfuMsgParser::CheckEndMask()
 	}
 
 	return true;
+}
+
+int CDfuMsgParser::GetFileNum()
+{
+	int nFileNum = m_pMsg->MsgBody[4] + m_pMsg->MsgBody[5] + m_pMsg->MsgBody[6] + m_pMsg->MsgBody[7];
+
+	return nFileNum;
 }
 
 double CDfuMsgParser::ArrayToDouble(char *szByte, int iLength)
@@ -370,16 +453,4 @@ char* CDfuMsgParser::Strrev(char *szT)
 		szT[k++] = ch;
 	}
 	return szT;
-}
-
-UINT CDfuMsgParser::EndianConvertLToB(UINT InputNum)
-{
-	UCHAR *p = (UCHAR*)&InputNum;
-	return(((UINT)*p<<24) + ((UINT)*(p+1)<<16) + ((UINT)*(p+2)<<8) + (UINT)*(p+3));
-}
-
-UINT CDfuMsgParser::EndianConvertBToL(UINT InputNum)
-{
-	UCHAR *p = (UCHAR*)&InputNum;
-	return(((UINT)*p) + ((UINT)*(p+1)<<8) + ((UINT)*(p+2)<<16) + (UINT)*(p+3)<<24);
 }

@@ -5,10 +5,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "RecordAPCIHandler.h"
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "../../common/RabbitmqAccess.h"
-#include "../../common/JsonMsgParser.h"
 
 class CInternalCommuMgr
 {
@@ -19,6 +19,8 @@ public:
 public:
 	//…Ë÷√≈‰÷√¿‡∑√Œ æ‰±˙
 	void SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj);
+
+	void SetRecordApciHandler(CRecordAPCIHandler* pApciHandler);
 
 public:
 	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
@@ -42,6 +44,8 @@ private:
 	COLLECTOR_ADVANCE_RABBITMQ_PARAM* m_pRabbitmqParm;
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;
+
+	CRecordAPCIHandler* m_pRecordApciHandler;
 
 	CSafeLock m_LockAmqpRecvMsg;
 

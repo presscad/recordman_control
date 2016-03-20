@@ -5,10 +5,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#include "RecordAPCIHandler.h"
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "CommandHandlerMgr.h"
-#include "RecordAPCIHandler.h"
 #include "InternalCommuMgr.h"
 
 class CRecordDataCollector

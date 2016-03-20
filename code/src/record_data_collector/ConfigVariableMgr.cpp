@@ -23,16 +23,19 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 	{
 		m_collector_sys_param.nLoglevel = CLogFile::trace;
 		m_collector_sys_param.nLogDays = COLLECTOR_LOG_SAVE_DEFAULT_DAYS;
-		m_collector_sys_param.nIdleCheckTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		m_collector_sys_param.nRecvTimeout = COLLECTOR_COMMU_RECV_TIMEOUT;
 		m_collector_sys_param.nSendTimeout = COLLECTOR_COMMU_SEND_TIMEOUT;
 		sprintf(m_collector_sys_param.chLogpath, "%s", "./data_collector_log/");
 
-		m_collector_sys_param.fault_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
-		sprintf(m_collector_sys_param.fault_dfu_param.chDfuAddr, "%s", "10.123.16.56");
+		m_fault_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
+		m_fault_dfu_param.nIdleTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
+		m_fault_dfu_param.nCheckNewFileTime = COLLECTOR_COMMU_CHECK_NEW_FILE_TIME;
+		sprintf(m_fault_dfu_param.chDfuAddr, "%s", "10.123.16.56");
 
-		m_collector_sys_param.contin_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
-		sprintf(m_collector_sys_param.contin_dfu_param.chDfuAddr, "%s", "10.123.16.57");
+		m_contin_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
+		m_contin_dfu_param.nIdleTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
+		m_contin_dfu_param.nCheckNewFileTime = COLLECTOR_COMMU_CHECK_NEW_FILE_TIME;
+		sprintf(m_contin_dfu_param.chDfuAddr, "%s", "10.123.16.57");
 
 		m_rabbit_mq_param.nCollectorRecvChannel = RABBIT_MQ_DEFAULT_CHANNEL_ID;
 		sprintf(m_rabbit_mq_param.chCollectorRecvQueName, "%s", DATA_COLLECTOR_RECV_QUEUE_NAME);
@@ -45,6 +48,12 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chusrname, "%s", "admin");
 		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chpassword, "%s", "admin");
 		sprintf(m_rabbit_mq_param.rabbitmq_basick_param.chVhost, "%s", RABBIT_MQ_DEFAULT_V_HOST);
+
+		m_mongo_access_param.nPort = 27017;
+		sprintf(m_mongo_access_param.chAddr, "%s", "127.0.0.1");
+		sprintf(m_mongo_access_param.chUser, "%s", "recordman");
+		sprintf(m_mongo_access_param.chPasswd, "%s", "Don0tpanic42");
+		sprintf(m_mongo_access_param.chDataBase, "%s", "recordman");
 	}
 	catch (...)
 	{
@@ -109,6 +118,11 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 		}
 
 		if (false == LoadContinDfuCommuConfig(pRootXmlElement))
+		{
+			return false;
+		}
+
+		if (false == LoadMongoDbConfig(pRootXmlElement))
 		{
 			return false;
 		}
@@ -236,11 +250,17 @@ bool CConfigVariableMgr::LoadDfuCommuConfig(TiXmlElement* pRootXmlElement)
 		}
 
 		GetCopyNodeValue(pXmlElement, "addr", 
-			m_collector_sys_param.fault_dfu_param.chDfuAddr, 
-			sizeof(m_collector_sys_param.fault_dfu_param.chDfuAddr));
+			m_fault_dfu_param.chDfuAddr, 
+			sizeof(m_fault_dfu_param.chDfuAddr));
 
 		GetCopyNodeValue(pXmlElement, "port", 
-			m_collector_sys_param.fault_dfu_param.nDfuport);
+			m_fault_dfu_param.nDfuport);
+
+		GetCopyNodeValue(pXmlElement, "idle_time", 
+			m_fault_dfu_param.nIdleTime);
+
+		GetCopyNodeValue(pXmlElement, "newfile_check_time", 
+			m_fault_dfu_param.nCheckNewFileTime);
 	}
 	catch (...)
 	{
@@ -266,11 +286,59 @@ bool CConfigVariableMgr::LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement)
 		}
 
 		GetCopyNodeValue(pXmlElement, "addr", 
-			m_collector_sys_param.contin_dfu_param.chDfuAddr, 
-			sizeof(m_collector_sys_param.contin_dfu_param.chDfuAddr));
+			m_contin_dfu_param.chDfuAddr, 
+			sizeof(m_contin_dfu_param.chDfuAddr));
 
 		GetCopyNodeValue(pXmlElement, "port", 
-			m_collector_sys_param.contin_dfu_param.nDfuport);
+			m_contin_dfu_param.nDfuport);
+
+		GetCopyNodeValue(pXmlElement, "idle_time", 
+			m_contin_dfu_param.nIdleTime);
+
+		GetCopyNodeValue(pXmlElement, "newfile_check_time", 
+			m_contin_dfu_param.nCheckNewFileTime);
+	}
+	catch (...)
+	{
+		printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡\n");
+		return false;
+	}
+
+	return true;
+}
+
+bool CConfigVariableMgr::LoadMongoDbConfig(TiXmlElement* pRootXmlElement)
+{
+	TiXmlElement* pXmlElement = NULL;
+
+	try
+	{
+		pXmlElement = pRootXmlElement->FirstChildElement("mongo_db_config");
+		if (NULL == pXmlElement)
+		{
+			printf("[LoadMongoDbConfig]get mongo_db_config node from config file£º%s failed£¡\n", 
+				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
+			return false;
+		}
+
+		GetCopyNodeValue(pXmlElement, "addr", 
+			m_mongo_access_param.chAddr, 
+			sizeof(m_mongo_access_param.chAddr));
+
+		GetCopyNodeValue(pXmlElement, "port", 
+			m_mongo_access_param.nPort);
+
+		GetCopyNodeValue(pXmlElement, "name", 
+			m_mongo_access_param.chDataBase, 
+			sizeof(m_mongo_access_param.chDataBase));
+
+		GetCopyNodeValue(pXmlElement, "user", 
+			m_mongo_access_param.chUser, 
+			sizeof(m_mongo_access_param.chUser));
+
+		GetCopyNodeValue(pXmlElement, "pwd", 
+			m_mongo_access_param.chPasswd, 
+			sizeof(m_mongo_access_param.chPasswd));
 	}
 	catch (...)
 	{

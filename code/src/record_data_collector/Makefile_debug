@@ -1,6 +1,8 @@
 #define the path of search
 VPATH = -I../../common \
 		-I../../common_open_source/rabbitmq/include \
+		-I../../common_open_source/boost/boost-1_60/include \
+		-I../../common_open_source/mongo/include \
 		-I../../common_open_source/cJSON \
 		-I../../common_open_source/tinyxml2 \
 		-I./
@@ -8,7 +10,7 @@ VPATH = -I../../common \
 #define compile obj
 common_obj = CCommonFile.o common_lib.o common_time.o DfuMsgParser.o globalfun.o Lock.o \
 				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o \
-				RabbitmqAccess.o
+				RabbitmqAccess.o JsonMsgParser.o MongodbAccess.o
 
 json_objects = cJSON.o
 
@@ -19,10 +21,18 @@ cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o Con
 
 AllOBJ =  $(common_obj) $(json_objects) $(tiny_xml_objects) $(cur_objects)
 
+
+RABBITMQ_LINK_PATH = -L../../common_open_source/rabbitmq/lib/linux-x86/
+MONGODB_LINK_PATH = -L../../common_open_source/mongo/lib/linux/x86/
+BOOST_LINK_PATH = -L../../common_open_source/boost/boost-1_60/lib_linux_x86/
+
 #define compile param
 LIBS = -rdynamic
-CFLAGS = -g -w -DOS_LINUX
-LINK_FLAGS = -lpthread -ldl -L../../common_open_source/rabbitmq/lib/linux-x86-64/ -lrabbitmq
+CFLAGS = -g -w -DOS_LINUX -m32
+RABBITMQ_LINK_FLAGS = $(RABBITMQ_LINK_PATH) -lrabbitmq
+MONGODB_LINK_FLAGS = $(MONGODB_LINK_PATH) -lmongoclient
+BOOST_LINK_FLAGS = $(BOOST_LINK_PATH) -lboost_system-mt -lboost_thread-mt -lboost_regex-mt
+LINK_FLAGS = -lpthread -ldl $(RABBITMQ_LINK_FLAGS) $(MONGODB_LINK_FLAGS) $(BOOST_LINK_FLAGS)
 
 #define compile program param
 VERSION = D1.0.1
@@ -32,10 +42,10 @@ TARGETPATH = ../../bin/record_data_collector/
 $(TARGETFILENAME)-$(VERSION) : $(AllOBJ) mkxjtargetdir
 	g++ -o $(TARGETPATH)$(TARGETFILENAME)-$(VERSION) $(AllOBJ) $(LIBS) $(CFLAGS) $(VPATH) $(LINK_FLAGS)
 
-$(common_obj):%.o: ../../../common_mstation/%.cpp
+$(common_obj):%.o: ../../common/%.cpp
 	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
 
-$(json_objects):%.o: ../../common_open_source/cJSON/%.cpp
+$(json_objects):%.o: ../../common_open_source/cJSON/%.c
 	g++  $(LIBS) $(CFLAGS) $(VPATH) -c -o $@ $<
 
 $(tiny_xml_objects):%.o: ../../common_open_source/tinyxml2/%.cpp

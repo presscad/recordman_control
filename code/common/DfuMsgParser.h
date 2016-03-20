@@ -39,10 +39,18 @@ public:
 
 	void SetMsgReserve();
 
+	void SetMsgDirection(int nDircetion);
+	int GetMsgdirection();
+	
+	void SetMsgErrorFlag(int nErrorFlag);
+	//get error flag,true:error false:no error
+	bool GetMsgErrorFlag();
+	
+	void SetMsgMutiFrameConfirmFlag(int nFlag);
+	int GetMsgMutiFrameConfirmFlag();
+
 	UINT GetMsgLength();
 	void SetMsgLength(UINT nLeng);
-
-	void SetMsgFunMask(int nFunMask);
 
 	bool GetMsgEndFlag();
 	void SetMsgEndFlag(bool bEndFlag);
@@ -57,6 +65,8 @@ public:
 	//检查收到的报文中结束码是否正确
 	bool CheckEndMask();
 
+	int GetFileNum();
+
 public:
 	char*  Strrev(char* szT);
 	char*  Itoa(int value, char* str, int radix);
@@ -65,8 +75,6 @@ public:
 	int    ArrayToInt(char* byte, int nCount);
 	UINT   ArrayToHex(char* byte, int nCount);
 	double ArrayToDouble(char* szByte,int iLength);
-	UINT EndianConvertLToB(UINT InputNum);
-	UINT EndianConvertBToL(UINT InputNum);
 };
 
 #endif // !defined(AFX_STTPMSGPARSER_H__D0F3545B_1380_4756_AE3B_3B009138B990__INCLUDED_)

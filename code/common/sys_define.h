@@ -495,49 +495,36 @@ const BYTE RECORD_COMMAND_CHAR_TIME_SET_VAR = 0xA2;
 /** @brief           时区设置*/
 const BYTE RECORD_COMMAND_CHAR_TIMEZONE_SET_VAR = 0xA3;
 
-/** @brief           INT定义*/
-/** @brief           巡检命令*/
-const int RECORD_DFU_COMMAND_INT_PATROL = 1;
-/** @brief           配置命令*/
-const int RECORD_DFU_COMMAND_INT_CONFIG_SEND = 17;
-/** @brief           配置命令*/
-const int RECORD_DFU_COMMAND_INT_CONFIG_RECV = 18;
-/** @brief           定值整定*/
-const int RECORD_DFU_COMMAND_INT_SETTING_ADJUST = 33;
-/** @brief           定值读取*/
-const int RECORD_DFU_COMMAND_INT_SETTING_READ = 34;
-/** @brief           定值区切换*/
-const int RECORD_DFU_COMMAND_INT_SETZONE_CHANGE = 35;
-/** @brief           活动定值区读取*/
-const int RECORD_DFU_COMMAND_INT_CURZONE_READ = 36;
-/** @brief           新录波查询*/
-const int RECORD_DFU_COMMAND_INT_NEW_OSC_QUERY = 49;
-/** @brief           录波索引读取*/
-const int RECORD_DFU_COMMAND_INT_OSC_INDEX_READ = 50;
-/** @brief           录波读取*/
-const int RECORD_DFU_COMMAND_INT_OSC_FILE_READ = 51;
-/** @brief           手动录波*/
-const int RECORD_DFU_COMMAND_INT_MANUAL_OSC = 58;
-/** @brief           实时波形读取*/
-const int RECORD_DFU_COMMAND_INT_REALTIME_OSC_READ = 65;
-/** @brief           实时数据读取*/
-const int RECORD_DFU_COMMAND_INT_REALTIME_DATA_READ = 66;
-/** @brief           自检查询*/
-const int RECORD_DFU_COMMAND_INT_SELF_CHECK = 145;
-/** @brief           版本查询*/
-const int RECORD_DFU_COMMAND_INT_VERSION_QUERY = 146;
-/** @brief           时间查询*/
-const int RECORD_DFU_COMMAND_INT_TIME_QUERY = 147;
-/** @brief           子模块信息查询*/
-const int RECORD_DFU_COMMAND_INT_SUB_MODULE_QUERY = 148;
-/** @brief           装置复位*/
-const int RECORD_DFU_COMMAND_INT_RESET = 160;
-/** @brief           写ip地址*/
-const int RECORD_DFU_COMMAND_INT_IP_SET = 161;
-/** @brief           时间设置*/
-const int RECORD_DFU_COMMAND_INT_TIME_SET = 162;
-/** @brief           时区设置*/
-const int RECORD_DFU_COMMAND_INT_TIMEZONE_SET = 163;
+/**	\brief 报文定义*/
+const int RECORD_DATA_MSG_ID_CALL_DFU_CONFIG = 20001;
+const int RECORD_DATA_MSG_ID_RESULT_CALL_DFU_CONFIG = 20002;
+const int RECORD_DATA_MSG_ID_CALL_SETTING = 20003;
+const int RECORD_DATA_MSG_ID_RESULT_CALL_SETTING = 20004;
+const int RECORD_DATA_MSG_ID_SWITCH_ZONE = 20005;
+const int RECORD_DATA_MSG_ID_RESULT_SWITCH_ZONE = 20006;
+const int RECORD_DATA_MSG_ID_CALL_ZONE = 20007;
+const int RECORD_DATA_MSG_ID_RESULT_CALL_ZONE = 20008;
+const int RECORD_DATA_MSG_ID_QUERY_SELFCHECK = 20009;
+const int RECORD_DATA_MSG_ID_RESULT_QUERY_SELFCHECK = 20010;
+const int RECORD_DATA_MSG_ID_QUERY_VER = 20011;
+const int RECORD_DATA_MSG_ID_RESULT_QUERY_VER = 20012;
+const int RECORD_DATA_MSG_ID_QUERY_TIME = 20013;
+const int RECORD_DATA_MSG_ID_RESULT_QUERY_TIME = 20014;
+const int RECORD_DATA_MSG_ID_QUERY_MOULE = 20015;
+const int RECORD_DATA_MSG_ID_RESULT_QUERY_MOULE = 20016;
+const int RECORD_DATA_MSG_ID_RESET_DEV = 20017;
+const int RECORD_DATA_MSG_ID_RESULT_RESET_DEV = 20018;
+const int RECORD_DATA_MSG_ID_SET_NET_PARAM = 20019;
+const int RECORD_DATA_MSG_ID_RESULT_SET_NET_PARAM = 20020;
+const int RECORD_DATA_MSG_ID_SET_TIME = 20021;
+const int RECORD_DATA_MSG_ID_RESULT_SET_TIME = 20022;
+const int RECORD_DATA_MSG_ID_SET_TIME_ZONE = 20023;
+const int RECORD_DATA_MSG_ID_RESULT_SET_TIME_ZONE = 20024;
+const int RECORD_DATA_MSG_ID_DOWN_DFU_CONFIG = 20060;
+const int RECORD_DATA_MSG_ID_RESULT_DOWN_DFU_CONFIG = 20061;
+const int RECORD_DATA_MSG_ID_DOWN_MGR_CONFIG = 20070;
+const int RECORD_DATA_MSG_ID_RESULT_DOWN_MGR_CONFIG = 20071;
+const int RECORD_DATA_MSG_ID_UPLOAD_NEW_OSC_FILE = 20090;
 
 /**
  * @brief       报文发送方向定义
@@ -686,6 +673,26 @@ typedef struct _RABBIT_RECV_PARAM
 	}
 
 }RABBIT_RECV_PARAM;
+
+//mongodb access param
+typedef struct _RECORD_MONGO_BASIC_PARAM
+{
+	int nPort;
+	char chAddr[64];
+	char chUser[128];
+	char chPasswd[128];
+	char chDataBase[128];
+
+	_RECORD_MONGO_BASIC_PARAM()
+	{
+		nPort = 27017;
+		bzero(chAddr, sizeof(chAddr));
+		bzero(chUser, sizeof(chUser));
+		bzero(chPasswd, sizeof(chPasswd));
+		bzero(chDataBase, sizeof(chDataBase));
+	}
+
+}RECORD_MONGO_BASIC_PARAM;
 
 /*  全局函数声明  */
 extern void GetSysTime(SYSTIME & curTime);
