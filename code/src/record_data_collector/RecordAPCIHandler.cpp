@@ -76,6 +76,8 @@ CRecordAPCIHandler::~CRecordAPCIHandler(void)
 		delete m_pNetSocket;
 		m_pNetSocket = NULL;
 	}
+
+	m_LogFile.Close();
 }
 
 void CRecordAPCIHandler::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam, COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParam)
@@ -87,6 +89,18 @@ void CRecordAPCIHandler::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam, 
 void CRecordAPCIHandler::SetMongoAccessParam(RECORD_MONGO_BASIC_PARAM* pMongoParam)
 {
 	m_pMongoParam = pMongoParam;
+}
+
+//init logfile
+bool CRecordAPCIHandler::InitLogFile()
+{
+	m_LogFile.Close();
+
+	m_LogFile.SetLogLevel(m_pCollectorSysParam->nLoglevel);
+	m_LogFile.SetLogSaveDays(m_pCollectorSysParam->nLogDays);
+	m_LogFile.SetLogPath(m_pCollectorSysParam->chLogpath);
+
+	return (TRUE == m_LogFile.Open(m_pDfuCommuParam->chDfuAddr))?true:false;
 }
 
 //************************************
@@ -102,6 +116,8 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 	{
 		m_bExitFlag = true;
 
+		InitLogFile();
+
 		if (NULL == m_pNetSocket)
 		{
 			m_pNetSocket = new CNet;
@@ -109,13 +125,13 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 
 		if (NULL == m_pNetSocket)
 		{
-			printf("new class CNet failed！\n");
+			m_LogFile.FormatAdd(CLogFile::error, "new class CNet failed！");
 			return false;
 		}
 
 		if (false == socketsInit())
 		{
-			printf("socket init failed！\n");
+			m_LogFile.FormatAdd(CLogFile::error, "socket init failed！");
 			return false;
 		}
 
@@ -123,11 +139,16 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 		m_MongoAccessHandler.SetMongDbAccessparam(m_pMongoParam);
 		if (false == m_MongoAccessHandler.ConnectMongoServer(strError))
 		{
+			m_LogFile.FormatAdd(CLogFile::error, 
+				"[InitRecordApciHandler]connect mongodb failed，reason：%s", 
+				strError.c_str());
 			return false;
 		}
+		m_LogFile.FormatAdd(CLogFile::trace, "[InitRecordApciHandler]connect mongodb succeed！");
 	}
 	catch (...)
 	{
+		m_LogFile.FormatAdd(CLogFile::error, "InitRecordApciHandler find exception！");
 		return false;
 	}
 
@@ -155,12 +176,18 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 
 		if (false == bRet)
 		{
-			printf("connect dfu server：%s port：%d failed！\n", 
+			m_LogFile.FormatAdd(CLogFile::error, 
+				"[StartRecordApciHandler]connect dfu server：%s port：%d failed！", 
 				m_pDfuCommuParam->chDfuAddr, 
 				m_pDfuCommuParam->nDfuport);
 
 			return false;
 		}
+
+		m_LogFile.FormatAdd(CLogFile::trace, 
+			"[StartRecordApciHandler]connect dfu server：%s port：%d succeed！", 
+			m_pDfuCommuParam->chDfuAddr, 
+			m_pDfuCommuParam->nDfuport);
 
 		m_pNetSocket->SetOptions(SENDTIME, m_pCollectorSysParam->nSendTimeout*1000, 0);
 		m_pNetSocket->SetOptions(RECVTIME, m_pCollectorSysParam->nRecvTimeout*1000, 0);
@@ -169,13 +196,16 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 
 		if (false == m_DfuOperationThread.Start(DFU_APCI_OPERATION_THREAD_PROC, this))
 		{
-			printf("start dfu operation thread failed！\n");
+			m_LogFile.FormatAdd(CLogFile::error, 
+				"[StartRecordApciHandler]start dfu operation thread failed！");
 			return false;
 		}
 
+		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start dfu operation thread succeed！");
 	}
 	catch (...)
 	{
+		m_LogFile.FormatAdd(CLogFile::error, "StartRecordApciHandler find exception！");
 		return false;
 	}
 
@@ -270,7 +300,7 @@ int CRecordAPCIHandler::DfuCommuOperationLoop()
 		}
 		catch (...)
 		{
-			printf("DfuCommuOperationLoop exit abormal！\n");
+			m_LogFile.FormatAdd(CLogFile::error, "DfuCommuOperationLoop exit abormal！");
 			return -1;
 		}
 	}
@@ -341,45 +371,45 @@ int CRecordAPCIHandler::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteStartMask[0], 2);//收取启动码
 	if (nRet <= 0)
 	{
-		printf("recv start code msg failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv start code msg failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	if (false == dfuMsgParser.CheckStartMask())
 	{
-		printf("recv wrong start code msg！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv wrong start code msg！");
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteTransMark[0], 2);//事务识别码
 	if (nRet <= 0)
 	{
-		printf("recv trans code msg failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv trans code msg failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteProtocolMark[0], 2);//协议码
 	if (nRet <= 0)
 	{
-		printf("recv protocol code msg failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv protocol code msg failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	if (false == dfuMsgParser.CheckMsgProtocolMask())
 	{
-		printf("recv wrong protocol code msg！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv wrong protocol code msg！");
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteReserve[0], 2);//备用
 	if (nRet <= 0)
 	{
-		printf("recv reserve code msg failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv reserve code msg failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteMsgLen[0], 2);//报文长度
 	if (nRet <= 0)
 	{
-		printf("recv msg length code failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv msg length code failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
@@ -388,21 +418,21 @@ int CRecordAPCIHandler::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteFunMask[0], 2);//功能码
 	if (nRet <= 0)
 	{
-		printf("recv fun mask failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv fun mask failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteCommandMask[0], 2);//命令码
 	if (nRet <= 0)
 	{
-		printf("recv command mask failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv command mask failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteFrameSeq[0], 4);//帧序号
 	if (nRet <= 0)
 	{
-		printf("recv frame seq failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv frame seq failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
@@ -411,7 +441,7 @@ int CRecordAPCIHandler::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 		nRet = m_pNetSocket->read((char*)&pMsg->MsgBody[0], (nMsgLen - 8));
 		if (nRet <= 0)
 		{
-			printf("recv msg body failed！\n");
+			m_LogFile.FormatAdd(CLogFile::error, "recv msg body failed！");
 			return (0 == nRet)?-1:nRet;
 		}
 	}
@@ -419,13 +449,13 @@ int CRecordAPCIHandler::ReceiveMsg(RECORD_DFU_MSG* pMsg)
 	nRet = m_pNetSocket->read((char*)&pMsg->DfuMsgHdr.byteEndMask[0], 2);
 	if (nRet <= 0)
 	{
-		printf("recv end mask failed！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv end mask failed！");
 		return (0 == nRet)?-1:nRet;
 	}
 
 	if (false == dfuMsgParser.CheckEndMask())
 	{
-		printf("recv wrong end mask msg！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "recv wrong end mask msg！");
 	}
 
 	LOG_BUFFER_HEAD recv_log_header;
@@ -496,12 +526,12 @@ int CRecordAPCIHandler::WriteRecordMsg(RECORD_DFU_MSG* pMsg)
 	}
 	catch (...)
 	{
-		
+		m_LogFile.FormatAdd(CLogFile::error, "[WriteRecordMsg]write msg find exception！");
 	}
 
 	if (nWriteRet < nMsgSendLen)
 	{
-		printf("[WriteRecordMsg]send msg failed，return：%d", 
+		m_LogFile.FormatAdd(CLogFile::error, "[WriteRecordMsg]send msg failed，return：%d", 
 			nWriteRet);
 		nRet = -1;
 	}
@@ -637,11 +667,11 @@ void CRecordAPCIHandler::LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER
 		// add enter
 		memcpy(pchar, "\r\n", 2);
 		
-		printf("%s\n", strLog.c_str());
+		m_LogFile.FormatAdd(CLogFile::trace, "%s", strLog.c_str());
 	}
 	catch(...)
 	{
-		printf("LogMessage exception！\n");
+		m_LogFile.FormatAdd(CLogFile::error, "LogMessage exception！");
 		return;
 	}		
 }

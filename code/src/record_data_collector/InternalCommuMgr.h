@@ -9,6 +9,7 @@
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "../../common/RabbitmqAccess.h"
+#include "../../common/MessageLog.h"
 
 class CInternalCommuMgr
 {
@@ -17,8 +18,10 @@ public:
 	~CInternalCommuMgr(void);
 
 public:
-	//…Ë÷√≈‰÷√¿‡∑√Œ æ‰±˙
+	//set rabbit access basic param
 	void SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj);
+
+	void SetSystemParam(COLLECTOR_DATA_SYS_PARAM* pSystemParam);
 
 	void SetRecordApciHandler(CRecordAPCIHandler* pApciHandler);
 
@@ -35,6 +38,8 @@ public:
 	bool StopCommandMonitorHandler();
 
 private:
+	bool InitLogFile();
+
 	bool GetAmqpCommand(amqp_envelope_t*& pAmqpComand);
 
 	bool ProcessAmqpCommand(amqp_envelope_t* pAmqpComand);
@@ -47,9 +52,13 @@ private:
 
 	CRecordAPCIHandler* m_pRecordApciHandler;
 
+	COLLECTOR_DATA_SYS_PARAM* m_pSystemParm;
+
 	CSafeLock m_LockAmqpRecvMsg;
 
 	CRecordmanThread m_IdlerMqCommandThread;
+
+	CMessageLog m_LogFile;
 
 private:
 	bool m_bExit;

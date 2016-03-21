@@ -7,11 +7,19 @@ CRecordDataCollector::CRecordDataCollector(void)
 	m_pRecordApciHandler = NULL;
 	m_pCommandHandlerMgr = NULL;
 	m_pInternalCommuMgr = NULL;
+
+	bzero(m_chLogpath, sizeof(m_chLogpath));
+	sprintf(m_chLogpath, "%s", MANAGER_BOARD_DEFAULT_ROOT_LOG);
+	m_nLogLevel = CLogFile::trace;
+	m_nLogDays = COLLECTOR_LOG_SAVE_DEFAULT_DAYS;
+
+	InitLogFile();//init log
 }
 
 
 CRecordDataCollector::~CRecordDataCollector(void)
 {
+	m_Log.Close();
 }
 
 //************************************
@@ -30,6 +38,13 @@ bool CRecordDataCollector::InitRecordDataColletor()
 			return false;
 		}
 
+		bzero(m_chLogpath, sizeof(m_chLogpath));
+		sprintf(m_chLogpath, "%s", m_pConfigvarialemgr->m_collector_sys_param.chLogpath);
+		m_nLogLevel = m_pConfigvarialemgr->m_collector_sys_param.nLoglevel;
+		m_nLogDays = m_pConfigvarialemgr->m_collector_sys_param.nLogDays;
+
+		InitLogFile();
+
 		if (false == InitApciHandler())
 		{
 			return false;
@@ -42,7 +57,8 @@ bool CRecordDataCollector::InitRecordDataColletor()
 	}
 	catch (...)
 	{
-		printf("[InitRecordDataColletor]init record dataCollector find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, 
+			"[InitRecordDataColletor]init record dataCollector find exception£¡");
 		return false;
 	}
 
@@ -72,7 +88,8 @@ bool CRecordDataCollector::StartRecordDataColletor()
 	}
 	catch (...)
 	{
-		printf("[StartRecordDataColletor]start record dataCollector find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, 
+			"[StartRecordDataColletor]start record dataCollector find exception£¡");
 		return false;
 	}
 	return true;
@@ -101,7 +118,8 @@ bool CRecordDataCollector::EndRecordDataColletor()
 	}
 	catch (...)
 	{
-		printf("[EndRecordDataColletor]end record dataCollector find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, 
+			"[EndRecordDataColletor]end record dataCollector find exception£¡");
 		return false;
 	}
 	return true;
@@ -138,10 +156,23 @@ bool CRecordDataCollector::ExitRecordDataColletor()
 	}
 	catch (...)
 	{
-		printf("[ExitRecordDataColletor]exit record dataCollector find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, 
+			"[ExitRecordDataColletor]exit record dataCollector find exception£¡");
 		return false;
 	}
 	return true;
+}
+
+//init log file
+bool CRecordDataCollector::InitLogFile()
+{
+	m_Log.Close();
+
+	m_Log.SetLogPath(m_chLogpath);
+	m_Log.SetLogLevel(m_nLogLevel);
+	m_Log.SetLogSaveDays(m_nLogDays);
+
+	return (TRUE == m_Log.Open("data_collector"))?true:false;
 }
 
 //************************************
@@ -162,23 +193,29 @@ bool CRecordDataCollector::InitSysConfigVariable()
 
 		if (NULL == m_pConfigvarialemgr)
 		{
-			printf("new class CConfigVariableMgr failed£¡\n");
+			m_Log.FormatAdd(CLogFile::error, "new class CConfigVariableMgr failed£¡");
 			return false;
 		}
 
+		m_pConfigvarialemgr->SetLogAccessHandler(&m_Log);
 		if (false == m_pConfigvarialemgr->InitCollectorSysparam())
 		{
+			m_Log.FormatAdd(CLogFile::error, "[InitSysConfigVariable]InitCollectorSysparam failed£¡");
 			return false;
 		}
 
 		if (false == m_pConfigvarialemgr->LoadCollectorSysParam())
 		{
+			m_Log.FormatAdd(CLogFile::error, "[InitSysConfigVariable]LoadCollectorSysParam failed£¡");
 			return false;
 		}
+
+		m_Log.FormatAdd(CLogFile::trace, "[InitSysConfigVariable]init config succeed£¡");
 	}
 	catch (...)
 	{
-		printf("[InitSysConfigVariable]init collector system param find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, 
+			"[InitSysConfigVariable]init collector system param find exception£¡");
 		return false;
 	}
 
@@ -203,7 +240,7 @@ bool CRecordDataCollector::InitApciHandler()
 
 		if (NULL == m_pRecordApciHandler)
 		{
-			printf("new class CRecordAPCIHandler failed£¡\n");
+			m_Log.FormatAdd(CLogFile::error, "new class CRecordAPCIHandler failed£¡");
 			return false;
 		}
 
@@ -216,14 +253,15 @@ bool CRecordDataCollector::InitApciHandler()
 
 		if (false == m_pRecordApciHandler->InitRecordApciHandler())
 		{
+			m_Log.FormatAdd(CLogFile::error, "[InitApciHandler]InitRecordApciHandler failed£¡");
 			return false;
 		}
 
-		printf("InitDfuCommuSession succeed£¡\n");
+		m_Log.FormatAdd(CLogFile::trace, "[InitApciHandler]InitRecordApciHandler succeed£¡");
 	}
 	catch (...)
 	{
-		printf("[InitApciHandler]init apci handler find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, "[InitApciHandler]InitRecordApciHandler find exception£¡");
 		return false;
 	}
 	
@@ -241,22 +279,24 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 
 		if (NULL == m_pInternalCommuMgr)
 		{
-			printf("new class CInternalCommuMgr failed£¡\n");
+			m_Log.FormatAdd(CLogFile::error, "[InitInternalCommuMgr]new class CInternalCommuMgr failed£¡");
 			return false;
 		}
 
 		m_pInternalCommuMgr->SetRabbitmqAccessParam(&m_pConfigvarialemgr->m_rabbit_mq_param);
 		m_pInternalCommuMgr->SetRecordApciHandler(m_pRecordApciHandler);
+		m_pInternalCommuMgr->SetSystemParam(&m_pConfigvarialemgr->m_collector_sys_param);
 		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
+			m_Log.FormatAdd(CLogFile::error, "[InitInternalCommuMgr]InitCommandMonitorHandler failed£¡");
 			return false;
 		}
 
-		printf("InitCommandMonitorHandler succeed£¡\n");
+		m_Log.FormatAdd(CLogFile::trace, "[InitInternalCommuMgr]InitCommandMonitorHandler succeed£¡");
 	}
 	catch (...)
 	{
-		printf("[InitInternalCommuMgr]init command monitor find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, "[InitInternalCommuMgr]init command monitor find exception£¡");
 		return false;
 	}
 
@@ -281,13 +321,13 @@ bool CRecordDataCollector::InitCommandHandlerMgr()
 
 		if (NULL == m_pCommandHandlerMgr)
 		{
-			printf("new class CCommandHandlerMgr failed£¡\n");
+			m_Log.FormatAdd(CLogFile::error, "new class CCommandHandlerMgr failed£¡");
 			return false;
 		}
 	}
 	catch (...)
 	{
-		printf("[InitCommandHandlerMgr]init command handler manager find exception£¡\n");
+		m_Log.FormatAdd(CLogFile::error, "[InitCommandHandlerMgr]init command handler manager find exception£¡");
 		return false;
 	}
 	

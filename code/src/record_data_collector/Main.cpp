@@ -58,7 +58,8 @@ void sigroutine(int nsig)
 	case SIGINT:
 	case SIGTERM:
 		{
-			printf("recv exit sinal（%d），start to exit program normal！", nsig);
+			g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+				"recv exit sinal（%d），start exit program normal！", nsig);
 			bExitMain = true;
 		}
 		break;
@@ -109,21 +110,21 @@ void WINAPI ServiceCtrlHandler(DWORD dwControl)
 //************************************
 bool Start()
 {
-	printf("begin to init param！...\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "begin init param！");
 	if(false == g_record_data_collector.InitRecordDataColletor())
 	{
-		printf("init param fail，begin to exit！...\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"init param fail，begin exit！");
 		return false;
 	}
-	printf("init param success！\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "init param succeed，begin start！");
 
-	printf("begin to start！...\n");
 	if(false == g_record_data_collector.StartRecordDataColletor())
 	{
-		printf("start fail，begin to exit！...\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, "start failed，begin to exit！");
 		return false;
 	}
-	printf("start success！\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start program succeed！");
 
 	return true;
 }
@@ -205,14 +206,14 @@ void WINAPI KServiceMain(DWORD argc, LPTSTR * argv)
 	}
 
 	//停止业务
-	printf("start to end program！...\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start end program！");
 	g_record_data_collector.EndRecordDataColletor();	
-	printf("end program success！\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "end program succeed！");
 
 	//退出并释放资源
-	printf("start to exit program！...\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start exit program！");
 	g_record_data_collector.ExitRecordDataColletor();
-	printf("exit program success！\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "exit program succeed！");
 	
 #ifdef OS_WINDOWS
 	if (bRunAsServices)
@@ -249,7 +250,8 @@ void InstallService(const char * szServiceName)
 	SC_HANDLE handle = ::OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (handle == NULL)
 	{
-		printf("Couldn't open service manager！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"Couldn't open service manager！");
 		return ;
 	}
 
@@ -264,12 +266,14 @@ void InstallService(const char * szServiceName)
 	if (hService == NULL)
     {
         ::CloseServiceHandle(handle);
-        printf("can not register service，CreateService fail！\n");
+        g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"can not register service，CreateService failed！");
         return ;
     }
 	::CloseServiceHandle(hService);
 	::CloseServiceHandle(handle);
-	printf("register success，please use command(Net Start record_data_collector) to start service！\n");
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+		"register succeed，please use command(Net Start record_data_collector) to start service！");
 #endif
 }
 
@@ -297,7 +301,8 @@ BOOL IsInstalled()
     }
 	else
 	{
-		printf("[IsInstalled]open windows sc manager fail！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"[IsInstalled]open windows sc manager failed！");
 	}
     return bResult;
 #endif
@@ -319,7 +324,8 @@ BOOL Uninstall()
 	
     if (hSCM == NULL)
     {
-		printf("[Uninstall] can not open service manager！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"[Uninstall] can not open service manager！");
         return FALSE;
     }
 	
@@ -327,7 +333,8 @@ BOOL Uninstall()
 	
     if (hService == NULL)
     {
-		printf("[Uninstall] can not open service！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"[Uninstall] can not open service！");
         ::CloseServiceHandle(hSCM);
         return FALSE;
     }
@@ -340,12 +347,14 @@ BOOL Uninstall()
 	
     if (bDelete)
 	{
-		printf("[Uninstall]delete record_data_collector service success！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+			"[Uninstall]delete record_data_collector service succeed！");
         return TRUE;
 	}
 	else
 	{
-		printf("[Uninstall]delete record_data_collector service fail！\n");
+		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+			"[Uninstall]delete record_data_collector service failed！");
 	}
 #endif
     return FALSE;
@@ -368,7 +377,8 @@ int main(int argc, char *argv[])
 	::GetModuleFileName(NULL, exeFullPath, MAX_LINE_LENGTH);
 	string strProgramFullPath = GetFilePathFromFullFileName(exeFullPath);
 
-	printf("program run path is %s\n", strProgramFullPath.c_str());
+	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+		"program run path：%s", strProgramFullPath.c_str());
 
 	SetCurrentDirectory(strProgramFullPath.c_str());//设置路径
 

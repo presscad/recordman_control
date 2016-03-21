@@ -53,6 +53,7 @@ m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
 	m_pRabbitmqParm = NULL;
 	m_pInterRabbitCommuHandler = NULL;
 	m_pRecordApciHandler = NULL;
+	m_pSystemParm = NULL;
 
 	m_veAmqpCommand.clear();
 }
@@ -60,12 +61,19 @@ m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
 
 CInternalCommuMgr::~CInternalCommuMgr(void)
 {
+	m_LogFile.Close();
 }
 
 //set rabbitmq access basic param
 void CInternalCommuMgr::SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj)
 {
 	m_pRabbitmqParm = pObj;
+}
+
+//set system config param
+void CInternalCommuMgr::SetSystemParam(COLLECTOR_DATA_SYS_PARAM* pSystemParam)
+{
+	m_pSystemParm = pSystemParam;
 }
 
 void CInternalCommuMgr::SetRecordApciHandler(CRecordAPCIHandler* pApciHandler)
@@ -85,7 +93,7 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 
 		if (NULL == m_pInterRabbitCommuHandler)
 		{
-			printf("new class CRabbitMqFactory failed£¡\n");
+			m_LogFile.FormatAdd(CLogFile::error, "new class CRabbitMqFactory failed£¡");
 			return false;
 		}
 
@@ -94,14 +102,16 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 
 		if (false == m_pInterRabbitCommuHandler->ConnectRabbitMqServer())
 		{
+			m_LogFile.FormatAdd(CLogFile::error, "[InitCommandMonitorHandler]connect rabbitmq server failed£¡");
 			return false;
 		}
 
-		printf("InitCommandMonitorHandler succeed£¡\n");
+		m_LogFile.FormatAdd(CLogFile::trace, "InitCommandMonitorHandler succeed£¡");
 	}
 	catch (...)
 	{
-		printf("[InitCommandMonitorHandler]init command monitor handler find exception£¡\n");
+		m_LogFile.FormatAdd(CLogFile::error, 
+			"[InitCommandMonitorHandler]init command monitor handler find exception£¡");
 		return false;
 	}
 
@@ -233,6 +243,18 @@ void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
 	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
 	m_veAmqpCommand.push_back(pAmqpEnvelope);
+}
+
+//init logfile
+bool CInternalCommuMgr::InitLogFile()
+{
+	m_LogFile.Close();
+
+	m_LogFile.SetLogPath(m_pSystemParm->chLogpath);
+	m_LogFile.SetLogLevel(m_pSystemParm->nLoglevel);
+	m_LogFile.SetLogSaveDays(m_pSystemParm->nLogDays);
+
+	return (TRUE == m_LogFile.Open("internal_commu_log"))?true:false;
 }
 
 //get msg fron queue

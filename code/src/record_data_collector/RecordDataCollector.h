@@ -18,31 +18,35 @@ public:
 	~CRecordDataCollector(void);
 
 public:
-	//初始化必要的参数
-	//true：成功 false：失败
+	//init
+	//true：success false：failed
 	bool InitRecordDataColletor();
 
-	//启动
-	//true：成功 false：失败
+	//start
+	//true：success false：failed
 	bool StartRecordDataColletor();
 
-	//停止
-	//true：成功 false：失败
+	//stop
+	//true：success false：failed
 	bool EndRecordDataColletor();
 
-	//退出
-	//true：成功 false：失败
+	//exit
+	//true：success false：failed
 	bool ExitRecordDataColletor();
 
 private:
-	//读取配置参数
-	//true：成功 false：失败
+	//init log file
+	bool InitLogFile();
+
+	//load config param
+	//true：success false：failed
 	bool InitSysConfigVariable();
 	
 	//初始化dfu通讯类对象
 	//true：成功 false：失败
 	bool InitApciHandler();
 
+	//init internalcommu mgr
 	bool InitInternalCommuMgr();
 
 	//初始化命令处理会话管理类对象
@@ -61,6 +65,20 @@ private:
 
 /**	\brief 系统内部消息管理*/
 	CInternalCommuMgr* m_pInternalCommuMgr;
+
+public:
+/**	\brief logfile*/
+	CMessageLog m_Log;
+
+private:
+	//log level
+	int m_nLogLevel;
+
+	//log days
+	int m_nLogDays;
+
+	//log path
+	char m_chLogpath[MAX_LINE_LENGTH];
 };
 
 #endif

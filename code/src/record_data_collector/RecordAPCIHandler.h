@@ -4,6 +4,7 @@
 #include "../../common/MongodbAccess.h"
 #include "ConfigVariableMgr.h"
 #include "../../common/JsonMsgParser.h"
+#include "../../common/MessageLog.h"
 
 #if _MSC_VER > 1000
 #pragma once
@@ -65,6 +66,9 @@ private:
 	int RecvFlowMsg(vector<RECORD_DFU_MSG>& veResultMsg);
 
 private:
+	//init logfile
+	bool InitLogFile();
+
 	//create poling command
 	bool ProcessPolingCommand();
 
@@ -93,6 +97,9 @@ private:
 
 	//mongo param
 	RECORD_MONGO_BASIC_PARAM* m_pMongoParam;
+
+	//log handler
+	CMessageLog m_LogFile;
 
 private:
 	/**	\brief ÍË³ö±êÖ¾*/

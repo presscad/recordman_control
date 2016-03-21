@@ -42,7 +42,14 @@ public:
 	//mogodb access param
 	RECORD_MONGO_BASIC_PARAM m_mongo_access_param;
 
+private:
+	//log handler
+	CMessageLog* m_pLogFile;
+
 public:
+	//set log handler
+	void SetLogAccessHandler(CMessageLog* pLog);
+
 	//初始化参数
 	//true：成功 false：失败
 	bool InitCollectorSysparam();

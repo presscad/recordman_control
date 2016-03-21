@@ -3,11 +3,17 @@
 
 CConfigVariableMgr::CConfigVariableMgr(void)
 {
+	m_pLogFile = NULL;
 }
 
 
 CConfigVariableMgr::~CConfigVariableMgr(void)
 {
+}
+
+void CConfigVariableMgr::SetLogAccessHandler(CMessageLog* pLog)
+{
+	m_pLogFile = pLog;
 }
 
 //************************************
@@ -57,7 +63,8 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 	}
 	catch (...)
 	{
-		printf("[InitCollectorSysparam]init system param find unknown exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[InitCollectorSysparam]init system param find unknown exception£¡");
 		return false;
 	}
 
@@ -82,7 +89,8 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 		nRet = doc.LoadFile(RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 		if (0 != nRet)
 		{
-			printf("[LoadConfig]load config file£º%s failed£¬reason£º%s\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadConfig]load config file£º%s failed£¬reason£º%s", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE, doc.GetErrorStr1());
 
 			return false;
@@ -91,7 +99,8 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 		pRootXmlElement = doc.RootElement();
 		if (NULL == pRootXmlElement)
 		{
-			printf("[LoadConfig]get root element from config file£º%s failed\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadConfig]get root element from config file£º%s failed", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			
 			return false;
@@ -129,7 +138,8 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 	}
 	catch (...)
 	{
-		printf("[LoadConfig]get param from config file find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadConfig]get param from config file find exception£¡");
 		return false;
 	}
 
@@ -139,19 +149,26 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 bool CConfigVariableMgr::LoadSystemLogConfig(TiXmlElement* pRootXmlElement)
 {
 	TiXmlElement* pXmlElement = NULL;
+	char chTempBuf[1024] = "";
 
 	try
 	{
 		pXmlElement = pRootXmlElement->FirstChildElement("system_log_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadSystemLogConfig]get system_log_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadSystemLogConfig]get system_log_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_collector_sys_param.chLogpath, sizeof(m_collector_sys_param.chLogpath));
+		bzero(chTempBuf, sizeof(chTempBuf));
 		GetCopyNodeValue(pXmlElement, "log_path", 
-			m_collector_sys_param.chLogpath, sizeof(m_collector_sys_param.chLogpath));
+			chTempBuf, sizeof(chTempBuf));
+		sprintf(m_collector_sys_param.chLogpath, "%s%s", 
+			GetFormatPath(chTempBuf).c_str(), "data_collector_log");
+
 		GetCopyNodeValue(pXmlElement, "log_level", 
 			m_collector_sys_param.nLoglevel);
 		GetCopyNodeValue(pXmlElement, "log_days", 
@@ -159,7 +176,8 @@ bool CConfigVariableMgr::LoadSystemLogConfig(TiXmlElement* pRootXmlElement)
 	}
 	catch (...)
 	{
-		printf("[LoadSystemLogConfig]get log param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadSystemLogConfig]get log param find exception£¡");
 		return false;
 	}
 
@@ -175,11 +193,14 @@ bool CConfigVariableMgr::LoadRabbitMqConfig(TiXmlElement* pRootXmlElement)
 		pXmlElement = pRootXmlElement->FirstChildElement("rabbit_mq_base_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadRabbitMqConfig]get rabbit_mq_base_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadRabbitMqConfig]get rabbit_mq_base_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_rabbit_mq_param.rabbitmq_basick_param.chhostname, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chhostname));
 		GetCopyNodeValue(pXmlElement, "addr", 
 			m_rabbit_mq_param.rabbitmq_basick_param.chhostname, 
 			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chhostname));
@@ -187,17 +208,22 @@ bool CConfigVariableMgr::LoadRabbitMqConfig(TiXmlElement* pRootXmlElement)
 		GetCopyNodeValue(pXmlElement, "port", 
 			m_rabbit_mq_param.rabbitmq_basick_param.nserver_port);
 
+		bzero(m_rabbit_mq_param.rabbitmq_basick_param.chusrname, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chusrname));
 		GetCopyNodeValue(pXmlElement, "user", 
 			m_rabbit_mq_param.rabbitmq_basick_param.chusrname, 
 			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chusrname));
 		
+		bzero(m_rabbit_mq_param.rabbitmq_basick_param.chpassword, 
+			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chpassword));
 		GetCopyNodeValue(pXmlElement, "pwd", 
 			m_rabbit_mq_param.rabbitmq_basick_param.chpassword, 
 			sizeof(m_rabbit_mq_param.rabbitmq_basick_param.chpassword));
 	}
 	catch (...)
 	{
-		printf("[LoadRabbitMqConfig]get rabbitmq param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadRabbitMqConfig]get rabbitmq param find exception£¡");
 		return false;
 	}
 
@@ -213,22 +239,28 @@ bool CConfigVariableMgr::LoadRabbitMqAdvanceConfig(TiXmlElement* pRootXmlElement
 		pXmlElement = pRootXmlElement->FirstChildElement("rabbit_mq_advance_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_rabbit_mq_param.chCollectorRecvQueName, 
+			sizeof(m_rabbit_mq_param.chCollectorRecvQueName));
 		GetCopyNodeValue(pXmlElement, "collector_recv_queue", 
 			m_rabbit_mq_param.chCollectorRecvQueName, 
 			sizeof(m_rabbit_mq_param.chCollectorRecvQueName));
 
+		bzero(m_rabbit_mq_param.chWebResultQueName, 
+			sizeof(m_rabbit_mq_param.chWebResultQueName));
 		GetCopyNodeValue(pXmlElement, "web_result_queue", 
 			m_rabbit_mq_param.chWebResultQueName, 
 			sizeof(m_rabbit_mq_param.chWebResultQueName));
 	}
 	catch (...)
 	{
-		printf("[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadRabbitMqAdvanceConfig]get rabbit_mq_advance_config param find exception£¡");
 		return false;
 	}
 
@@ -244,11 +276,13 @@ bool CConfigVariableMgr::LoadDfuCommuConfig(TiXmlElement* pRootXmlElement)
 		pXmlElement = pRootXmlElement->FirstChildElement("dfu_commu_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadDfuCommuConfig]get dfu_commu_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadDfuCommuConfig]get dfu_commu_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_fault_dfu_param.chDfuAddr, sizeof(m_fault_dfu_param.chDfuAddr));
 		GetCopyNodeValue(pXmlElement, "addr", 
 			m_fault_dfu_param.chDfuAddr, 
 			sizeof(m_fault_dfu_param.chDfuAddr));
@@ -264,7 +298,8 @@ bool CConfigVariableMgr::LoadDfuCommuConfig(TiXmlElement* pRootXmlElement)
 	}
 	catch (...)
 	{
-		printf("[LoadDfuCommuConfig]get dfu_commu_config param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadDfuCommuConfig]get dfu_commu_config param find exception£¡");
 		return false;
 	}
 
@@ -280,11 +315,13 @@ bool CConfigVariableMgr::LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement)
 		pXmlElement = pRootXmlElement->FirstChildElement("continue_dfu_commu_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadContinDfuCommuConfig]get continue_dfu_commu_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_contin_dfu_param.chDfuAddr, sizeof(m_contin_dfu_param.chDfuAddr));
 		GetCopyNodeValue(pXmlElement, "addr", 
 			m_contin_dfu_param.chDfuAddr, 
 			sizeof(m_contin_dfu_param.chDfuAddr));
@@ -300,7 +337,8 @@ bool CConfigVariableMgr::LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement)
 	}
 	catch (...)
 	{
-		printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡");
 		return false;
 	}
 
@@ -316,11 +354,13 @@ bool CConfigVariableMgr::LoadMongoDbConfig(TiXmlElement* pRootXmlElement)
 		pXmlElement = pRootXmlElement->FirstChildElement("mongo_db_config");
 		if (NULL == pXmlElement)
 		{
-			printf("[LoadMongoDbConfig]get mongo_db_config node from config file£º%s failed£¡\n", 
+			m_pLogFile->FormatAdd(CLogFile::error, 
+				"[LoadMongoDbConfig]get mongo_db_config node from config file£º%s failed£¡", 
 				RECORD_MANAGEMENT_BOARD_CONFIG_FILE);
 			return false;
 		}
 
+		bzero(m_mongo_access_param.chAddr, sizeof(m_mongo_access_param.chAddr));
 		GetCopyNodeValue(pXmlElement, "addr", 
 			m_mongo_access_param.chAddr, 
 			sizeof(m_mongo_access_param.chAddr));
@@ -328,21 +368,25 @@ bool CConfigVariableMgr::LoadMongoDbConfig(TiXmlElement* pRootXmlElement)
 		GetCopyNodeValue(pXmlElement, "port", 
 			m_mongo_access_param.nPort);
 
+		bzero(m_mongo_access_param.chDataBase, sizeof(m_mongo_access_param.chDataBase));
 		GetCopyNodeValue(pXmlElement, "name", 
 			m_mongo_access_param.chDataBase, 
 			sizeof(m_mongo_access_param.chDataBase));
 
+		bzero(m_mongo_access_param.chUser, sizeof(m_mongo_access_param.chUser));
 		GetCopyNodeValue(pXmlElement, "user", 
 			m_mongo_access_param.chUser, 
 			sizeof(m_mongo_access_param.chUser));
 
+		bzero(m_mongo_access_param.chPasswd, sizeof(m_mongo_access_param.chPasswd));
 		GetCopyNodeValue(pXmlElement, "pwd", 
 			m_mongo_access_param.chPasswd, 
 			sizeof(m_mongo_access_param.chPasswd));
 	}
 	catch (...)
 	{
-		printf("[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡\n");
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"[LoadContinDfuCommuConfig]get continue_dfu_commu_config param find exception£¡");
 		return false;
 	}
 
@@ -367,7 +411,8 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 	pXMlChild = pRootNode->FirstChildElement(pNodeName);
 	if (NULL == pXMlChild)
 	{
-		printf("node£º%s not exists in config file£¡\n", 
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"node£º%s not exists in config file£¡", 
 			pNodeName);
 		return false;
 	}
@@ -379,7 +424,8 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 	}
 	else
 	{
-		printf("node£º%s value is null£¡\n", 
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"node£º%s value is null£¡", 
 			pNodeName);
 	}
 
@@ -403,7 +449,8 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 
 	if (NULL == pParam)
 	{
-		printf("node£º%s local param is not point£¡\n", 
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"node£º%s local param is not point£¡", 
 			pNodeName);
 		
 		return false;
@@ -412,7 +459,8 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 	pXMlChild = pRootNode->FirstChildElement(pNodeName);
 	if (NULL == pXMlChild)
 	{
-		printf("node£º%s not exists in config file£¡\n", 
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"node£º%s not exists in config file£¡", 
 			pNodeName);
 		return false;
 	}
@@ -420,7 +468,8 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 	node_value = pXMlChild->GetText();
 	if (NULL == node_value)
 	{
-		printf("node£º%s value is null£¡\n", 
+		m_pLogFile->FormatAdd(CLogFile::error, 
+			"node£º%s value is null£¡", 
 			pNodeName);
 	}
 

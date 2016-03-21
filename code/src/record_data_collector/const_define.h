@@ -16,7 +16,7 @@
 #include "GlobalFunction.h"
 
 /**	\brief 日志默认保存天数*/
-const int COLLECTOR_LOG_SAVE_DEFAULT_DAYS = 5;
+const int COLLECTOR_LOG_SAVE_DEFAULT_DAYS = 2;
 /**	\brief 日志默认大小*/
 const int COLLECTOR_LOG_DEFAULT_SIZE = 5*1024;
 /**	\brief DFU监听端口*/
@@ -40,6 +40,9 @@ const char DATA_COLLECTOR_RECV_QUEUE_NAME[] = "DATA_COLLECTOR_COMMAND_QUEUE";
 
 //配置文件
 #define RECORD_MANAGEMENT_BOARD_CONFIG_FILE "../../conf/recordman_manager_config.xml"
+
+//日志根目录
+#define MANAGER_BOARD_DEFAULT_ROOT_LOG "./data_collector_log/"
 
 //dfu配置
 typedef struct _COLLECTOR_DFU_COMMU_PARAM
