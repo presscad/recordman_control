@@ -16,27 +16,19 @@
 #pragma once
 
 // Define to 1 if SSL support is enabled
-// #undef MONGO_SSL
+#define MONGO_SSL 1
 
 // Define to 1 if SASL support is enabled
 // #undef MONGO_SASL
 
 // Define to 1 if unistd.h is available
-#ifndef OS_WINDOWS
-	#define MONGO_HAVE_HEADER_UNISTD_H 1
-#else
-	// #undef MONGO_HAVE_HEADER_UNISTD_H
-#endif
+#define MONGO_HAVE_HEADER_UNISTD_H 1
 
 // Define to 1 if C++11 <atomic> is available
 // #undef MONGO_HAVE_CXX11_ATOMICS
 
 // Define to 1 if GCC style __atomic functions are available
-#ifndef OS_WINDOWS
-	#define MONGO_HAVE_GCC_ATOMIC_BUILTINS 1
-#else
-	// #undef MONGO_HAVE_GCC_ATOMIC_BUILTINS
-#endif
+#define MONGO_HAVE_GCC_ATOMIC_BUILTINS 1
 
 // Define to 1 if GCC style __sync functions are available
 // #undef MONGO_HAVE_GCC_SYNC_BUILTINS
