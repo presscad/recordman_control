@@ -194,6 +194,7 @@ bool CRabbitmqAccess::StartAmqpRecv(RABBIT_RECV_PARAM& rabbitmq_recv_param)
 bool CRabbitmqAccess::StopAmqpRecv()
 {
 	m_bExit = true;
+	CloseRabbitMqConn();
 	m_MsgRecvThread.Stop();
 
 	return true;

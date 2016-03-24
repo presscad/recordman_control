@@ -555,7 +555,7 @@ const int RABBIT_MQ_DEFAULT_RECV_FETCH_COUNT = 1000;
  * @date        
  *
  */
-#pragma pack(1)
+//#pragma pack(1)
 typedef struct _RECORD_DFU_MSG_HEADER
 {
 	BYTE byteStartMask[2];//Æô¶¯Âë
@@ -568,7 +568,7 @@ typedef struct _RECORD_DFU_MSG_HEADER
 	BYTE byteFrameSeq[4];//Ö¡ÐòºÅ
     BYTE byteEndMask[2];//½áÊøÂë
 }RECORD_DFU_MSG_HEADER;
-#pragma pack()
+//#pragma pack()
 
 
 /**

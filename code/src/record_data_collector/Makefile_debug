@@ -1,3 +1,25 @@
+#makefile for record_data_collector i386-i686 version
+#dependency install lib in /usr/lib
+#
+#glibc-2.17-106.el7_2.4.i686
+#glibc-devel-2.17-106.el7_2.4.i686
+#libstdc++-4.8.5-4.el7.i686
+#libstdc++-devel.i686
+#libgcc-4.8.5-4.el7.i686
+#krb5-devel-1.13.2-10.el7.i686
+#krb5-libs-1.13.2-10.el7.i686
+#zlib-1.2.7-15.el7.i686
+#zlib-devel-1.2.7-15.el7.i686
+#openssl-libs-1.0.1e-51.el7_2.4.i686
+#openssl-devel-1.0.1e-51.el7_2.4.i686
+#xz-libs-5.1.2-12alpha.el7.i686
+#nss-softokn-freebl-3.16.2.3-13.el7_1.i686
+#libcom_err-1.42.9-7.el7.i686
+#libselinux-2.2.2-6.el7.i686
+#libverto-0.2.5-4.el7.i686
+#pcre-8.32-15.el7.i686
+#keyutils-libs-1.5.8-3.el7.i686
+
 #define the path of search
 VPATH = -I../../common \
 		-I../../common_open_source/rabbitmq/include \
@@ -21,9 +43,8 @@ cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o Con
 
 AllOBJ =  $(common_obj) $(json_objects) $(tiny_xml_objects) $(cur_objects)
 
-
 RABBITMQ_LINK_PATH = -L../../common_open_source/rabbitmq/lib/linux-x86/
-MONGODB_LINK_PATH = -L../../common_open_source/mongo/lib/linux/x86/
+MONGODB_LINK_PATH = -L../../common_open_source/mongo/lib/linux/x86/dbg/
 BOOST_LINK_PATH = -L../../common_open_source/boost/boost-1_60/lib_linux_x86/
 
 #define compile param
@@ -32,7 +53,9 @@ CFLAGS = -g -w -DOS_LINUX -m32
 RABBITMQ_LINK_FLAGS = $(RABBITMQ_LINK_PATH) -lrabbitmq
 MONGODB_LINK_FLAGS = $(MONGODB_LINK_PATH) -lmongoclient
 BOOST_LINK_FLAGS = $(BOOST_LINK_PATH) -lboost_system-mt -lboost_thread-mt -lboost_regex-mt
-LINK_FLAGS = -lpthread -ldl $(RABBITMQ_LINK_FLAGS) $(MONGODB_LINK_FLAGS) $(BOOST_LINK_FLAGS)
+
+LINK_THIRD_PATY_FLAGS = $(RABBITMQ_LINK_FLAGS) $(MONGODB_LINK_FLAGS) $(BOOST_LINK_FLAGS)
+LINK_FLAGS = -lpthread -ldl $(LINK_THIRD_PATY_FLAGS) -L/usr/lib/ -lz -lkrb5 -lssl -lcrypto
 
 #define compile program param
 VERSION = D1.0.1

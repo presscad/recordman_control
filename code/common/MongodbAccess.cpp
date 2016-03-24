@@ -22,29 +22,38 @@ bool CMongodbAccess::ConnectMongoServer(string& strErrorMsg)
 	char chConnectStr[256] = "";
 	bzero(chConnectStr, sizeof(chConnectStr));
 	
-// 	sprintf(chConnectStr, "mongodb://%s:%s@%s:%d/%s", 
-// 		m_pMongoParam->chUser, m_pMongoParam->chPasswd, 
-// 		m_pMongoParam->chAddr, m_pMongoParam->nPort, 
-// 		m_pMongoParam->chDataBase);
-
-	sprintf(chConnectStr, "mongodb://%s:%d/%s", 
+	sprintf(chConnectStr, "mongodb://%s:%s@%s:%d/%s", 
+		m_pMongoParam->chUser, m_pMongoParam->chPasswd, 
 		m_pMongoParam->chAddr, m_pMongoParam->nPort, 
 		m_pMongoParam->chDataBase);
 
-	ConnectionString cs = ConnectionString::parse(chConnectStr, strErrorMsg);
+// 	sprintf(chConnectStr, "mongodb://%s:%d", 
+// 		m_pMongoParam->chAddr, m_pMongoParam->nPort);
 
+	//mongo::DBClientConnection c;
+	mongo::client::initialize();
+
+	ConnectionString cs = ConnectionString::parse(chConnectStr, strErrorMsg);
 	if (!cs.isValid())
 	{
 		return false;
 	}
 
-	m_pMongoAccessHandler = cs.connect(strErrorMsg);
-	if (NULL == m_pMongoAccessHandler)
+	try
 	{
+		m_pMongoAccessHandler = cs.connect(strErrorMsg);
+		if (NULL == m_pMongoAccessHandler)
+		{
+			return false;
+		}
+	}
+	catch (UserException& e)
+	{
+		strErrorMsg = e.toString();
 		return false;
 	}
 
-	//bool bRet = m_pMongoAccessHandler->connect("10.123.16.100:27018", strErrorMsg);
+	printf("conn %s£¬succeed£¡\n", chConnectStr);
 	
 	return true;
 }
