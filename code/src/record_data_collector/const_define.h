@@ -12,7 +12,6 @@
 #include "../../common/Lock.h"
 #include "../../common/MessageLog.h"
 #include "../../common/RecordmanThread.h"
-#include "../../common/DfuMsgParser.h"
 #include "GlobalFunction.h"
 
 /**	\brief 日志默认保存天数*/
@@ -43,6 +42,83 @@ const char DATA_COLLECTOR_RECV_QUEUE_NAME[] = "DATA_COLLECTOR_COMMAND_QUEUE";
 
 //日志根目录
 #define MANAGER_BOARD_DEFAULT_ROOT_LOG "./data_collector_log/"
+
+
+/** @brief           启动码*/
+const BYTE RECORD_COMMU_CHAR_START_VAR = 0xA8;
+/** @brief           结束码*/
+const BYTE RECORD_COMMU_CHAR_END_VAR = 0x5F;
+/** @brief           协议码第一位*/
+const BYTE RECORD_COMMU_CHAR_PROTOCOL_START_VAR = 0x61;
+/** @brief           协议码第二位*/
+const BYTE RECORD_COMMU_CHAR_PROTOCOL_END_VAR = 0x01;
+/** @brief           掩码*/
+const WORD DEFAULT_LENGTH_MASK = 0x0fff;
+
+/**
+ * @defgroup STTP 报文结构定义
+ * @{
+ */
+
+/** @brief           报文体最大长度(1400)*/
+const UINT MAX_RECORD_MSG_LEN = 0x578;
+
+/**
+ * @brief       commu protocol define
+ * @author      pengl
+ * @version     ver1.0
+ * @date        
+ *
+ */
+/*  record private commu protocol  */
+const int DEFINE_COMMU_PROTOCOL_RECORD_SELF = 1;
+
+/** @brief           BYTE定义*/
+/** @brief           巡检命令*/
+const BYTE RECORD_COMMAND_CHAR_PATROL_VAR = 0x01;
+/** @brief           配置命令*/
+const BYTE RECORD_COMMAND_CHAR_CONFIG_SEND_VAR = 0x11;
+/** @brief           配置命令*/
+const BYTE RECORD_COMMAND_CHAR_CONFIG_RECV_VAR = 0x12;
+/** @brief           定值整定*/
+const BYTE RECORD_COMMAND_CHAR_SETTING_ADJUST_VAR = 0x21;
+/** @brief           定值读取*/
+const BYTE RECORD_COMMAND_CHAR_SETTING_READ_VAR = 0x22;
+/** @brief           定值区切换*/
+const BYTE RECORD_COMMAND_CHAR_SETZONE_CHANGE_VAR = 0x23;
+/** @brief           活动定值区读取*/
+const BYTE RECORD_COMMAND_CHAR_CURZONE_READ_VAR = 0x24;
+/** @brief           新录波查询*/
+const BYTE RECORD_COMMAND_CHAR_NEW_OSC_QUERY_VAR = 0x31;
+/** @brief           录波索引读取*/
+const BYTE RECORD_COMMAND_CHAR_OSC_INDEX_READ_VAR = 0x32;
+/** @brief           录波读取*/
+const BYTE RECORD_COMMAND_CHAR_OSC_FILE_READ_VAR = 0x33;
+/** @brief           手动录波*/
+const BYTE RECORD_COMMAND_CHAR_MANUAL_OSC_VAR = 0x3A;
+/** @brief           实时波形读取*/
+const BYTE RECORD_COMMAND_CHAR_REALTIME_OSC_READ_VAR = 0x41;
+/** @brief           实时数据读取*/
+const BYTE RECORD_COMMAND_CHAR_REALTIME_DATA_READ_VAR = 0x42;
+/** @brief           自检查询*/
+const BYTE RECORD_COMMAND_CHAR_SELF_CHECK_VAR = 0x91;
+/** @brief           版本查询*/
+const BYTE RECORD_COMMAND_CHAR_VERSION_QUERY_VAR = 0x92;
+/** @brief           时间查询*/
+const BYTE RECORD_COMMAND_CHAR_TIME_QUERY_VAR = 0x93;
+/** @brief           子模块信息查询*/
+const BYTE RECORD_COMMAND_CHAR_SUB_MODULE_QUERY_VAR = 0x94;
+/** @brief           装置复位*/
+const BYTE RECORD_COMMAND_CHAR_RESET_VAR = 0xA0;
+/** @brief           写ip地址*/
+const BYTE RECORD_COMMAND_CHAR_IP_SET_VAR = 0xA1;
+/** @brief           时间设置*/
+const BYTE RECORD_COMMAND_CHAR_TIME_SET_VAR = 0xA2;
+/** @brief           时区设置*/
+const BYTE RECORD_COMMAND_CHAR_TIMEZONE_SET_VAR = 0xA3;
+
+//dfu msg
+typedef vector<BYTE> DFU_COMMU_MSG;
 
 //dfu配置
 typedef struct _COLLECTOR_DFU_COMMU_PARAM

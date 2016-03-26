@@ -30,16 +30,17 @@ VPATH = -I../../common \
 		-I./
 
 #define compile obj
-common_obj = CCommonFile.o common_lib.o common_time.o DfuMsgParser.o globalfun.o Lock.o \
+common_obj = CCommonFile.o common_lib.o common_time.o globalfun.o Lock.o \
 				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o \
-				RabbitmqAccess.o JsonMsgParser.o MongodbAccess.o
+				RabbitmqAccess.o MongodbAccess.o
 
 json_objects = cJSON.o
 
 tiny_xml_objects = tinyxml2.o
 
 cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o ConfigVariableMgr.o \
-				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o
+				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o DfuMsgAttach.o \
+				JsonMsgParser.o
 
 AllOBJ =  $(common_obj) $(json_objects) $(tiny_xml_objects) $(cur_objects)
 

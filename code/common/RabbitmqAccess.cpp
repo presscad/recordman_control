@@ -298,6 +298,9 @@ bool CRabbitmqAccess::LoginAndOpenChannel()
 int CRabbitmqAccess::RecvAmqpMsgLoop()
 {
 	amqp_envelope_t* envelope = NULL;
+// 	struct timeval tv;
+// 	tv.tv_sec = 10;
+// 	tv.tv_usec = 0;
 
 	while(!m_bExit)
 	{

@@ -3,14 +3,15 @@
 
 #include "../../common/MongodbAccess.h"
 #include "ConfigVariableMgr.h"
-#include "../../common/JsonMsgParser.h"
+#include "JsonMsgParser.h"
 #include "../../common/MessageLog.h"
+#include "DfuMsgAttach.h"
 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
 
-typedef vector<RECORD_DFU_MSG> full_msg_list;
+typedef vector<DFU_COMMU_MSG> full_msg_list;
 
 class CRecordAPCIHandler
 {
@@ -49,41 +50,35 @@ public:
 	int SaveFileOperationLoop();
 
 private:
-	//process multi command
-	int ProcessCommandMsg(vector<RECORD_DFU_MSG>& veCommandMsg, vector<RECORD_DFU_MSG>& veResultMsg);
+	//SendAndRecvMessage multi
+	int SendAndRecvMessage(vector<DFU_COMMU_MSG>& veCommandMsg, vector<DFU_COMMU_MSG>& veResultMsg);
 	
-	//process one command
-	int ProcessCommandMsg(RECORD_DFU_MSG& commandMsg, vector<RECORD_DFU_MSG>& veResultMsg);
+	//SendAndRecvMessage singel msg
+	int SendAndRecvMessage(DFU_COMMU_MSG& commandMsg, vector<DFU_COMMU_MSG>& veResultMsg);
 
 	//read msg from socket
 	//return readed msg bytes num
-	int ReceiveMsg(RECORD_DFU_MSG* pMsg);
+	int ReceiveMsg(DFU_COMMU_MSG& pMsg);
 
 	//send msg
-	int WriteRecordMsg(RECORD_DFU_MSG* pMsg);
-
-	//recv until end flag
-	int RecvFlowMsg(vector<RECORD_DFU_MSG>& veResultMsg);
+	int SendDfuMessage(DFU_COMMU_MSG& record_msg);
 
 private:
 	//init logfile
 	bool InitLogFile();
 
-	//create poling command
-	bool ProcessPolingCommand();
+	//create link test command
+	bool LaunchLinkTest();
 
 	//query new osc file from dfu
-	int ProcessQueryNewFile();
+	int LaunchQueryNewFile();
 
 	//get osc file
 	void ProcessGetOscFile(int nFileIndex);
 
 private:
 	//print msg
-	void LogMessage(const RECORD_DFU_MSG* pMsg, const LOG_BUFFER_HEAD& pHead);
-
-	//copy string
-	void CopyMessageToString(BYTE bMsg, char*& pChar);
+	void WriteMsgLog(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead);
 
 	//get msg trans mask
 	UINT GetMsgTransMask();

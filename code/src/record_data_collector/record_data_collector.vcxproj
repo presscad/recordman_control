@@ -49,7 +49,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;_BIG_ENDIAN_CPU_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../common_open_source/mongo/include;../../common_open_source/boost/boost-1_60/include;../../common_open_source/rabbitmq/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -68,7 +68,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;_BIG_ENDIAN_CPU_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../common_open_source/mongo/include;../../common_open_source/boost/boost-1_60/include;../../common_open_source/rabbitmq/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -84,9 +84,7 @@
     <ClCompile Include="..\..\common\CCommonFile.cpp" />
     <ClCompile Include="..\..\common\common_lib.cpp" />
     <ClCompile Include="..\..\common\common_time.cpp" />
-    <ClCompile Include="..\..\common\DfuMsgParser.cpp" />
     <ClCompile Include="..\..\common\globalfun.cpp" />
-    <ClCompile Include="..\..\common\JsonMsgParser.cpp" />
     <ClCompile Include="..\..\common\Lock.cpp" />
     <ClCompile Include="..\..\common\LogFile.cpp" />
     <ClCompile Include="..\..\common\MessageLog.cpp" />
@@ -101,8 +99,10 @@
     <ClCompile Include="CommandHandlerMgr.cpp" />
     <ClCompile Include="CommandHandlerSession.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
+    <ClCompile Include="DfuMsgAttach.cpp" />
     <ClCompile Include="GlobalFunction.cpp" />
     <ClCompile Include="InternalCommuMgr.cpp" />
+    <ClCompile Include="JsonMsgParser.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="RecordAPCIHandler.cpp" />
     <ClCompile Include="RecordDataCollector.cpp" />
@@ -111,9 +111,7 @@
     <ClInclude Include="..\..\common\CCommonFile.h" />
     <ClInclude Include="..\..\common\common_lib.h" />
     <ClInclude Include="..\..\common\common_time.h" />
-    <ClInclude Include="..\..\common\DfuMsgParser.h" />
     <ClInclude Include="..\..\common\include.h" />
-    <ClInclude Include="..\..\common\JsonMsgParser.h" />
     <ClInclude Include="..\..\common\Lock.h" />
     <ClInclude Include="..\..\common\LogFile.h" />
     <ClInclude Include="..\..\common\MessageLog.h" />
@@ -130,8 +128,10 @@
     <ClInclude Include="CommandHandlerSession.h" />
     <ClInclude Include="ConfigVariableMgr.h" />
     <ClInclude Include="const_define.h" />
+    <ClInclude Include="DfuMsgAttach.h" />
     <ClInclude Include="GlobalFunction.h" />
     <ClInclude Include="InternalCommuMgr.h" />
+    <ClInclude Include="JsonMsgParser.h" />
     <ClInclude Include="RecordAPCIHandler.h" />
     <ClInclude Include="RecordDataCollector.h" />
   </ItemGroup>

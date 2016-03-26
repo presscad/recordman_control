@@ -1,4 +1,5 @@
 #include "JsonMsgParser.h"
+#include "DfuMsgAttach.h"
 
 
 CJsonMsgParser::CJsonMsgParser(void)
@@ -93,7 +94,7 @@ bool CJsonMsgParser::GetJsonItem(int& nItemval, const char* pItemName)
 	return true;
 }
 
-bool CJsonMsgParser::JsonToRecordDfuMsg(vector<RECORD_DFU_MSG>& veMsg, cJSON* pJonObj /* = NULL */)
+bool CJsonMsgParser::JsonToRecordDfuMsg(vector<DFU_COMMU_MSG>& veMsg, cJSON* pJonObj /* = NULL */)
 {
 	if (NULL == pJonObj)
 	{
@@ -127,21 +128,22 @@ bool CJsonMsgParser::JsonToRecordDfuMsg(vector<RECORD_DFU_MSG>& veMsg, cJSON* pJ
 }
 
 //read config file from dfu
-int CJsonMsgParser::Json_20001_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20001_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	dfuMsg.clear();
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x12);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_CONFIG_RECV_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -149,39 +151,40 @@ int CJsonMsgParser::Json_20001_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //call setting data from dfu
-int CJsonMsgParser::Json_20003_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20003_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //switch zone to dfu
-int CJsonMsgParser::Json_20005_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20005_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //read curzone from dfu
-int CJsonMsgParser::Json_20007_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20007_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //read selfcheck info from dfu
-int CJsonMsgParser::Json_20009_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20009_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	bzero(&dfuMsg, sizeof(DFU_COMMU_MSG));
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x91);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_SELF_CHECK_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -189,21 +192,22 @@ int CJsonMsgParser::Json_20009_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //read version
-int CJsonMsgParser::Json_20011_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20011_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	bzero(&dfuMsg, sizeof(DFU_COMMU_MSG));
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x92);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_VERSION_QUERY_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -211,21 +215,22 @@ int CJsonMsgParser::Json_20011_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //read time
-int CJsonMsgParser::Json_20013_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20013_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	dfuMsg.clear();
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x93);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_TIME_QUERY_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -233,21 +238,22 @@ int CJsonMsgParser::Json_20013_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //red sub module
-int CJsonMsgParser::Json_20015_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20015_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	dfuMsg.clear();
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x94);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_SUB_MODULE_QUERY_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -255,21 +261,22 @@ int CJsonMsgParser::Json_20015_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //reset
-int CJsonMsgParser::Json_20017_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20017_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	dfuMsg.clear();
 
 	dfu_msg_paraser.Attach(&dfuMsg);
 
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0xA0);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_RESET_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 
@@ -277,31 +284,31 @@ int CJsonMsgParser::Json_20017_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 }
 
 //set ip addr
-int CJsonMsgParser::Json_20019_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20019_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //set time
-int CJsonMsgParser::Json_20021_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20021_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //set zone
-int CJsonMsgParser::Json_20023_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20023_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	return 1;
 }
 
 //down config file to dfu
-int CJsonMsgParser::Json_20060_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm, int nOption)
+int CJsonMsgParser::Json_20060_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
 {
 	string strFileDir = "";
 	string strFileName = "";
-	CDfuMsgParser dfu_msg_paraser;
-	RECORD_DFU_MSG dfuMsg;
-	bzero(&dfuMsg, sizeof(RECORD_DFU_MSG));
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	dfuMsg.clear();
 	CJsonMsgParser* pJsonMsgParser = (CJsonMsgParser*)pParm;
 
 	pJsonMsgParser->GetJsonItem(strFileDir, "file_dir");
@@ -312,10 +319,11 @@ int CJsonMsgParser::Json_20060_to_msg(vector<RECORD_DFU_MSG>& veMsg, void* pParm
 	dfu_msg_paraser.SetMsgStartMask();
 	dfu_msg_paraser.SetMsgProtocolMask();
 	dfu_msg_paraser.SetMsgReserve();
-	dfu_msg_paraser.SetMsgLength(8);
-	dfu_msg_paraser.SetMsgCommand(0x11);
-	dfu_msg_paraser.SetEndMask();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_CONFIG_SEND_VAR);
 	dfu_msg_paraser.SetMsgEndFlag(true);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
 
 	veMsg.push_back(dfuMsg);
 

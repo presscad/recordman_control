@@ -57,9 +57,6 @@
     <ClCompile Include="..\..\common\common_time.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\DfuMsgParser.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\common\globalfun.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -84,10 +81,13 @@
     <ClCompile Include="..\..\common\StrongString.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\JsonMsgParser.cpp">
+    <ClCompile Include="..\..\common_open_source\tinyxml2\tinyxml2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common_open_source\tinyxml2\tinyxml2.cpp">
+    <ClCompile Include="DfuMsgAttach.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonMsgParser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,9 +131,6 @@
     <ClInclude Include="..\..\common\common_lib.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\DfuMsgParser.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\common\common_time.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -164,10 +161,13 @@
     <ClInclude Include="..\..\common\sys_define.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common\JsonMsgParser.h">
+    <ClInclude Include="..\..\common_open_source\tinyxml2\tinyxml2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\common_open_source\tinyxml2\tinyxml2.h">
+    <ClInclude Include="DfuMsgAttach.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonMsgParser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
