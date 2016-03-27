@@ -11,10 +11,11 @@ class CDFUMsgAttach
 {
 public:
 	CDFUMsgAttach();
+	CDFUMsgAttach(WORD pLengthMask);
 	virtual ~CDFUMsgAttach();
 
 public:
-	void Attach(vector<BYTE>* pMsg);
+	void Attach(DFU_COMMU_MSG* pMsg);
 
 public:
 	//启动码
@@ -68,11 +69,37 @@ public:
 	//检查收到的报文中结束码是否正确
 	bool CheckEndMask();
 
+public:
+	void SetMsgSettingZone(int nZone);
+	int GetMsgSettingZone();
+
+	void SetMsgSettingGroup(int nGroup);
+
+	void SetMsgSettingGroupIndex(int nIndex);
+
+	void SetMsgSubModuleNo(int nModuleNo);
+
+	void SetMsgCurSecond(UINT nCurSecond);
+
+	void SetMsgCurNanoSecond(UINT nCurNanoSecond);
+
+	void SetMsgCurTimeZone(int nTimeZone);
+
+	int GetErrorNum();
+
+	int GetSettingNum();
+
+	int GetOldZone();
+
+	int GetNewZone();
+
+	int GetZoneNum();
+
 	int GetFileNum();
 
 private:
 	WORD m_wLengthMask;
 
-	vector<BYTE>* m_pMsg;
+	DFU_COMMU_MSG* m_pMsg;
 };
 #endif // !defined(AFX_RECORD_DFU_MSG_ATTACH__INCLUDED_)

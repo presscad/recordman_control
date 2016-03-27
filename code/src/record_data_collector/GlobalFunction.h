@@ -4,9 +4,11 @@
 #include "const_define.h"
 
 //
-extern char* Record_Strrev(char* szT);
+char* Record_Strrev(char* szT);
 
 //×Ö·û×ª»»
-extern char* Record_Itoa(int value, char* str, int radix);
+char* Record_Itoa(int value, char* str, int radix);
+
+string GetDfuErrorMsgString(int nErrorNum);
 
 #endif

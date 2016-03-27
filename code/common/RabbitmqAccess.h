@@ -8,8 +8,9 @@
 #include "../common_open_source/rabbitmq/include/amqp_ssl_socket.h"
 #include "RecordmanThread.h"
 #include "../common_open_source/cJSON/cJSON.h"
+#include "SafeLock.h"
 
-typedef int (*PAMQPRECVFUNCALLBACK)(amqp_envelope_t* pAmqp_envelope_t, void* pReserved);
+typedef int (*PAMQPRECVFUNCALLBACK)(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved);
 
 class CRabbitmqAccess
 {
@@ -21,7 +22,7 @@ public:
 	//设置配置类访问句柄
 	void SetRabbitAccessParam(RABBIT_MQ_BASIC_ACCESS_PARAM* pObj);
 
-	void RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, void* pReserved);
+	void RegisterRecvHandler(PAMQPRECVFUNCALLBACK pRecvFun, XJHANDLE pReserved);
 
 public:
 	bool ConnectRabbitMqServer();
@@ -58,6 +59,8 @@ private:
 
 	bool m_bExit;
 
+	CSafeLock m_LockRabbitmqSend;
+
 	/**	\brief 连接句柄*/
 	amqp_connection_state_t m_pRabbitMqConn;
 
@@ -68,7 +71,7 @@ private:
 private:
 	PAMQPRECVFUNCALLBACK m_pAmqpRecvFun;
 	
-	void* m_pAmqpRecvReserved;
+	XJHANDLE m_pAmqpRecvReserved;
 };
 
 #endif

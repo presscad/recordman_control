@@ -7,12 +7,18 @@ m_wLengthMask(DEFAULT_LENGTH_MASK)
 	m_pMsg = NULL;
 }
 
+CDFUMsgAttach::CDFUMsgAttach(WORD pLengthMask)
+{
+	m_wLengthMask = pLengthMask;
+	m_pMsg = NULL;
+}
+
 CDFUMsgAttach::~CDFUMsgAttach()
 {
 
 }
 
-void CDFUMsgAttach::Attach(vector<BYTE> *pMsg)
+void CDFUMsgAttach::Attach(DFU_COMMU_MSG* pMsg)
 {
 	m_pMsg = pMsg;
 }
@@ -288,6 +294,8 @@ void CDFUMsgAttach::SetMsgFuncMask(int nErrorFlag /*= 0*/, int nDirect /*= 0*/, 
 	SetMsgMutiFrameConfirmFlag(nConfirmFlag);
 }
 
+//true:the last msg
+//false:has follow-up msg
 bool CDFUMsgAttach::GetMsgEndFlag()
 {
 	if (m_pMsg->size() < 18)
@@ -320,6 +328,165 @@ void CDFUMsgAttach::SetMsgEndFlag(bool bEndFlag)
 	{
 		(*m_pMsg)[14] = 0x01;
 	}
+}
+
+void CDFUMsgAttach::SetMsgSettingZone(int nZone)
+{
+	if (m_pMsg->size() < 20)
+	{
+		m_pMsg->resize(20);
+	}
+
+	int nMsgZone = nZone & m_wLengthMask;
+	(*m_pMsg)[18] = nMsgZone / 256;
+	(*m_pMsg)[19] = nMsgZone % 256;
+}
+
+int CDFUMsgAttach::GetMsgSettingZone()
+{
+	if (m_pMsg->size() < 20)
+	{
+		return -1;
+	}
+
+	int nZone = (*m_pMsg)[18] * 256 + (*m_pMsg)[19];
+	return nZone;
+}
+
+void CDFUMsgAttach::SetMsgSettingGroup(int nGroup)
+{
+	if (m_pMsg->size() < 22)
+	{
+		m_pMsg->resize(22);
+	}
+
+	if (nGroup == 0)
+	{
+		(*m_pMsg)[20] = 0xFF;
+		(*m_pMsg)[21] = 0xFF;
+	}
+	else
+	{
+		int nMsgGroup = nGroup & m_wLengthMask;
+		(*m_pMsg)[20] = nMsgGroup / 256;
+		(*m_pMsg)[21] = nMsgGroup % 256;
+	}
+}
+
+void CDFUMsgAttach::SetMsgSettingGroupIndex(int nIndex)
+{
+	if (m_pMsg->size() < 24)
+	{
+		m_pMsg->resize(24);
+	}
+
+	if (nIndex == 0)
+	{
+		(*m_pMsg)[22] = 0xFF;
+		(*m_pMsg)[23] = 0xFF;
+	}
+	else
+	{
+		int nMsgIndex = nIndex & m_wLengthMask;
+		(*m_pMsg)[22] = nMsgIndex / 256;
+		(*m_pMsg)[23] = nMsgIndex % 256;
+	}
+}
+
+void CDFUMsgAttach::SetMsgSubModuleNo(int nModuleNo)
+{
+	if (m_pMsg->size() < 20)
+	{
+		m_pMsg->resize(20);
+	}
+
+	int nMsgModuleNo = nModuleNo & m_wLengthMask;
+	(*m_pMsg)[18] = nMsgModuleNo / 256;
+	(*m_pMsg)[19] = nMsgModuleNo % 256;
+}
+
+void CDFUMsgAttach::SetMsgCurSecond(UINT nCurSecond)
+{
+	if (m_pMsg->size() < 22)
+	{
+		m_pMsg->resize(22);
+	}
+}
+
+void CDFUMsgAttach::SetMsgCurNanoSecond(UINT nCurNanoSecond)
+{
+	if (m_pMsg->size() < 26)
+	{
+		m_pMsg->resize(26);
+	}
+}
+
+void CDFUMsgAttach::SetMsgCurTimeZone(int nTimeZone)
+{
+	if (m_pMsg->size() < 22)
+	{
+		m_pMsg->resize(22);
+	}
+}
+
+int CDFUMsgAttach::GetErrorNum()
+{
+	if (m_pMsg->size() < 20)
+	{
+		return -1;
+	}
+
+	int nErrorNum = 0;
+	nErrorNum = (*m_pMsg)[18] * 256 + (*m_pMsg)[19];
+	return nErrorNum;
+}
+
+int CDFUMsgAttach::GetSettingNum()
+{
+	if (m_pMsg->size() < 22)
+	{
+		return 0;
+	}
+
+	int nSettingNum = (*m_pMsg)[20] * 256 + (*m_pMsg)[21];
+
+	return nSettingNum;
+}
+
+int CDFUMsgAttach::GetOldZone()
+{
+	if (m_pMsg->size() < 20)
+	{
+		return 0;
+	}
+
+	int nOldZone = (*m_pMsg)[18] * 256 + (*m_pMsg)[19];
+
+	return nOldZone;
+}
+
+int CDFUMsgAttach::GetNewZone()
+{
+	if (m_pMsg->size() < 22)
+	{
+		return 0;
+	}
+
+	int nNewZone = (*m_pMsg)[20] * 256 + (*m_pMsg)[21];
+
+	return nNewZone;
+}
+
+int CDFUMsgAttach::GetZoneNum()
+{
+	if (m_pMsg->size() < 22)
+	{
+		return 0;
+	}
+
+	int nZoneNum = (*m_pMsg)[20] * 256 + (*m_pMsg)[21];
+
+	return nZoneNum;
 }
 
 //************************************

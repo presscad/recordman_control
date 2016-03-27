@@ -9,7 +9,7 @@
 #include "../../common_open_source/cJSON/cJSON.h"
 #include "DfuMsgAttach.h"
 
-typedef int (*PJSONCOMMANDTOMSGFUNC)(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+typedef int (*PJSONCOMMANDTOMSGFUNC)(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 
 class CJsonMsgParser
 {
@@ -22,22 +22,21 @@ public:
 
 	int GetCommandID();
 
-	bool JsonToRecordDfuMsg(vector<DFU_COMMU_MSG>& veMsg, cJSON* pJonObj = NULL);
+	bool JsonToRecordDfuMsg(vector<DFU_COMMU_MSG>& veMsg, int& nDfuCommandID, cJSON* pJonObj = NULL);
 
 public:
-	static int Json_20001_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20003_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20005_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20007_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20009_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20011_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20013_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20015_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20017_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20019_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20021_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20023_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
-	static int Json_20060_to_msg(vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20001_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20003_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20005_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20007_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20009_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20011_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20013_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20015_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20017_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20019_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20021_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20060_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 
 private:
 	int InitJsonToMsgFunc();

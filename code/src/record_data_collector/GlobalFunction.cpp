@@ -71,3 +71,73 @@ char* Record_Itoa(int value, char* str, int radix)
 
 	return Record_Strrev(str);	
 }
+
+std::string GetDfuErrorMsgString(int nErrorNum)
+{
+	string strErrorMsg = "";
+
+	switch (nErrorNum)
+	{
+	case 0x0001:
+		strErrorMsg = "无效命令";
+		break;
+
+	case 0x0002:
+		strErrorMsg = "通讯忙";
+		break;
+
+	case 0x0003:
+		strErrorMsg = "事务错误";
+		break;
+
+	case 0x0004:
+		strErrorMsg = "不支持的协议";
+		break;
+
+	case 0x0005:
+		strErrorMsg = "不支持的功能";
+		break;
+
+	case 0x0010:
+		strErrorMsg = "无效数据";
+		break;
+
+	case 0x0011:
+		strErrorMsg = "参数错误";
+		break;
+
+	case 0x0012:
+		strErrorMsg = "多帧传输错误";
+		break;
+
+	case 0x0013:
+		strErrorMsg = "请求的操作失败";
+		break;
+
+	case 0x0021:
+		strErrorMsg = "数据准备失败";
+		break;
+
+	case 0x0022:
+		strErrorMsg = "后续命令错误";
+		break;
+
+	case 0x0023:
+		strErrorMsg = "帧序号错误";
+		break;
+
+	case 0x0024:
+		strErrorMsg = "数据传输提前结束";
+		break;
+
+	case 0x0025:
+		strErrorMsg = "数据已经完成";
+		break;
+
+	case 0xFFFF:
+		strErrorMsg = "自定义错误";
+		break;
+	}
+
+	return strErrorMsg;
+}

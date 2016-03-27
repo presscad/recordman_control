@@ -21,7 +21,8 @@ THREAD_FUNC WINAPI AmqpMsgRecvProc(LPVOID pParam)
 }
 
 
-CRabbitmqAccess::CRabbitmqAccess(void)
+CRabbitmqAccess::CRabbitmqAccess(void):
+m_LockRabbitmqSend("LOCK_RABBITMQ_SEND")
 {
 	m_pRabbitBasicParam = NULL;
 	m_pRabbitMqConn = NULL;
@@ -191,6 +192,7 @@ bool CRabbitmqAccess::StartAmqpRecv(RABBIT_RECV_PARAM& rabbitmq_recv_param)
 	return true;
 }
 
+//stop
 bool CRabbitmqAccess::StopAmqpRecv()
 {
 	m_bExit = true;
@@ -202,6 +204,8 @@ bool CRabbitmqAccess::StopAmqpRecv()
 
 bool CRabbitmqAccess::SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& send_basic_properties, amqp_channel_t ampq_channel)
 {
+	CLockUp lockUp(&m_LockRabbitmqSend);
+
 	if (NULL == pSendJsonContent)
 	{
 		return false;
@@ -231,6 +235,12 @@ bool CRabbitmqAccess::SendMsg(cJSON* pSendJsonContent, amqp_basic_properties_t& 
 	{
 		delete[] preplay_to;
 		preplay_to = NULL;
+	}
+
+	if (NULL != pSendMsg)
+	{
+		free(pSendMsg);
+		pSendMsg = NULL;
 	}
 
 	return true;

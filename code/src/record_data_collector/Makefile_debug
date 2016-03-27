@@ -40,7 +40,7 @@ tiny_xml_objects = tinyxml2.o
 
 cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o ConfigVariableMgr.o \
 				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o DfuMsgAttach.o \
-				JsonMsgParser.o
+				JsonMsgParser.o DfuMsgToJson.o
 
 AllOBJ =  $(common_obj) $(json_objects) $(tiny_xml_objects) $(cur_objects)
 

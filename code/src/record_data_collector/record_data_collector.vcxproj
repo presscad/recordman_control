@@ -49,7 +49,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;_BIG_ENDIAN_CPU_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../../common_open_source/mongo/include;../../common_open_source/boost/boost-1_60/include;../../common_open_source/rabbitmq/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -100,6 +100,7 @@
     <ClCompile Include="CommandHandlerSession.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
     <ClCompile Include="DfuMsgAttach.cpp" />
+    <ClCompile Include="DfuMsgToJson.cpp" />
     <ClCompile Include="GlobalFunction.cpp" />
     <ClCompile Include="InternalCommuMgr.cpp" />
     <ClCompile Include="JsonMsgParser.cpp" />
@@ -129,6 +130,7 @@
     <ClInclude Include="ConfigVariableMgr.h" />
     <ClInclude Include="const_define.h" />
     <ClInclude Include="DfuMsgAttach.h" />
+    <ClInclude Include="DfuMsgToJson.h" />
     <ClInclude Include="GlobalFunction.h" />
     <ClInclude Include="InternalCommuMgr.h" />
     <ClInclude Include="JsonMsgParser.h" />

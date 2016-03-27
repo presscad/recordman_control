@@ -13,6 +13,10 @@
 #include "../../common/MessageLog.h"
 #include "../../common/RecordmanThread.h"
 #include "GlobalFunction.h"
+#include "../../common_open_source/rabbitmq/include/amqp.h"
+#include "../../common_open_source/rabbitmq/include/amqp_framing.h"
+#include "../../common_open_source/rabbitmq/include/amqp_tcp_socket.h"
+#include "../../common_open_source/rabbitmq/include/amqp_ssl_socket.h"
 
 /**	\brief 日志默认保存天数*/
 const int COLLECTOR_LOG_SAVE_DEFAULT_DAYS = 2;
@@ -30,18 +34,27 @@ const int COLLECTOR_COMMU_RECV_TIMEOUT = 3*1000;
 const int COLLECTOR_COMMU_SEND_TIMEOUT = 3*1000;
 /**	\brief 新文件检查时间*/
 const int COLLECTOR_COMMU_CHECK_NEW_FILE_TIME = 2;
-
-/**	\brief 日志默认路径*/
-#define COLLECTOR_LOG_DEFAULT_PATH "./default_log/"
-
 /**	\brief 命令接收队列名*/
 const char DATA_COLLECTOR_RECV_QUEUE_NAME[] = "DATA_COLLECTOR_COMMAND_QUEUE";
-
-//配置文件
+/**	\brief 配置文件*/
 #define RECORD_MANAGEMENT_BOARD_CONFIG_FILE "../../conf/recordman_manager_config.xml"
-
-//日志根目录
+/**	\brief 日志根目录*/
 #define MANAGER_BOARD_DEFAULT_ROOT_LOG "./data_collector_log/"
+
+//dfu msg type
+/** @brief           json command*/
+const int RECORD_DFU_MESSAGE_TYPE_JSON = 0;
+/** @brief           osc list query command*/
+const int RECORD_DFU_MESSAGE_TYPE_OSC_LIST = 1;
+/** @brief           osc file query command*/
+const int RECORD_DFU_MESSAGE_TYPE_OSC_FILE = 2;
+/** @brief           test command*/
+const int RECORD_DFU_MESSAGE_TYPE_TEST = 3;
+
+//command result
+const int RECORD_COMMAND_RESULT_UNKNOWN = -1;
+const int RECORD_COMMAND_RESULT_NORMAL = 0;
+const int RECORD_COMMAND_RESULT_FAILED = 1;
 
 
 /** @brief           启动码*/
@@ -54,25 +67,10 @@ const BYTE RECORD_COMMU_CHAR_PROTOCOL_START_VAR = 0x61;
 const BYTE RECORD_COMMU_CHAR_PROTOCOL_END_VAR = 0x01;
 /** @brief           掩码*/
 const WORD DEFAULT_LENGTH_MASK = 0x0fff;
-
-/**
- * @defgroup STTP 报文结构定义
- * @{
- */
-
 /** @brief           报文体最大长度(1400)*/
 const UINT MAX_RECORD_MSG_LEN = 0x578;
-
-/**
- * @brief       commu protocol define
- * @author      pengl
- * @version     ver1.0
- * @date        
- *
- */
 /*  record private commu protocol  */
 const int DEFINE_COMMU_PROTOCOL_RECORD_SELF = 1;
-
 /** @brief           BYTE定义*/
 /** @brief           巡检命令*/
 const BYTE RECORD_COMMAND_CHAR_PATROL_VAR = 0x01;
@@ -117,7 +115,7 @@ const BYTE RECORD_COMMAND_CHAR_TIME_SET_VAR = 0xA2;
 /** @brief           时区设置*/
 const BYTE RECORD_COMMAND_CHAR_TIMEZONE_SET_VAR = 0xA3;
 
-//dfu msg
+/** @brief           dfu msg*/
 typedef vector<BYTE> DFU_COMMU_MSG;
 
 //dfu配置
@@ -163,6 +161,7 @@ typedef struct _COLLECTOR_DATA_SYS_PARAM
 
 }COLLECTOR_DATA_SYS_PARAM;
 
+//rabbit advance param
 typedef struct _COLLECTOR_ADVANCE_RABBITMQ_PARAM
 {
 	//接收通道号
@@ -182,6 +181,37 @@ typedef struct _COLLECTOR_ADVANCE_RABBITMQ_PARAM
 	}
 
 }COLLECTOR_ADVANCE_RABBITMQ_PARAM;
+
+//dfu msg struct
+typedef struct _DFUMESSAGE
+{
+	bool bRecvEnd;//recv end msg
+	bool bProcessed;//is processed
+	int nMsgType;//msg type
+	int nTransMask;//trans mask
+	int nDfuCommandID;//dfu command id
+	int nCommandNum;//command num
+	int nCommandProcessResult;//command execute result
+	int nInternalCommandID;//internal command id
+
+	vector<DFU_COMMU_MSG> command_msg;
+
+	vector<DFU_COMMU_MSG> result_msg;
+
+	_DFUMESSAGE()
+	{
+		bRecvEnd = false;
+		bProcessed = false;
+		nMsgType = -1;
+		nTransMask = -1;
+		nDfuCommandID = -1;
+		nCommandNum = -1;
+		nInternalCommandID = -1;
+		nCommandProcessResult = RECORD_COMMAND_RESULT_UNKNOWN;//-1未知，0正常，1错误
+		command_msg.clear();
+		result_msg.clear();
+	}
+}DFUMESSAGE;
 
 /////////////////////////////////////////////////////////////////////////
 #endif

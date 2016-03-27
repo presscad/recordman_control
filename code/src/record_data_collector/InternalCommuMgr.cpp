@@ -8,7 +8,7 @@
 // 参    数： amqp_envelope_t * pAmqp_envelope_t 
 // 参    数： void * pReserved 
 //************************************
-int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, void* pReserved)
+int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
 {
 	if (NULL == pAmqp_envelope_t)
 	{
@@ -26,6 +26,26 @@ int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, void* pReserved)
 	return 1;
 }
 
+//json result msg recv fun
+int JsonResultRecvFun(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved)
+{
+	if (NULL == pJsonMsg)
+	{
+		return 0;
+	}
+
+	if (NULL == pReserved)
+	{
+		return 0;
+	}
+
+	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pReserved;
+	bool bRet = pInternalCommuMgr->AddJsonResultMsg(pJsonMsg, nTransMask, nCommandID);
+
+	return (true == bRet)?1:0;
+}
+
+//process amqp msg thread
 THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
 {
 	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pParam;
@@ -46,8 +66,30 @@ THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
 	return THREAD_RETURN;
 }
 
+//json msg send thread
+THREAD_FUNC WINAPI JsonMsgSendProc(LPVOID pParam)
+{
+	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pParam;
+	if (NULL == pInternalCommuMgr)
+	{
+		return THREAD_RETURN;
+	}
+
+	try
+	{
+		pInternalCommuMgr->JsonResultSendLoop();
+	}
+	catch (...)
+	{
+		return THREAD_RETURN;
+	}
+
+	return THREAD_RETURN;
+}
+
 CInternalCommuMgr::CInternalCommuMgr(void):
-m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
+m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST"),
+m_LockResultMsg("LOCK_RESULT_MSG_LIST")
 {
 	m_bExit = true;
 	m_pRabbitmqParm = NULL;
@@ -56,6 +98,7 @@ m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST")
 	m_pSystemParm = NULL;
 
 	m_veAmqpCommand.clear();
+	m_veJsonSendList.clear();
 }
 
 
@@ -86,6 +129,10 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 {
 	try
 	{
+		InitLogFile();
+
+		m_pRecordApciHandler->RegisterJsonResultFunc(JsonResultRecvFun, this);
+
 		if (NULL == m_pInterRabbitCommuHandler)
 		{
 			m_pInterRabbitCommuHandler = new CRabbitmqAccess;
@@ -127,15 +174,33 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	m_pInterRabbitCommuHandler->RegisterRecvHandler(AmqpCommandRecvFun, this);//注册接收回调函数
 	if (false == m_pInterRabbitCommuHandler->StartAmqpRecv(rabbit_rcv_param))
 	{
+		m_LogFile.FormatAdd(CLogFile::error, "[StartCommandMonitorHandler]start amqp recv failed！");
 		return false;
 	}
 
+	m_LogFile.FormatAdd(CLogFile::trace, "[StartCommandMonitorHandler]start amqp recv succeed！");
+
 	m_IdlerMqCommandThread.Stop();
+	m_SendJsonResultThread.Stop();
+
 	m_bExit = false;
 	if (false == m_IdlerMqCommandThread.Start(AmqpCommandOperationProc, this))
 	{
+		m_LogFile.FormatAdd(CLogFile::error, 
+			"[StartCommandMonitorHandler]start amqp command process thread failed！");
 		return false;
 	}
+	m_LogFile.FormatAdd(CLogFile::trace, 
+		"[StartCommandMonitorHandler]start amqp command process thread succeed！");
+
+	if (false == m_SendJsonResultThread.Start(JsonMsgSendProc, this))
+	{
+		m_LogFile.FormatAdd(CLogFile::error, 
+			"[StartCommandMonitorHandler]start json result send thread failed！");
+		return false;
+	}
+	m_LogFile.FormatAdd(CLogFile::trace, 
+		"[StartCommandMonitorHandler]start json result send thread succeed！");
 
 	return true;
 }
@@ -188,14 +253,50 @@ int CInternalCommuMgr::AmqpCommandOperationLoop()
 	return 0;
 }
 
+//json result msg send thread main loop
+int CInternalCommuMgr::JsonResultSendLoop()
+{
+	while (!m_bExit)
+	{
+		if (true == m_bExit)
+		{
+			break;;
+		}
+
+		JSON_SENDMSG json_send_msg;
+		if (false == GetJsonResultMsg(json_send_msg))
+		{
+			MySleep(200);
+			continue;
+		}
+
+		if (json_send_msg.pJsonMsg != NULL)
+		{
+			m_pInterRabbitCommuHandler->SendMsg(
+				json_send_msg.pJsonMsg, 
+				json_send_msg.sender_info, 
+				json_send_msg.sender_channel);
+
+			if (NULL != json_send_msg.pJsonMsg)
+			{
+				cJSON_Delete(json_send_msg.pJsonMsg);
+				json_send_msg.pJsonMsg = NULL;
+			}
+		}
+	}
+
+	return 0;
+}
+
 //process msg function
 bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 {
-	int nCommandID = 0;
 	cJSON* pRecvRootJson = NULL;
 	cJSON* pResultJson = NULL;
 	CJsonMsgParser jsonMsgparser;
 	char* messageBody = NULL;
+	DFUMESSAGE dfuMsg;
+	int nDfuMsgID = -1;
 	
 	messageBody = new char[pAmqpComand->message.body.len];
 	bzero(messageBody, pAmqpComand->message.body.len);
@@ -209,11 +310,34 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 	}
 
 	jsonMsgparser.Attach(pRecvRootJson);
-	nCommandID = jsonMsgparser.GetCommandID();
-
-	if (true == m_pRecordApciHandler->ProcessJsonCommand(pRecvRootJson, pResultJson))
+	if (false == jsonMsgparser.JsonToRecordDfuMsg(dfuMsg.command_msg, nDfuMsgID))//转换失败
 	{
-		m_pInterRabbitCommuHandler->SendMsg(pResultJson, pAmqpComand->message.properties, pAmqpComand->channel);
+		m_LogFile.FormatAdd(CLogFile::error, "[ProcessAmqpCommand]recv commmand：%d，transform dfu msg failed！", 
+			jsonMsgparser.GetCommandID());
+
+		pResultJson = cJSON_CreateObject();
+		cJSON_AddNumberToObject(pResultJson, "command_id", (jsonMsgparser.GetCommandID() + 1));
+		cJSON_AddNumberToObject(pResultJson, "result", RECORD_COMMAND_RESULT_FAILED);
+		m_pInterRabbitCommuHandler->SendMsg(
+			pResultJson, pAmqpComand->message.properties, pAmqpComand->channel);//send rabbitmq
+	}
+	else
+	{
+		JSON_SENDMSG json_send_msg;
+		json_send_msg.bEnd = false;
+		json_send_msg.nCommandID = jsonMsgparser.GetCommandID();
+		json_send_msg.nTransMask = m_pRecordApciHandler->GetMsgTransMask();
+		json_send_msg.sender_channel = pAmqpComand->channel;
+		json_send_msg.sender_info = pAmqpComand->message.properties;
+		AddJsonWaitResultMsg(json_send_msg);//加入等待队列
+
+		dfuMsg.nDfuCommandID = nDfuMsgID;
+		dfuMsg.nInternalCommandID = jsonMsgparser.GetCommandID();
+		dfuMsg.nCommandNum = dfuMsg.command_msg.size();
+		dfuMsg.nMsgType = RECORD_DFU_MESSAGE_TYPE_JSON;
+		dfuMsg.nTransMask = json_send_msg.nTransMask;
+		dfuMsg.bRecvEnd = false;
+		m_pRecordApciHandler->PostDfuMsg(dfuMsg);
 	}
 
 	if (NULL != pRecvRootJson)
@@ -237,12 +361,58 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 	return true;
 }
 
+//get a send json msg
+bool CInternalCommuMgr::GetJsonResultMsg(JSON_SENDMSG& json_send_msg)
+{
+	CLockUp lockUp(&m_LockResultMsg);
+
+	vector<JSON_SENDMSG>::iterator it = m_veJsonSendList.begin();
+	for (; it != m_veJsonSendList.end(); it++)
+	{
+		if (it->bEnd == true)
+		{
+			json_send_msg = *it;
+			m_veJsonSendList.erase(it);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 //add msg from rabbitmq to msg queue
 void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
 {
 	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
 	m_veAmqpCommand.push_back(pAmqpEnvelope);
+}
+
+//add a wait result command
+void CInternalCommuMgr::AddJsonWaitResultMsg(JSON_SENDMSG& json_send_msg)
+{
+	CLockUp lockUp(&m_LockResultMsg);
+
+	m_veJsonSendList.push_back(json_send_msg);
+}
+
+//add a result msg
+bool CInternalCommuMgr::AddJsonResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID)
+{
+	CLockUp lockUp(&m_LockResultMsg);
+
+	vector<JSON_SENDMSG>::iterator it = m_veJsonSendList.begin();
+	for (; it != m_veJsonSendList.end(); it++)
+	{
+		if ((it->nTransMask == nTransMask) && (it->nCommandID == nCommmandID))
+		{
+			it->pJsonMsg = pResultMsg;
+			it->bEnd = true;
+			return true;
+		}
+	}
+
+	return false;
 }
 
 //init logfile
