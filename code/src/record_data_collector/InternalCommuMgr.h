@@ -53,13 +53,13 @@ public:
 public:
 	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
 
-	void AddJsonWaitResultMsg(JSON_SENDMSG& json_send_msg);
+	void AddResultWaitMsg(JSON_SENDMSG& json_send_msg);
 
-	bool AddJsonResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID);
+	bool AddAmqpResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID);
 
 	int AmqpCommandOperationLoop();
 
-	int JsonResultSendLoop();
+	int AmqpMsgSendLoop();
 
 public:
 	bool InitCommandMonitorHandler();
@@ -75,7 +75,7 @@ private:
 
 	bool ProcessAmqpCommand(amqp_envelope_t* pAmqpComand);
 
-	bool GetJsonResultMsg(JSON_SENDMSG& json_send_msg);
+	bool GetAmqpResultMsg(JSON_SENDMSG& json_send_msg);
 
 private:
 /**	\brief 配置维护类对象*/
@@ -93,7 +93,7 @@ private:
 
 	CRecordmanThread m_IdlerMqCommandThread;
 
-	CRecordmanThread m_SendJsonResultThread;
+	CRecordmanThread m_AmqpMsgSendThread;
 
 	CMessageLog m_LogFile;
 

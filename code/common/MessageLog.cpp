@@ -31,7 +31,7 @@ bool CompareDiskFileTime(const FILE_DES_STRUCT &lpFileTime1, const FILE_DES_STRU
  ·µ »Ø Öµ:   
 **************************************************************/
 CMessageLog::CMessageLog()
-:m_iLogSaveDays(10),m_strLogRootPath("Xj_Log/"),m_strLogName("MessageLog"),m_Lock("CMessageLog")
+:m_iLogSaveDays(10),m_strLogRootPath("record_message_Log/"),m_strLogName("messagelog"),m_Lock("CMessageLog")
 {
 	bzero(m_szLogPath,FILE_NAME_MAX_LEN);
 

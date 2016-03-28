@@ -141,3 +141,39 @@ std::string GetDfuErrorMsgString(int nErrorNum)
 
 	return strErrorMsg;
 }
+
+void ConvertInt32BigedianToL(XJHANDLE pChar, int& nVal)
+{
+	memcpy(&nVal, pChar, 4);
+	RECORD_SWAP_32(nVal);
+}
+
+void ConvertFloat32BigedianToL(XJHANDLE pChar, float& fVal)
+{
+	memcpy(&fVal, pChar, 4);
+	RECORD_SWAP_32(fVal);
+}
+
+void ConvertUint32BigedianToL(XJHANDLE pChar, UINT& nVal)
+{
+	memcpy(&nVal, pChar, 4);
+	RECORD_SWAP_32(nVal);
+}
+
+string GetInt32VersionInfo(int nVersion)
+{
+	int nMainVer(0);
+	int nSeedVer(0);
+	int nCorrectVer(0);
+	char chVersion[512] = "";
+	bzero(chVersion, sizeof(chVersion));
+
+	nCorrectVer = nVersion & 0x3F;
+	nSeedVer = nVersion & 0xFC0;
+	nMainVer = nVersion & 0xF000;
+
+	sprintf(chVersion, "%d.%d.%d", 
+		nMainVer, nSeedVer, nCorrectVer);
+
+	return chVersion;
+}

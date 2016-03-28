@@ -210,17 +210,37 @@ typedef struct _COLLECTOR_ADVANCE_RABBITMQ_PARAM
 //dfu msg struct
 typedef struct _DFUMESSAGE
 {
-	bool bRecvEnd;//recv end msg
-	bool bProcessed;//is processed
-	int nMsgType;//msg type
-	int nTransMask;//trans mask
-	int nDfuCommandID;//dfu command id
-	int nCommandNum;//command num
-	int nCommandProcessResult;//command execute result
-	int nInternalCommandID;//internal command id
+	//recv end msg
+	bool bRecvEnd;
 
+	//is processed
+	bool bProcessed;
+
+	//msg type
+	int nMsgType;
+
+	//trans mask
+	int nTransMask;
+
+	//dfu command id
+	int nDfuCommandID;
+
+	//command num
+	int nCommandNum;
+
+	//command execute result
+	int nCommandProcessResult;
+
+	//internal command id
+	int nInternalCommandID;
+
+	//msg send time
+	time_t tSendTime;
+
+	//command msg list
 	vector<DFU_COMMU_MSG> command_msg;
 
+	//result msg list
 	vector<DFU_COMMU_MSG> result_msg;
 
 	_DFUMESSAGE()

@@ -11,4 +11,12 @@ char* Record_Itoa(int value, char* str, int radix);
 
 string GetDfuErrorMsgString(int nErrorNum);
 
+void ConvertInt32BigedianToL(XJHANDLE pChar, int& nVal);
+
+void ConvertUint32BigedianToL(XJHANDLE pChar, UINT& nVal);
+
+void ConvertFloat32BigedianToL(XJHANDLE pChar, float& fVal);
+
+string GetInt32VersionInfo(int nVersion);
+
 #endif

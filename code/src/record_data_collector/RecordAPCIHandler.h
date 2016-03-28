@@ -8,7 +8,7 @@
 #include "DfuMsgAttach.h"
 #include "DfuMsgToJson.h"
 
-typedef int (*PJSONRESULTFUNCALLBACK)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
+typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
 
 #if _MSC_VER > 1000
 #pragma once
@@ -30,7 +30,7 @@ public:
 	void SetMongoAccessParam(RECORD_MONGO_BASIC_PARAM* pMongoParam);
 
 	//set result json fun
-	void RegisterJsonResultFunc(PJSONRESULTFUNCALLBACK pFunc, XJHANDLE pObj);
+	void RegisterResultCallBackFunc(PRESULTMSGCALLBACKFUNC pFunc, XJHANDLE pObj);
 
 public:
 
@@ -50,18 +50,18 @@ public:
 	int PostDfuMsg(DFUMESSAGE& command);
 
 	//get msg trans mask
-	UINT GetMsgTransMask();
+	UINT CreateTransMask();
 
 public:
 	//与dfu通讯主线程函数
 	//0：线程退出
-	int DfuCommuOperationLoop();
+	int DfuBuinessProcessLoop();
 
 	//recv loop
 	int DfuRecvOperationLoop();
 
 	//save new osc file
-	int SaveFileOperationLoop();
+	int FileBuinessProcessLoop();
 
 private:
 	//read msg from socket
@@ -72,9 +72,6 @@ private:
 	int SendDfuMessage(DFU_COMMU_MSG& record_msg);
 
 private:
-	//init logfile
-	bool InitLogFile();
-
 	//get send msg from list
 	bool GetDfuSendMsg(DFU_COMMU_MSG& sendmsg);
 
@@ -87,21 +84,28 @@ private:
 	//get follow up msg
 	bool GetFollowUpMsg(int nMsgTrans, int nCommandID, DFU_COMMU_MSG& follow_up_msg);
 
+private:
+	//add file result msg
+	bool AddFileResultMsg(DFUMESSAGE& file_result_msg);
+
+	//get msg procedd
+	bool GetFileResultMsg(DFUMESSAGE& file_msg);
+
+private:
+	//init logfile
+	bool InitLogFile();
+
 	//create link test command
 	bool LaunchLinkTest();
 
 	//query new osc file from dfu
-	int LaunchQueryNewFile();
-
-	//get osc file
-	void ProcessGetOscFile(int nFileIndex);
+	bool LaunchQueryNewFile();
 
 	//create test_msg
 	void CreateTestReplyMsg(DFU_COMMU_MSG& reply_msg, DFU_COMMU_MSG recv_msg);
 
-private:
 	//print msg
-	void WriteMsgLog(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead);
+	void WriteDfuMessageLog(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead);
 
 private:
 	/**	\brief 配置参数对象*/
@@ -121,13 +125,13 @@ private:
 	bool m_bExitFlag;
 
 	/**	\brief 与dfu业务处理线程*/
-	CRecordmanThread m_DfuOperationThread;
+	CRecordmanThread m_DfuBuinessThread;
 
 	//recv thread
 	CRecordmanThread m_DfuRecvThread;
 
 	//save file thread
-	CRecordmanThread m_DfuFileSaveTherad;
+	CRecordmanThread m_FileBuinessThread;
 
 private:
 	/**	\brief net对象*/
@@ -142,14 +146,20 @@ private:
 	//command list lock
 	CSafeLock m_LockCommandList;
 
+	//File list lock
+	CSafeLock m_LockFileList;
+
 private:
 	//dfu msg list
 	dfumsg_list m_command_msg_list;
 
-	//json result fun
-	PJSONRESULTFUNCALLBACK m_pJsonResultFun;
+	//file list
+	dfumsg_list m_file_msg_list; 
 
-	XJHANDLE m_pJsonResultHandle;
+	//json result fun
+	PRESULTMSGCALLBACKFUNC m_pResultCallBackFunc;
+
+	XJHANDLE m_pResultProcessClassHandle;
 
 	//link last active time
 	time_t m_tLinkActive;

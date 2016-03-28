@@ -92,17 +92,25 @@ int CDfuMsgToJson::DfuMsg_22_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	cJSON* pOneSet = NULL;
 	CDFUMsgAttach msgAttach;
 	DFUMESSAGE* pMsgList = NULL;
-	char chTempBuf[128] = "";
 	bool bSetZone = false;
-	int nContentNum = 22;
+	int nOffset = 22;
 	int nSettingNum = 0;
 
 	pJsonMsg = cJSON_CreateObject();
 	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20004);//command id
-	cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);//result
 	cJSON_AddItemToObject(pJsonMsg, "set_vals", pSettingSet = cJSON_CreateArray());//setting vals array
 
 	pMsgList = pClassObj->GetDfuResultMsg();
+	if (pMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);//fail result
+		return 0;
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);//succeed result
+	}
+
 	vector<DFU_COMMU_MSG>::iterator itResultMsg = pMsgList->result_msg.begin();
 	for (; itResultMsg != pMsgList->result_msg.end(); itResultMsg++)//for multi msg
 	{
@@ -119,27 +127,22 @@ int CDfuMsgToJson::DfuMsg_22_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 
 		for (int i = 0; i < nSettingNum; i++)//set group
 		{
-			UINT nSettingID = 0;
-			UINT nTempval = 0;
-			UINT nDataType = 0;
-			UINT nGroupIndex = 0;
-			UINT nGroupNo = 0;
-			bzero(chTempBuf, sizeof(chTempBuf));
+			int nSettingID = 0;
+			int nSettingIndex = 0;
+			int nDataType = 0;
+			int nGroupIndex = 0;
+			int nGroupNo = 0;
 
-			memcpy(&nSettingID, &(*pOneMsg)[nContentNum], 4);
-			RECORD_SWAP_32(nSettingID);
-			nContentNum += 4;
+			ConvertInt32BigedianToL(&(*pOneMsg)[nOffset], nSettingID);
+			nOffset += 4;
 
-			memcpy(&nTempval, &(*pOneMsg)[nContentNum], 4);
-			RECORD_SWAP_32(nTempval);
-			nDataType = nTempval & 0x0F;
-			nGroupIndex = (nTempval & 0x1FFF0) >> 4;
-			nGroupNo = nTempval >> 18;
-			nContentNum += 4;
+			ConvertInt32BigedianToL(&(*pOneMsg)[nOffset], nSettingIndex);
+			nDataType = nSettingIndex & 0x0F;
+			nGroupIndex = (nSettingIndex & 0x1FFF0) >> 4;
+			nGroupNo = nSettingIndex >> 18;
+			nOffset += 4;
 
-			sprintf(chTempBuf, "%d_%d", 
-				nGroupNo, nSettingID);
-			cJSON_AddItemToObject(pSettingSet, chTempBuf, pOneSet = cJSON_CreateObject());//setting vals array
+			cJSON_AddItemToObject(pSettingSet, "", pOneSet = cJSON_CreateObject());//setting vals array
 			cJSON_AddNumberToObject(pOneSet, "set_id", nSettingID);//set_id
 			cJSON_AddNumberToObject(pOneSet, "data_type", nDataType);//data_type
 			cJSON_AddNumberToObject(pOneSet, "set_index", nGroupIndex);//set_index
@@ -150,18 +153,16 @@ int CDfuMsgToJson::DfuMsg_22_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 				(RECORD_DFU_SETTING_DATATYPE_UINT == nDataType))
 			{
 				int nValue(0);
-				memcpy(&nValue, &(*pOneMsg)[nContentNum], 4);
-				SWAP_32(nValue);
+				ConvertInt32BigedianToL(&(*pOneMsg)[nOffset], nValue);
 				cJSON_AddNumberToObject(pOneSet, "set_val", nValue);//set_val
 			}
 			else if (RECORD_DFU_SETTING_DATATYPE_FOLAT32 == nDataType)
 			{
 				float fValue(0);
-				memcpy(&fValue, &(*pOneMsg)[nContentNum], 4);
-				SWAP_32(fValue);
+				ConvertFloat32BigedianToL(&(*pOneMsg)[nOffset], fValue);
 				cJSON_AddNumberToObject(pOneSet, "set_val", fValue);//set_val
 			}
-			nContentNum += 4;
+			nOffset += 4;
 		}
 	}
 
@@ -245,18 +246,128 @@ int CDfuMsgToJson::DfuMsg_33_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 //self check
 int CDfuMsgToJson::DfuMsg_91_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+	int nOffset = 18;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20010);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	int nDevMask(0);
+	int nModuleMask(0);
+	int nPluginMask(0);
+
+	ConvertInt32BigedianToL(&(*pOneMsg)[nOffset], nDevMask);
+	ConvertInt32BigedianToL(&(*pOneMsg)[nOffset + 4], nModuleMask);
+
+	cJSON_AddNumberToObject(pJsonMsg, "dev_mask", nDevMask);
+	cJSON_AddNumberToObject(pJsonMsg, "module_mask", msgAttach.GetZoneNum());
+	cJSON_AddNumberToObject(pJsonMsg, "plugin_mask", msgAttach.GetZoneNum());
+
 	return 0;
 }
 
 //query version
 int CDfuMsgToJson::DfuMsg_92_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+	int nOffset = 18;
+	int nVal = 0;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20012);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	int nTemp(0);
+	memcpy(&nTemp, &(*pOneMsg)[nOffset + 1], 1);
+	RECORD_SWAP_32(nTemp);
+	int nVersion = (nTemp & 0x3F);
+	string strPlatformVer = GetInt32VersionInfo(nVersion);
+	string strSoftwareVer = GetInt32VersionInfo(nVersion);
+	string strConfigVer = GetInt32VersionInfo(nVersion);
+
+	cJSON_AddStringToObject(pJsonMsg, "platform_ver", strPlatformVer.c_str());
+	cJSON_AddNumberToObject(pJsonMsg, "platform_crc", RECORD_COMMAND_RESULT_NORMAL);
+	cJSON_AddStringToObject(pJsonMsg, "software_ver", strSoftwareVer.c_str());
+	cJSON_AddNumberToObject(pJsonMsg, "software_crc", RECORD_COMMAND_RESULT_NORMAL);
+	cJSON_AddStringToObject(pJsonMsg, "config_ver", strConfigVer.c_str());
+	cJSON_AddNumberToObject(pJsonMsg, "config_crc", RECORD_COMMAND_RESULT_NORMAL);
+
 	return 0;
 }
 
 //query time
 int CDfuMsgToJson::DfuMsg_93_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+	int nOffset = 18;
+	int nVal = 0;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20014);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+
+	UINT uCurSecond = 0;
+	UINT uCurNanoSecond = 0;
+	int nCurZone = 0;
+
+	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset], uCurSecond);
+	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset + 4], uCurNanoSecond);
+	ConvertInt32BigedianToL(&(*pOneMsg)[nOffset + 8], nCurZone);
+
+	cJSON_AddNumberToObject(pJsonMsg, "cur_second", uCurSecond);
+	cJSON_AddNumberToObject(pJsonMsg, "cur_nanosecond", uCurNanoSecond);
+	cJSON_AddNumberToObject(pJsonMsg, "time_zone", nCurZone);
+
 	return 0;
 }
 
@@ -269,23 +380,131 @@ int CDfuMsgToJson::DfuMsg_94_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 //reset
 int CDfuMsgToJson::DfuMsg_A0_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20018);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	if (msgAttach.GetMsgErrorFlag() == true)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
 	return 0;
 }
 
 //write ip addr
 int CDfuMsgToJson::DfuMsg_A1_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20020);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	if (msgAttach.GetMsgErrorFlag() == true)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
 	return 0;
 }
 
 //set time
 int CDfuMsgToJson::DfuMsg_A2_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20022);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	if (msgAttach.GetMsgErrorFlag() == true)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
 	return 0;
 }
 
 //set time zone
 int CDfuMsgToJson::DfuMsg_A3_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20024);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	if (msgAttach.GetMsgErrorFlag() == true)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
 	return 0;
 }

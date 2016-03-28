@@ -27,7 +27,7 @@ int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
 }
 
 //json result msg recv fun
-int JsonResultRecvFun(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved)
+int CommandResultRecvFunc(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved)
 {
 	if (NULL == pJsonMsg)
 	{
@@ -40,7 +40,7 @@ int JsonResultRecvFun(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE 
 	}
 
 	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pReserved;
-	bool bRet = pInternalCommuMgr->AddJsonResultMsg(pJsonMsg, nTransMask, nCommandID);
+	bool bRet = pInternalCommuMgr->AddAmqpResultMsg(pJsonMsg, nTransMask, nCommandID);
 
 	return (true == bRet)?1:0;
 }
@@ -67,7 +67,7 @@ THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
 }
 
 //json msg send thread
-THREAD_FUNC WINAPI JsonMsgSendProc(LPVOID pParam)
+THREAD_FUNC WINAPI AmqpResultSendProc(LPVOID pParam)
 {
 	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pParam;
 	if (NULL == pInternalCommuMgr)
@@ -77,7 +77,7 @@ THREAD_FUNC WINAPI JsonMsgSendProc(LPVOID pParam)
 
 	try
 	{
-		pInternalCommuMgr->JsonResultSendLoop();
+		pInternalCommuMgr->AmqpMsgSendLoop();
 	}
 	catch (...)
 	{
@@ -131,7 +131,7 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 	{
 		InitLogFile();
 
-		m_pRecordApciHandler->RegisterJsonResultFunc(JsonResultRecvFun, this);
+		m_pRecordApciHandler->RegisterResultCallBackFunc(CommandResultRecvFunc, this);
 
 		if (NULL == m_pInterRabbitCommuHandler)
 		{
@@ -181,7 +181,7 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	m_LogFile.FormatAdd(CLogFile::trace, "[StartCommandMonitorHandler]start amqp recv succeed！");
 
 	m_IdlerMqCommandThread.Stop();
-	m_SendJsonResultThread.Stop();
+	m_AmqpMsgSendThread.Stop();
 
 	m_bExit = false;
 	if (false == m_IdlerMqCommandThread.Start(AmqpCommandOperationProc, this))
@@ -193,7 +193,7 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	m_LogFile.FormatAdd(CLogFile::trace, 
 		"[StartCommandMonitorHandler]start amqp command process thread succeed！");
 
-	if (false == m_SendJsonResultThread.Start(JsonMsgSendProc, this))
+	if (false == m_AmqpMsgSendThread.Start(AmqpResultSendProc, this))
 	{
 		m_LogFile.FormatAdd(CLogFile::error, 
 			"[StartCommandMonitorHandler]start json result send thread failed！");
@@ -217,6 +217,7 @@ bool CInternalCommuMgr::StopCommandMonitorHandler()
 
 	m_pInterRabbitCommuHandler->StopAmqpRecv();
 	m_IdlerMqCommandThread.Stop();
+	m_AmqpMsgSendThread.Stop();
 
 	if (NULL != m_pInterRabbitCommuHandler)
 	{
@@ -254,7 +255,7 @@ int CInternalCommuMgr::AmqpCommandOperationLoop()
 }
 
 //json result msg send thread main loop
-int CInternalCommuMgr::JsonResultSendLoop()
+int CInternalCommuMgr::AmqpMsgSendLoop()
 {
 	while (!m_bExit)
 	{
@@ -264,7 +265,7 @@ int CInternalCommuMgr::JsonResultSendLoop()
 		}
 
 		JSON_SENDMSG json_send_msg;
-		if (false == GetJsonResultMsg(json_send_msg))
+		if (false == GetAmqpResultMsg(json_send_msg))
 		{
 			MySleep(200);
 			continue;
@@ -326,10 +327,10 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 		JSON_SENDMSG json_send_msg;
 		json_send_msg.bEnd = false;
 		json_send_msg.nCommandID = jsonMsgparser.GetCommandID();
-		json_send_msg.nTransMask = m_pRecordApciHandler->GetMsgTransMask();
+		json_send_msg.nTransMask = m_pRecordApciHandler->CreateTransMask();
 		json_send_msg.sender_channel = pAmqpComand->channel;
 		json_send_msg.sender_info = pAmqpComand->message.properties;
-		AddJsonWaitResultMsg(json_send_msg);//加入等待队列
+		AddResultWaitMsg(json_send_msg);//加入等待队列
 
 		dfuMsg.nDfuCommandID = nDfuMsgID;
 		dfuMsg.nInternalCommandID = jsonMsgparser.GetCommandID();
@@ -337,7 +338,10 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 		dfuMsg.nMsgType = RECORD_DFU_MESSAGE_TYPE_JSON;
 		dfuMsg.nTransMask = json_send_msg.nTransMask;
 		dfuMsg.bRecvEnd = false;
-		m_pRecordApciHandler->PostDfuMsg(dfuMsg);
+		m_pRecordApciHandler->PostDfuMsg(dfuMsg);//发送给dfu
+
+		m_LogFile.FormatAdd(CLogFile::error, "[ProcessAmqpCommand]post commmand：%d to dfu！", 
+			jsonMsgparser.GetCommandID());
 	}
 
 	if (NULL != pRecvRootJson)
@@ -362,7 +366,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 }
 
 //get a send json msg
-bool CInternalCommuMgr::GetJsonResultMsg(JSON_SENDMSG& json_send_msg)
+bool CInternalCommuMgr::GetAmqpResultMsg(JSON_SENDMSG& json_send_msg)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
@@ -380,16 +384,8 @@ bool CInternalCommuMgr::GetJsonResultMsg(JSON_SENDMSG& json_send_msg)
 	return false;
 }
 
-//add msg from rabbitmq to msg queue
-void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
-{
-	CLockUp lockUp(&m_LockAmqpRecvMsg);
-
-	m_veAmqpCommand.push_back(pAmqpEnvelope);
-}
-
 //add a wait result command
-void CInternalCommuMgr::AddJsonWaitResultMsg(JSON_SENDMSG& json_send_msg)
+void CInternalCommuMgr::AddResultWaitMsg(JSON_SENDMSG& json_send_msg)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
@@ -397,7 +393,7 @@ void CInternalCommuMgr::AddJsonWaitResultMsg(JSON_SENDMSG& json_send_msg)
 }
 
 //add a result msg
-bool CInternalCommuMgr::AddJsonResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID)
+bool CInternalCommuMgr::AddAmqpResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
@@ -415,16 +411,12 @@ bool CInternalCommuMgr::AddJsonResultMsg(cJSON* pResultMsg, int nTransMask, int 
 	return false;
 }
 
-//init logfile
-bool CInternalCommuMgr::InitLogFile()
+//add msg from rabbitmq to msg queue
+void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
 {
-	m_LogFile.Close();
+	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
-	m_LogFile.SetLogPath(m_pSystemParm->chLogpath);
-	m_LogFile.SetLogLevel(m_pSystemParm->nLoglevel);
-	m_LogFile.SetLogSaveDays(m_pSystemParm->nLogDays);
-
-	return (TRUE == m_LogFile.Open("internal_commu_log"))?true:false;
+	m_veAmqpCommand.push_back(pAmqpEnvelope);
 }
 
 //get msg fron queue
@@ -442,4 +434,16 @@ bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
 	m_veAmqpCommand.erase(it);
 
 	return true;
+}
+
+//init logfile
+bool CInternalCommuMgr::InitLogFile()
+{
+	m_LogFile.Close();
+
+	m_LogFile.SetLogPath(m_pSystemParm->chLogpath);
+	m_LogFile.SetLogLevel(m_pSystemParm->nLoglevel);
+	m_LogFile.SetLogSaveDays(m_pSystemParm->nLogDays);
+
+	return (TRUE == m_LogFile.Open("internal_commu_log"))?true:false;
 }
