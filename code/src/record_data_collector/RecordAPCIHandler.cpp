@@ -839,8 +839,11 @@ bool CRecordAPCIHandler::LaunchLinkTest()
 	msg_parser.SetMsgProtocolMask();
 	msg_parser.SetMsgReserve();
 	msg_parser.SetMsgFuncMask();
-	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_CURZONE_READ_VAR);
+	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_SETTING_READ_VAR);
 	msg_parser.SetMsgEndFlag(true);
+	msg_parser.SetMsgSettingZone(1);
+	msg_parser.SetMsgSettingGroup(1);
+	msg_parser.SetMsgSettingGroupIndex(0);
 	msg_parser.SetMsgLength();
 	msg_parser.SetEndMask();
 

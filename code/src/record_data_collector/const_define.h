@@ -52,9 +52,22 @@ const int RECORD_DFU_MESSAGE_TYPE_OSC_FILE = 2;
 const int RECORD_DFU_MESSAGE_TYPE_TEST = 3;
 
 //command result
+//result is unknown
 const int RECORD_COMMAND_RESULT_UNKNOWN = -1;
+//result is normal
 const int RECORD_COMMAND_RESULT_NORMAL = 0;
+//result is failed
 const int RECORD_COMMAND_RESULT_FAILED = 1;
+
+//data type
+//data type-bool
+const int RECORD_DFU_SETTING_DATATYPE_BOOL = 0;
+//data type-float32
+const int RECORD_DFU_SETTING_DATATYPE_FOLAT32 = 1;
+//data type-int
+const int RECORD_DFU_SETTING_DATATYPE_INT = 2;
+//data type-uint
+const int RECORD_DFU_SETTING_DATATYPE_UINT = 3;
 
 
 /** @brief           启动码*/
@@ -114,6 +127,18 @@ const BYTE RECORD_COMMAND_CHAR_IP_SET_VAR = 0xA1;
 const BYTE RECORD_COMMAND_CHAR_TIME_SET_VAR = 0xA2;
 /** @brief           时区设置*/
 const BYTE RECORD_COMMAND_CHAR_TIMEZONE_SET_VAR = 0xA3;
+
+#define RECORD_SWAP_16(b)\
+{\
+	unsigned short&a =  *(unsigned short*)(&(b));\
+	a = (a>>8)|(a<<8);\
+}
+
+#define RECORD_SWAP_32(b)\
+{\
+	unsigned &a = *(unsigned *)(&(b));\
+	a = (a>>24)|((a>>8)&0xFF00)|((a<<8)&0xFF0000)|(a<<24);\
+}
 
 /** @brief           dfu msg*/
 typedef vector<BYTE> DFU_COMMU_MSG;

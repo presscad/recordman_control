@@ -87,42 +87,81 @@ DFUMESSAGE* CDfuMsgToJson::GetDfuResultMsg()
 //call setting result
 int CDfuMsgToJson::DfuMsg_22_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
-	CDfuMsgToJson* pObj = (CDfuMsgToJson*)pParm;
-	CDFUMsgAttach dfuMsgAttach;
-	DFUMESSAGE* pMsg = NULL;
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	cJSON* pSettingSet = NULL;
+	cJSON* pOneSet = NULL;
+	CDFUMsgAttach msgAttach;
+	DFUMESSAGE* pMsgList = NULL;
+	char chTempBuf[128] = "";
 	bool bSetZone = false;
-	int nSettingNum = 0;
-	UINT nSettingID = 0;
 	int nContentNum = 22;
+	int nSettingNum = 0;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20004);
-	cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20004);//command id
+	cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);//result
+	cJSON_AddItemToObject(pJsonMsg, "set_vals", pSettingSet = cJSON_CreateArray());//setting vals array
 
-	pMsg = pObj->GetDfuResultMsg();
-	vector<DFU_COMMU_MSG>::iterator itResultMsg = pMsg->result_msg.begin();
-	for (; itResultMsg != pMsg->result_msg.end(); itResultMsg++)
+	pMsgList = pClassObj->GetDfuResultMsg();
+	vector<DFU_COMMU_MSG>::iterator itResultMsg = pMsgList->result_msg.begin();
+	for (; itResultMsg != pMsgList->result_msg.end(); itResultMsg++)//for multi msg
 	{
-		DFU_COMMU_MSG* pDfuMsg = &*itResultMsg;
-		dfuMsgAttach.Attach(pDfuMsg);
+		DFU_COMMU_MSG* pOneMsg = &*itResultMsg;
+		msgAttach.Attach(pOneMsg);
 
 		if (false == bSetZone)
 		{
-			cJSON_AddNumberToObject(pJsonMsg, "set_zone", dfuMsgAttach.GetMsgSettingZone());
+			cJSON_AddNumberToObject(pJsonMsg, "set_zone", msgAttach.GetMsgSettingZone());
 			bSetZone = true;
 		}
 
-		nSettingNum = dfuMsgAttach.GetSettingNum();
-		for (int i = 0; i < nSettingNum; i++)
+		nSettingNum = msgAttach.GetSettingNum();//setting nums
+
+		for (int i = 0; i < nSettingNum; i++)//set group
 		{
-			int a = 0;
-			memcpy(&a, &(*pDfuMsg)[22], 4);
-			SWAP_32(a);
-// 			nSettingID = 
-// 				(*pDfuMsg)[nContentNum] + 
-// 				((*pDfuMsg)[nContentNum + 1] << 8) + 
-// 				((*pDfuMsg)[nContentNum + 2] << 16) + 
-// 				((*pDfuMsg)[nContentNum + 3] << 24);
+			UINT nSettingID = 0;
+			UINT nTempval = 0;
+			UINT nDataType = 0;
+			UINT nGroupIndex = 0;
+			UINT nGroupNo = 0;
+			bzero(chTempBuf, sizeof(chTempBuf));
+
+			memcpy(&nSettingID, &(*pOneMsg)[nContentNum], 4);
+			RECORD_SWAP_32(nSettingID);
+			nContentNum += 4;
+
+			memcpy(&nTempval, &(*pOneMsg)[nContentNum], 4);
+			RECORD_SWAP_32(nTempval);
+			nDataType = nTempval & 0x0F;
+			nGroupIndex = (nTempval & 0x1FFF0) >> 4;
+			nGroupNo = nTempval >> 18;
+			nContentNum += 4;
+
+			sprintf(chTempBuf, "%d_%d", 
+				nGroupNo, nSettingID);
+			cJSON_AddItemToObject(pSettingSet, chTempBuf, pOneSet = cJSON_CreateObject());//setting vals array
+			cJSON_AddNumberToObject(pOneSet, "set_id", nSettingID);//set_id
+			cJSON_AddNumberToObject(pOneSet, "data_type", nDataType);//data_type
+			cJSON_AddNumberToObject(pOneSet, "set_index", nGroupIndex);//set_index
+			cJSON_AddNumberToObject(pOneSet, "set_group_no", nGroupNo);//set_group_no
+
+			if ((RECORD_DFU_SETTING_DATATYPE_BOOL == nDataType) || 
+				(RECORD_DFU_SETTING_DATATYPE_INT == nDataType) || 
+				(RECORD_DFU_SETTING_DATATYPE_UINT == nDataType))
+			{
+				int nValue(0);
+				memcpy(&nValue, &(*pOneMsg)[nContentNum], 4);
+				SWAP_32(nValue);
+				cJSON_AddNumberToObject(pOneSet, "set_val", nValue);//set_val
+			}
+			else if (RECORD_DFU_SETTING_DATATYPE_FOLAT32 == nDataType)
+			{
+				float fValue(0);
+				memcpy(&fValue, &(*pOneMsg)[nContentNum], 4);
+				SWAP_32(fValue);
+				cJSON_AddNumberToObject(pOneSet, "set_val", fValue);//set_val
+			}
+			nContentNum += 4;
 		}
 	}
 
