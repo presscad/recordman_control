@@ -418,15 +418,15 @@ int CRecordAPCIHandler::DfuBuinessProcessLoop()
 
 			time(&tCur);//get cur time
 
-			if ((tCur - m_tCheckFile) >= m_pDfuCommuParam->nCheckNewFileTime)//query file
-			{
-				if (bQueryNewFile == false)
-				{
-					LaunchQueryNewFile();
-					bQueryNewFile = true;
-				}
-				time(&m_tCheckFile);
-			}
+// 			if ((tCur - m_tCheckFile) >= m_pDfuCommuParam->nCheckNewFileTime)//query file
+// 			{
+// 				if (bQueryNewFile == false)
+// 				{
+// 					LaunchQueryNewFile();
+// 					bQueryNewFile = true;
+// 				}
+// 				time(&m_tCheckFile);
+// 			}
 
 			if ((tCur - m_tLinkActive) >= m_pDfuCommuParam->nIdleTime)//test frame
 			{
@@ -571,10 +571,6 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 //save new osc file
 int CRecordAPCIHandler::FileBuinessProcessLoop()
 {
-	time_t tCur;
-	time(&tCur);
-	bool bSendQueryMsg;
-
 	while (!m_bExitFlag)
 	{
 		if (true == m_bExitFlag)

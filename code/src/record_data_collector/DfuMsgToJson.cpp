@@ -291,7 +291,6 @@ int CDfuMsgToJson::DfuMsg_92_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFU_COMMU_MSG* pOneMsg = NULL;
 	DFUMESSAGE* pResultMsgList = NULL;
 	int nOffset = 18;
-	int nVal = 0;
 
 	pJsonMsg = cJSON_CreateObject();
 	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20012);
@@ -310,20 +309,19 @@ int CDfuMsgToJson::DfuMsg_92_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	pOneMsg = &pResultMsgList->result_msg.front();
 	msgAttach.Attach(pOneMsg);
 
-	int nTemp(0);
-	memcpy(&nTemp, &(*pOneMsg)[nOffset + 1], 1);
-	RECORD_SWAP_32(nTemp);
-	int nVersion = (nTemp & 0x3F);
-	string strPlatformVer = GetInt32VersionInfo(nVersion);
-	string strSoftwareVer = GetInt32VersionInfo(nVersion);
-	string strConfigVer = GetInt32VersionInfo(nVersion);
+	string strPlatformVer = GetInt32VersionInfo(&(*pOneMsg)[nOffset]);
+	string strPlatformCrc = GetDfucrcInfo(&(*pOneMsg)[nOffset + 2]);
+	string strSoftwareVer = GetInt32VersionInfo(&(*pOneMsg)[nOffset + 4]);
+	string strSoftwareCrc = GetDfucrcInfo(&(*pOneMsg)[nOffset + 6]);
+	string strConfigVer = GetInt32VersionInfo(&(*pOneMsg)[nOffset + 8]);
+	string strConfigCrc = GetDfucrcInfo(&(*pOneMsg)[nOffset + 10]);
 
 	cJSON_AddStringToObject(pJsonMsg, "platform_ver", strPlatformVer.c_str());
-	cJSON_AddNumberToObject(pJsonMsg, "platform_crc", RECORD_COMMAND_RESULT_NORMAL);
+	cJSON_AddStringToObject(pJsonMsg, "platform_crc", strPlatformCrc.c_str());
 	cJSON_AddStringToObject(pJsonMsg, "software_ver", strSoftwareVer.c_str());
-	cJSON_AddNumberToObject(pJsonMsg, "software_crc", RECORD_COMMAND_RESULT_NORMAL);
+	cJSON_AddStringToObject(pJsonMsg, "software_crc", strSoftwareCrc.c_str());
 	cJSON_AddStringToObject(pJsonMsg, "config_ver", strConfigVer.c_str());
-	cJSON_AddNumberToObject(pJsonMsg, "config_crc", RECORD_COMMAND_RESULT_NORMAL);
+	cJSON_AddStringToObject(pJsonMsg, "config_crc", strConfigCrc.c_str());
 
 	return 0;
 }
@@ -374,6 +372,47 @@ int CDfuMsgToJson::DfuMsg_93_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 //submodule query
 int CDfuMsgToJson::DfuMsg_94_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+	int nOffset = 18;
+	uint16 usubmoduleNo = 0;
+	char chInfoNote[65] = "";
+	bzero(chInfoNote, sizeof(chInfoNote));
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20016);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	ConvertUint16BigedianToL(&(*pOneMsg)[nOffset], usubmoduleNo);
+	string strSoftwareVer = GetInt32VersionInfo(&(*pOneMsg)[nOffset + 2]);
+	string strSoftwareCrc = GetDfucrcInfo(&(*pOneMsg)[nOffset + 4]);
+	string strConfigVer = GetInt32VersionInfo(&(*pOneMsg)[nOffset + 6]);
+	string strConfigCrc = GetDfucrcInfo(&(*pOneMsg)[nOffset + 8]);
+	memcpy(chInfoNote, &(*pOneMsg)[nOffset + 26], 64);
+
+	cJSON_AddNumberToObject(pJsonMsg, "module_id", usubmoduleNo);
+	cJSON_AddStringToObject(pJsonMsg, "software_ver", strSoftwareVer.c_str());
+	cJSON_AddStringToObject(pJsonMsg, "software_crc", strSoftwareCrc.c_str());
+	cJSON_AddStringToObject(pJsonMsg, "config_ver", strConfigVer.c_str());
+	cJSON_AddStringToObject(pJsonMsg, "config_crc", strConfigCrc.c_str());
+	cJSON_AddStringToObject(pJsonMsg, "info_zone", "0");
+	cJSON_AddStringToObject(pJsonMsg, "info_note", chInfoNote);
+
 	return 0;
 }
 

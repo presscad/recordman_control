@@ -17,6 +17,10 @@ void ConvertUint32BigedianToL(XJHANDLE pChar, UINT& nVal);
 
 void ConvertFloat32BigedianToL(XJHANDLE pChar, float& fVal);
 
-string GetInt32VersionInfo(int nVersion);
+void ConvertUint16BigedianToL(XJHANDLE pChar, uint16& uVal);
+
+string GetInt32VersionInfo(XJHANDLE pChar);
+
+string GetDfucrcInfo(XJHANDLE pChar);
 
 #endif

@@ -160,20 +160,61 @@ void ConvertUint32BigedianToL(XJHANDLE pChar, UINT& nVal)
 	RECORD_SWAP_32(nVal);
 }
 
-string GetInt32VersionInfo(int nVersion)
+void ConvertUint16BigedianToL(XJHANDLE pChar, uint16& uVal)
 {
-	int nMainVer(0);
-	int nSeedVer(0);
-	int nCorrectVer(0);
+	memcpy(&uVal, pChar, 2);
+	RECORD_SWAP_16(uVal);
+}
+
+string GetInt32VersionInfo(XJHANDLE pChar)
+{
+	uint16 uMsgVer(0);
+	UINT uMainVer(0);
+	UINT uSeedVer(0);
+	UINT uCorrectVer(0);
 	char chVersion[512] = "";
 	bzero(chVersion, sizeof(chVersion));
 
-	nCorrectVer = nVersion & 0x3F;
-	nSeedVer = nVersion & 0xFC0;
-	nMainVer = nVersion & 0xF000;
+	ConvertUint16BigedianToL(pChar, uMsgVer);
+
+	uCorrectVer = uMsgVer & 0x3F;
+	uSeedVer = (uMsgVer & 0xFC0) >> 6;
+	uMainVer = (uMsgVer & 0xF000) >> 12;
 
 	sprintf(chVersion, "%d.%d.%d", 
-		nMainVer, nSeedVer, nCorrectVer);
+		uMainVer, uSeedVer, uCorrectVer);
 
 	return chVersion;
 }
+
+std::string GetDfucrcInfo(XJHANDLE pChar)
+{
+	BYTE bCrc[2];
+	char temp[3] = "" ,temp1[2]="";
+	string strCrc = "";
+	strCrc.resize(4);
+	char* pcrc = (char*)&strCrc[0];
+	
+	memcpy(&bCrc, pChar, 2);
+
+	for (int i = 0; i < 2; i++)
+	{
+		if (bCrc[i] < 16)
+		{
+			Record_Itoa(bCrc[i], temp1, 16);
+			temp[1] = temp1[0];
+			temp[0] = '0';
+			memset(temp1, 0, 1);
+		}
+		else
+		{
+			Record_Itoa(bCrc[i], temp, 16);
+		}
+
+		memcpy(pcrc, temp, 2);
+		pcrc += 2;
+	}
+
+	return strCrc;
+}
+
