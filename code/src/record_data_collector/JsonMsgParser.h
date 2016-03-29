@@ -36,6 +36,7 @@ public:
 	static int Json_20017_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 	static int Json_20019_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 	static int Json_20021_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
+	static int Json_20025_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 	static int Json_20060_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption);
 
 private:

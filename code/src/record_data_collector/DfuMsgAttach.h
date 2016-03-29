@@ -85,6 +85,8 @@ public:
 
 	void SetMsgCurTimeZone(int nTimeZone);
 
+	void SetFileIndex(UINT nFileIndex);
+
 	int GetErrorNum();
 
 	int GetSettingNum();
@@ -94,8 +96,6 @@ public:
 	int GetNewZone();
 
 	int GetZoneNum();
-
-	int GetFileNum();
 
 private:
 	WORD m_wLengthMask;

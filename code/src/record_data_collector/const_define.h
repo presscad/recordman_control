@@ -69,6 +69,9 @@ const int RECORD_DFU_SETTING_DATATYPE_INT = 2;
 //data type-uint
 const int RECORD_DFU_SETTING_DATATYPE_UINT = 3;
 
+//dfu msg header num
+const int RECORD_DFU_MSG_HEADER_OFFSET = 18;
+
 
 /** @brief           ЦєЖЏТы*/
 const BYTE RECORD_COMMU_CHAR_START_VAR = 0xA8;

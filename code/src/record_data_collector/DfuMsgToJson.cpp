@@ -22,6 +22,7 @@ int CDfuMsgToJson::InitDfuMsgToJsonFunc()
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_CURZONE_READ_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_24_Json));
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_NEW_OSC_QUERY_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_31_Json));
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_OSC_FILE_READ_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_33_Json));
+	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_MANUAL_OSC_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_3A_Json));
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_SELF_CHECK_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_91_Json));
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_VERSION_QUERY_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_92_Json));
 	m_mapDfuToJsonFunc.insert(make_pair(RECORD_COMMAND_CHAR_TIME_QUERY_VAR, (PDFUMSGTOJSONFUNC)DfuMsg_93_Json));
@@ -97,7 +98,7 @@ int CDfuMsgToJson::DfuMsg_22_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	int nSettingNum = 0;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20004);//command id
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_CALL_SETTING);//command id
 	cJSON_AddItemToObject(pJsonMsg, "set_vals", pSettingSet = cJSON_CreateArray());//setting vals array
 
 	pMsgList = pClassObj->GetDfuResultMsg();
@@ -178,7 +179,7 @@ int CDfuMsgToJson::DfuMsg_23_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20006);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_SWITCH_ZONE);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -209,7 +210,7 @@ int CDfuMsgToJson::DfuMsg_24_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20008);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_CALL_ZONE);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -243,6 +244,39 @@ int CDfuMsgToJson::DfuMsg_33_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	return 0;
 }
 
+//manual file
+int CDfuMsgToJson::DfuMsg_3A_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
+{
+	CDfuMsgToJson* pClassObj = (CDfuMsgToJson*)pParm;
+	CDFUMsgAttach msgAttach;
+	DFU_COMMU_MSG* pOneMsg = NULL;
+	DFUMESSAGE* pResultMsgList = NULL;
+
+	pJsonMsg = cJSON_CreateObject();
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_MANUAL_FILE);
+
+	pResultMsgList = pClassObj->GetDfuResultMsg();
+	if (pResultMsgList->result_msg.size() <= 0)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+		return 0;
+	}
+
+	pOneMsg = &pResultMsgList->result_msg.front();
+	msgAttach.Attach(pOneMsg);
+
+	if (msgAttach.GetMsgErrorFlag() == true)
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_FAILED);
+	}
+	else
+	{
+		cJSON_AddNumberToObject(pJsonMsg, "result", RECORD_COMMAND_RESULT_NORMAL);
+	}
+
+	return 0;
+}
+
 //self check
 int CDfuMsgToJson::DfuMsg_91_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 {
@@ -253,7 +287,7 @@ int CDfuMsgToJson::DfuMsg_91_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	int nOffset = 18;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20010);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_QUERY_SELFCHECK);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -293,7 +327,7 @@ int CDfuMsgToJson::DfuMsg_92_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	int nOffset = 18;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20012);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_QUERY_VER);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -337,7 +371,7 @@ int CDfuMsgToJson::DfuMsg_93_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	int nVal = 0;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20014);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_QUERY_TIME);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -382,7 +416,7 @@ int CDfuMsgToJson::DfuMsg_94_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	bzero(chInfoNote, sizeof(chInfoNote));
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20016);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_QUERY_MOULE);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -425,7 +459,7 @@ int CDfuMsgToJson::DfuMsg_A0_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20018);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_RESET_DEV);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -458,7 +492,7 @@ int CDfuMsgToJson::DfuMsg_A1_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20020);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_SET_NET_PARAM);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -491,7 +525,7 @@ int CDfuMsgToJson::DfuMsg_A2_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20022);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_SET_TIME);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)
@@ -524,7 +558,7 @@ int CDfuMsgToJson::DfuMsg_A3_Json(cJSON*& pJsonMsg, void* pParm, int nOption)
 	DFUMESSAGE* pResultMsgList = NULL;
 
 	pJsonMsg = cJSON_CreateObject();
-	cJSON_AddNumberToObject(pJsonMsg, "command_id", 20024);
+	cJSON_AddNumberToObject(pJsonMsg, "command_id", RECORD_DATA_MSG_ID_RESULT_SET_TIME_ZONE);
 
 	pResultMsgList = pClassObj->GetDfuResultMsg();
 	if (pResultMsgList->result_msg.size() <= 0)

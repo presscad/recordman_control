@@ -411,6 +411,9 @@ void CDFUMsgAttach::SetMsgCurSecond(UINT nCurSecond)
 	{
 		m_pMsg->resize(22);
 	}
+
+	RECORD_SWAP_32(nCurSecond);
+	memcpy(&(*m_pMsg)[18], &nCurSecond, 4);
 }
 
 void CDFUMsgAttach::SetMsgCurNanoSecond(UINT nCurNanoSecond)
@@ -419,6 +422,9 @@ void CDFUMsgAttach::SetMsgCurNanoSecond(UINT nCurNanoSecond)
 	{
 		m_pMsg->resize(26);
 	}
+
+	RECORD_SWAP_32(nCurNanoSecond);
+	memcpy(&(*m_pMsg)[22], &nCurNanoSecond, 4);
 }
 
 void CDFUMsgAttach::SetMsgCurTimeZone(int nTimeZone)
@@ -427,6 +433,20 @@ void CDFUMsgAttach::SetMsgCurTimeZone(int nTimeZone)
 	{
 		m_pMsg->resize(22);
 	}
+
+	RECORD_SWAP_32(nTimeZone);
+	memcpy(&(*m_pMsg)[18], &nTimeZone, 4);
+}
+
+void CDFUMsgAttach::SetFileIndex(UINT nFileIndex)
+{
+	if (m_pMsg->size() < 22)
+	{
+		m_pMsg->resize(22);
+	}
+
+	RECORD_SWAP_32(nFileIndex);
+	memcpy(&(*m_pMsg)[18], &nFileIndex, 4);
 }
 
 int CDFUMsgAttach::GetErrorNum()
@@ -572,11 +592,3 @@ bool CDFUMsgAttach::CheckEndMask()
 
 	return true;
 }
-
-int CDFUMsgAttach::GetFileNum()
-{
-	int nFileNum = -1;
-
-	return nFileNum;
-}
-

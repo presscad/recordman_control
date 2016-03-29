@@ -84,6 +84,7 @@
     <ClCompile Include="..\..\common\CCommonFile.cpp" />
     <ClCompile Include="..\..\common\common_lib.cpp" />
     <ClCompile Include="..\..\common\common_time.cpp" />
+    <ClCompile Include="..\..\common\GECodeConvert.cpp" />
     <ClCompile Include="..\..\common\globalfun.cpp" />
     <ClCompile Include="..\..\common\Lock.cpp" />
     <ClCompile Include="..\..\common\LogFile.cpp" />
@@ -112,6 +113,7 @@
     <ClInclude Include="..\..\common\CCommonFile.h" />
     <ClInclude Include="..\..\common\common_lib.h" />
     <ClInclude Include="..\..\common\common_time.h" />
+    <ClInclude Include="..\..\common\GECodeConvert.h" />
     <ClInclude Include="..\..\common\include.h" />
     <ClInclude Include="..\..\common\Lock.h" />
     <ClInclude Include="..\..\common\LogFile.h" />

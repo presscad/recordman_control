@@ -30,6 +30,7 @@ public:
 	static int DfuMsg_24_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
 	static int DfuMsg_31_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
 	static int DfuMsg_33_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
+	static int DfuMsg_3A_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
 	static int DfuMsg_91_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
 	static int DfuMsg_92_Json(cJSON*& pJsonMsg, void* pParm, int nOption);
 	static int DfuMsg_93_Json(cJSON*& pJsonMsg, void* pParm, int nOption);

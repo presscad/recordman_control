@@ -2,6 +2,7 @@
 #define RECORD_DATA_COLLECTOR_GLOBAL_FUNCTION_H
 
 #include "const_define.h"
+#include "../../common/common_time.h"
 
 //
 char* Record_Strrev(char* szT);
@@ -22,5 +23,7 @@ void ConvertUint16BigedianToL(XJHANDLE pChar, uint16& uVal);
 string GetInt32VersionInfo(XJHANDLE pChar);
 
 string GetDfucrcInfo(XJHANDLE pChar);
+
+string FormatDfuMsgTime(UINT uMsgtime, int nTimetype = CCommonTime::STTP19Time);
 
 #endif

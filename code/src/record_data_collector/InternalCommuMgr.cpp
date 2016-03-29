@@ -180,11 +180,11 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 
 	m_LogFile.FormatAdd(CLogFile::trace, "[StartCommandMonitorHandler]start amqp recv succeed£¡");
 
-	m_IdlerMqCommandThread.Stop();
+	m_AmqpCommandProcessThread.Stop();
 	m_AmqpMsgSendThread.Stop();
 
 	m_bExit = false;
-	if (false == m_IdlerMqCommandThread.Start(AmqpCommandOperationProc, this))
+	if (false == m_AmqpCommandProcessThread.Start(AmqpCommandOperationProc, this))
 	{
 		m_LogFile.FormatAdd(CLogFile::error, 
 			"[StartCommandMonitorHandler]start amqp command process thread failed£¡");
@@ -216,7 +216,7 @@ bool CInternalCommuMgr::StopCommandMonitorHandler()
 	m_bExit = true;
 
 	m_pInterRabbitCommuHandler->StopAmqpRecv();
-	m_IdlerMqCommandThread.Stop();
+	m_AmqpCommandProcessThread.Stop();
 	m_AmqpMsgSendThread.Stop();
 
 	if (NULL != m_pInterRabbitCommuHandler)

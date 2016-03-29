@@ -28,6 +28,7 @@ int CJsonMsgParser::InitJsonToMsgFunc()
 	m_mapJsonToMsgFun.insert(make_pair(RECORD_DATA_MSG_ID_RESET_DEV, (PJSONCOMMANDTOMSGFUNC)Json_20017_to_msg));
 	m_mapJsonToMsgFun.insert(make_pair(RECORD_DATA_MSG_ID_SET_NET_PARAM, (PJSONCOMMANDTOMSGFUNC)Json_20019_to_msg));
 	m_mapJsonToMsgFun.insert(make_pair(RECORD_DATA_MSG_ID_SET_TIME, (PJSONCOMMANDTOMSGFUNC)Json_20021_to_msg));
+	m_mapJsonToMsgFun.insert(make_pair(RECORD_DATA_MSG_ID_MANUAL_OSC_FILE, (PJSONCOMMANDTOMSGFUNC)Json_20025_to_msg));
 	m_mapJsonToMsgFun.insert(make_pair(RECORD_DATA_MSG_ID_DOWN_DFU_CONFIG, (PJSONCOMMANDTOMSGFUNC)Json_20060_to_msg));
 
 	return 1;
@@ -401,6 +402,31 @@ int CJsonMsgParser::Json_20021_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veM
 	dfu_msg_paraser.SetMsgEndFlag(true);
 	dfu_msg_paraser.SetMsgCurSecond(nCursecond);
 	dfu_msg_paraser.SetMsgCurNanoSecond(nCurNanoSecond);
+	dfu_msg_paraser.SetMsgLength();
+	dfu_msg_paraser.SetEndMask();
+
+	nDfuMsgID = dfu_msg_paraser.GetMsgCommand();
+
+	veMsg.push_back(dfuMsg);
+
+	return 1;
+}
+
+//manual osc file
+int CJsonMsgParser::Json_20025_to_msg(int& nDfuMsgID, vector<DFU_COMMU_MSG>& veMsg, void* pParm, int nOption)
+{
+	CDFUMsgAttach dfu_msg_paraser;
+	DFU_COMMU_MSG dfuMsg;
+	bzero(&dfuMsg, sizeof(DFU_COMMU_MSG));
+
+	dfu_msg_paraser.Attach(&dfuMsg);
+
+	dfu_msg_paraser.SetMsgStartMask();
+	dfu_msg_paraser.SetMsgProtocolMask();
+	dfu_msg_paraser.SetMsgReserve();
+	dfu_msg_paraser.SetMsgFuncMask();
+	dfu_msg_paraser.SetMsgCommand(RECORD_COMMAND_CHAR_MANUAL_OSC_VAR);
+	dfu_msg_paraser.SetMsgEndFlag(true);
 	dfu_msg_paraser.SetMsgLength();
 	dfu_msg_paraser.SetEndMask();
 

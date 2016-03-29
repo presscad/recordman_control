@@ -91,7 +91,7 @@ private:
 
 	CSafeLock m_LockResultMsg;
 
-	CRecordmanThread m_IdlerMqCommandThread;
+	CRecordmanThread m_AmqpCommandProcessThread;
 
 	CRecordmanThread m_AmqpMsgSendThread;
 

@@ -7,6 +7,7 @@
 #include "../../common/MessageLog.h"
 #include "DfuMsgAttach.h"
 #include "DfuMsgToJson.h"
+#include "../../common/common_time.h"
 
 typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
 
@@ -84,6 +85,15 @@ private:
 	//get follow up msg
 	bool GetFollowUpMsg(int nMsgTrans, int nCommandID, DFU_COMMU_MSG& follow_up_msg);
 
+	//process client result msg
+	bool ProcessClientResultMsg(DFUMESSAGE& client_result_msg);
+
+	//query file list msg
+	bool PorocessFListResultMsg(DFUMESSAGE& file_list_msg);
+
+	//process file msg(analyze and save)
+	bool ProcessFileResultMsg(DFUMESSAGE& file_msg);
+
 private:
 	//add file result msg
 	bool AddFileResultMsg(DFUMESSAGE& file_result_msg);
@@ -100,6 +110,12 @@ private:
 
 	//query new osc file from dfu
 	bool LaunchQueryNewFile();
+
+	//get new file
+	bool LaunchReadNewFile(UINT& uIndex);
+
+	//manual file
+	bool LaunchManualFile();
 
 	//create test_msg
 	void CreateTestReplyMsg(DFU_COMMU_MSG& reply_msg, DFU_COMMU_MSG recv_msg);
@@ -159,6 +175,7 @@ private:
 	//json result fun
 	PRESULTMSGCALLBACKFUNC m_pResultCallBackFunc;
 
+	//result class handle
 	XJHANDLE m_pResultProcessClassHandle;
 
 	//link last active time

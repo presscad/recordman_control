@@ -218,3 +218,11 @@ std::string GetDfucrcInfo(XJHANDLE pChar)
 	return strCrc;
 }
 
+std::string FormatDfuMsgTime(UINT uMsgtime, int nTimetype /*= CCommonTime::STTP19Time*/)
+{
+	time_t tTime = uMsgtime;
+	CCommonTime commontime(tTime);
+
+	return commontime.GetTimeString(nTimetype);
+}
+

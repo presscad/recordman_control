@@ -196,8 +196,11 @@ bool CRabbitmqAccess::StartAmqpRecv(RABBIT_RECV_PARAM& rabbitmq_recv_param)
 bool CRabbitmqAccess::StopAmqpRecv()
 {
 	m_bExit = true;
-	CloseRabbitMqConn();
+	//CloseRabbitMqConn();
+
 	m_MsgRecvThread.Stop();
+
+	CloseRabbitMqConn();
 
 	return true;
 }
@@ -312,32 +315,42 @@ int CRabbitmqAccess::RecvAmqpMsgLoop()
 // 	tv.tv_sec = 10;
 // 	tv.tv_usec = 0;
 
-	while(!m_bExit)
+	try
 	{
-		amqp_rpc_reply_t ret;
-		amqp_maybe_release_buffers(m_pRabbitMqConn);
-		envelope = new amqp_envelope_t;
-		bzero(envelope, sizeof(amqp_envelope_t));
+		while(!m_bExit)
+		{
+			amqp_rpc_reply_t ret;
+			amqp_maybe_release_buffers(m_pRabbitMqConn);
+			envelope = new amqp_envelope_t;
+			bzero(envelope, sizeof(amqp_envelope_t));
 
-		ret = amqp_consume_message(m_pRabbitMqConn, envelope, NULL, 0);
-		if(ret.reply_type == AMQP_RESPONSE_NORMAL)
-		{
-			if (NULL != m_pAmqpRecvFun)
+			ret = amqp_consume_message(m_pRabbitMqConn, envelope, NULL, 0);
+			if(ret.reply_type == AMQP_RESPONSE_NORMAL)
 			{
-				m_pAmqpRecvFun(envelope, m_pAmqpRecvReserved);
+				if (NULL != m_pAmqpRecvFun)
+				{
+					m_pAmqpRecvFun(envelope, m_pAmqpRecvReserved);
+				}
+
+				if(amqp_basic_ack(m_pRabbitMqConn, envelope->channel, envelope->delivery_tag, false) > 0)
+				{
+					printf("failing to send the ack to the broker...\n");
+				}
 			}
-			
-			if(amqp_basic_ack(m_pRabbitMqConn, envelope->channel, envelope->delivery_tag, false) > 0)
+			else if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION)
 			{
-				printf("failing to send the ack to the broker...\n");
+				FreeAmqpEnveloptObj(envelope);
+				printf("amqp_consume_message faild!\n");
 			}
-		}
-		else if(ret.reply_type == AMQP_RESPONSE_LIBRARY_EXCEPTION)
-		{
-			FreeAmqpEnveloptObj(envelope);
-			printf("amqp_consume_message faild!\n");
 		}
 	}
+	catch (...)
+	{
+		printf("[RecvAmqpMsgLoop]find unknown exception£¡\n");
+		return -1;
+	}
+
+	printf("[RecvAmqpMsgLoop]recv amqp loop exit normal£¡\n");
 
 	return 0;
 }
