@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{FF365352-0830-43C6-A3A1-067EF74EDEB9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>recordman_services_control</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../common_open_source/mongo/include;../../common_open_source/boost/boost-1_60/include;../../common_open_source/rabbitmq/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>../../bin/Debug/$(TargetName)/$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>../../common_open_source/boost/boost-1_60/lib_win32/dbg/;../../common_open_source/mongo/lib/win32/dbg/;../../common_open_source/rabbitmq/lib/win32/dbg/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient-gd.lib;libboost_chrono-vc100-mt-gd-1_60.lib;libboost_date_time-vc100-mt-gd-1_60.lib;libboost_system-vc100-mt-gd-1_60.lib;libboost_thread-vc100-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;OS_WINDOWS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../common_open_source/mongo/include;../../common_open_source/boost/boost-1_60/include;../../common_open_source/rabbitmq/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <OutputFile>../../bin/$(TargetName)/$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>../../common_open_source/boost/boost-1_60/lib_win32/;../../common_open_source/mongo/lib/win32/;../../common_open_source/rabbitmq/lib/win32/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient.lib;libboost_chrono-vc100-mt-1_60.lib;libboost_date_time-vc100-mt-1_60.lib;libboost_system-vc100-mt-1_60.lib;libboost_thread-vc100-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\common\CCommonFile.cpp" />
+    <ClCompile Include="..\..\common\common_lib.cpp" />
+    <ClCompile Include="..\..\common\common_time.cpp" />
+    <ClCompile Include="..\..\common\GECodeConvert.cpp" />
+    <ClCompile Include="..\..\common\globalfun.cpp" />
+    <ClCompile Include="..\..\common\Lock.cpp" />
+    <ClCompile Include="..\..\common\LogFile.cpp" />
+    <ClCompile Include="..\..\common\MessageLog.cpp" />
+    <ClCompile Include="..\..\common\MongodbAccess.cpp" />
+    <ClCompile Include="..\..\common\RabbitmqAccess.cpp" />
+    <ClCompile Include="..\..\common\RecordmanThread.cpp" />
+    <ClCompile Include="..\..\common\SafeLock.cpp" />
+    <ClCompile Include="..\..\common\StrongString.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RecordManServicesControl.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\common\CCommonFile.h" />
+    <ClInclude Include="..\..\common\common_lib.h" />
+    <ClInclude Include="..\..\common\common_time.h" />
+    <ClInclude Include="..\..\common\GECodeConvert.h" />
+    <ClInclude Include="..\..\common\Lock.h" />
+    <ClInclude Include="..\..\common\LogFile.h" />
+    <ClInclude Include="..\..\common\MessageLog.h" />
+    <ClInclude Include="..\..\common\MongodbAccess.h" />
+    <ClInclude Include="..\..\common\RabbitmqAccess.h" />
+    <ClInclude Include="..\..\common\RecordmanThread.h" />
+    <ClInclude Include="..\..\common\SafeLock.h" />
+    <ClInclude Include="..\..\common\StrongString.h" />
+    <ClInclude Include="..\..\common\sys_define.h" />
+    <ClInclude Include="RecordManServicesControl.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
