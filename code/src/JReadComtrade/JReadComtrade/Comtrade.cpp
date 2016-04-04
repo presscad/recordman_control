@@ -54,9 +54,11 @@ bool Comtrade::loadQuickComtrade()
 
 	string strFile = "quickComtrade.dll";
 #ifndef OS_WINDOWS //其他平台
-	strFile = "libQuickComtrade.so";
+	strFile = "libquickComtrade.so";
 #endif
+	cout<<"readwave.dll:"<<"load dll:"<<strFile<<endl;
 	hDllInst   =  xj_load_library(strFile.c_str());  
+	cout<<"readwave.dll:"<<"load dll success"<<endl;
 	
 	if(hDllInst)  
 	{ 
@@ -118,14 +120,19 @@ Comtrade::~Comtrade(void)
 }
 int Comtrade::LoadFile(char* sFilePath, char* sError)
 {
-
+	cout<<"readwave.dll:"<<"start load file"<<endl;
+	
 	if(hDllInst==NULL){
 		isLoadQuickComtrade=loadQuickComtrade();
 	}
-
+	
 	if(!isLoadQuickComtrade){
+		cout<<"readwave.dll:"<<"load quickcomtrade.dll failed"<<endl;
 		return  1;
-	} 
+	}
+	
+	cout<<"readwave.dll:"<<"load quickcomtrade.dll success, start load comtrade file"<<endl;
+	
 	return m_LoadFileFUN( sFilePath ,sError,hQuickComtrade);
 
 }

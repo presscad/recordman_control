@@ -1436,7 +1436,7 @@ int CCOMTRADEParser::ParseHdr()
 	if( XML_NO_ERROR != eRet ){
 		pathName.Format("%s.HDR", m_strName.c_str());
 		eRet = doc.LoadFile( pathName.c_str() );
-		if( XML_NO_ERROR == eRet )
+		if( XML_NO_ERROR != eRet )
 		{
 			m_Hdr.result = 0;
 			return 0;
@@ -1476,11 +1476,12 @@ int CCOMTRADEParser::ParseHdr()
 	cout<<"encoding:"<<encoding.c_str()<<endl;
 	CGECodeConvert convert;
 	CGECodeConvert* pc = NULL;
-	if( encoding.find("GB") >=0 || encoding.find("gb") >= 0){
-
+	if( encoding.find("GB") != string::npos || encoding.find("gb") != string::npos){
+			cout<<"endcoding is gbk,do not need convert"<<endl;
 	}else{
-		if( encoding.find("utf") >= 0 || encoding.find("UTF") >= 0 ){
+		if( encoding.find("utf") != string::npos || encoding.find("UTF") != string::npos ){
 			pc = &convert;
+			cout<<"endcoding is utf8,need convert"<<endl;
 		}else{
 			//±àÂë²»Ö§³Ö
 			m_Hdr.result = 3;
