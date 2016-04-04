@@ -92,10 +92,9 @@ m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST"),
 m_LockResultMsg("LOCK_RESULT_MSG_LIST")
 {
 	m_bExit = true;
-	m_pRabbitmqParm = NULL;
+	m_pConfigHandle = NULL;
 	m_pInterRabbitCommuHandler = NULL;
 	m_pRecordApciHandler = NULL;
-	m_pSystemParm = NULL;
 
 	m_veAmqpCommand.clear();
 	m_veJsonSendList.clear();
@@ -107,16 +106,9 @@ CInternalCommuMgr::~CInternalCommuMgr(void)
 	m_LogFile.Close();
 }
 
-//set rabbitmq access basic param
-void CInternalCommuMgr::SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj)
+void CInternalCommuMgr::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle)
 {
-	m_pRabbitmqParm = pObj;
-}
-
-//set system config param
-void CInternalCommuMgr::SetSystemParam(COLLECTOR_DATA_SYS_PARAM* pSystemParam)
-{
-	m_pSystemParm = pSystemParam;
+	m_pConfigHandle = pConfigHandle;
 }
 
 void CInternalCommuMgr::SetRecordApciHandler(CRecordAPCIHandler* pApciHandler)
@@ -145,7 +137,7 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 		}
 
 		m_pInterRabbitCommuHandler->SetRabbitAccessParam(
-			&m_pRabbitmqParm->rabbitmq_basick_param);
+			m_pConfigHandle->GetRabmqBasicParamHandle());
 
 		if (false == m_pInterRabbitCommuHandler->ConnectRabbitMqServer())
 		{
@@ -169,7 +161,7 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 bool CInternalCommuMgr::StartCommandMonitorHandler()
 {
 	RABBIT_RECV_PARAM rabbit_rcv_param;
-	sprintf(rabbit_rcv_param.chQueueName, "%s", m_pRabbitmqParm->chCollectorRecvQueName);
+	sprintf(rabbit_rcv_param.chQueueName, "%s", m_pConfigHandle->GetRabmqadParam_RevQueName());
 
 	m_pInterRabbitCommuHandler->RegisterRecvHandler(AmqpCommandRecvFun, this);//注册接收回调函数
 	if (false == m_pInterRabbitCommuHandler->StartAmqpRecv(rabbit_rcv_param))
@@ -441,9 +433,9 @@ bool CInternalCommuMgr::InitLogFile()
 {
 	m_LogFile.Close();
 
-	m_LogFile.SetLogPath(m_pSystemParm->chLogpath);
-	m_LogFile.SetLogLevel(m_pSystemParm->nLoglevel);
-	m_LogFile.SetLogSaveDays(m_pSystemParm->nLogDays);
+	m_LogFile.SetLogPath(m_pConfigHandle->GetSysParam_LogPath());
+	m_LogFile.SetLogLevel(m_pConfigHandle->GetSysParam_LogLevel());
+	m_LogFile.SetLogSaveDays(m_pConfigHandle->GetSysParam_LogDays());
 
 	return (TRUE == m_LogFile.Open("internal_commu_log"))?true:false;
 }

@@ -43,10 +43,7 @@ public:
 	~CInternalCommuMgr(void);
 
 public:
-	//set rabbit access basic param
-	void SetRabbitmqAccessParam(COLLECTOR_ADVANCE_RABBITMQ_PARAM* pObj);
-
-	void SetSystemParam(COLLECTOR_DATA_SYS_PARAM* pSystemParam);
+	void SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle);
 
 	void SetRecordApciHandler(CRecordAPCIHandler* pApciHandler);
 
@@ -79,13 +76,11 @@ private:
 
 private:
 /**	\brief 配置维护类对象*/
-	COLLECTOR_ADVANCE_RABBITMQ_PARAM* m_pRabbitmqParm;
+	CConfigVariableMgr* m_pConfigHandle;
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;
 
 	CRecordAPCIHandler* m_pRecordApciHandler;
-
-	COLLECTOR_DATA_SYS_PARAM* m_pSystemParm;
 
 	CSafeLock m_LockAmqpRecvMsg;
 

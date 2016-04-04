@@ -81,10 +81,8 @@ m_LockCommandList("LOCK_COMMAND_LIST"),
 m_LockFileList("LOCK_FILE_LIST")
 {
 	m_bExitFlag = true;
-	m_pCollectorSysParam = NULL;
-	m_pDfuCommuParam = NULL;
+	m_pConfigHandle = NULL;
 	m_pNetSocket = NULL;
-	m_pMongoParam = NULL;
 	m_pResultCallBackFunc = NULL;
 	m_pResultProcessClassHandle = NULL;
 	m_utTransMask = 0;
@@ -108,17 +106,9 @@ CRecordAPCIHandler::~CRecordAPCIHandler(void)
 	m_LogFile.Close();
 }
 
-//set system param
-void CRecordAPCIHandler::SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam, COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParam)
+void CRecordAPCIHandler::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle)
 {
-	m_pCollectorSysParam = pParam;
-	m_pDfuCommuParam = pDfuCommuParam;
-}
-
-//set mongodb access param
-void CRecordAPCIHandler::SetMongoAccessParam(RECORD_MONGO_BASIC_PARAM* pMongoParam)
-{
-	m_pMongoParam = pMongoParam;
+	m_pConfigHandle = pConfigHandle;
 }
 
 //result json fun
@@ -133,11 +123,11 @@ bool CRecordAPCIHandler::InitLogFile()
 {
 	m_LogFile.Close();
 
-	m_LogFile.SetLogLevel(m_pCollectorSysParam->nLoglevel);
-	m_LogFile.SetLogSaveDays(m_pCollectorSysParam->nLogDays);
-	m_LogFile.SetLogPath(m_pCollectorSysParam->chLogpath);
+	m_LogFile.SetLogLevel(m_pConfigHandle->GetSysParam_LogLevel());
+	m_LogFile.SetLogSaveDays(m_pConfigHandle->GetSysParam_LogDays());
+	m_LogFile.SetLogPath(m_pConfigHandle->GetSysParam_LogPath());
 
-	return (TRUE == m_LogFile.Open(m_pDfuCommuParam->chDfuAddr))?true:false;
+	return (TRUE == m_LogFile.Open(m_pConfigHandle->GetDfuCommuParam_Addr(true)))?true:false;
 }
 
 //get send msg
@@ -316,75 +306,136 @@ bool CRecordAPCIHandler::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 	CDFUMsgAttach msgAttach;
 	uint16 uAnalogchannelNum(0);//模拟量通道数
 	uint16 uDigitalchannelNum(0);//开关量通道数
-	float fFirstFactoryAnalog(0);//一次系数
-	float fSecondaryFactoryAnalog(0);//二次系数
-	float fLinerate(0);//线路频率
 	UINT uFilesecond(0);//录波时刻，秒
 	UINT uFilenanosecond(0);//录波时刻，纳秒
 	UINT uFaultsecond(0);//故障时刻，秒
 	UINT uFaultnanosecond(0);//故障时刻，纳秒
 	UINT uSamplesectionNum(0);//采样段数目
 	UINT uDatablockNum(0);//数据块数目
+	UINT uAiVal(0);//模拟通道值
 	UINT uNo(0);
+	UINT uDataNo(0);
+	UINT uDival(0);
 	int nMsgoffset = RECORD_DFU_MSG_HEADER_OFFSET;
 
-	vector<DFU_COMMU_MSG>::iterator itFile = file_msg.result_msg.begin();
-	for (; itFile != file_msg.result_msg.end(); itFile++)
+	comtradeHead head;
+	CreateComtrade com;
+	list<aiChannel> aichs;//模拟量通道
+	list<diChannel> dichs;//开关量通道
+	list<sampleInfo> samples;//采样段
+	list<list<short> > datas;//数据
+	aichs.clear();
+	dichs.clear();
+	samples.clear();
+	datas.clear();
+
+	try
 	{
-		pOneMsg = &*itFile;
-		msgAttach.Attach(pOneMsg);
-		
-		ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//模拟通道数目
-		nMsgoffset += 2;
+		head.revYear = 1991;
+		head.datType="ascii";
+		head.timemult=1.0;
 
-		ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//开关通道数目
-		nMsgoffset += 2;
+		GetOscInfo(head);//get osc info
 
-		ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], fFirstFactoryAnalog);//模拟通道一次系数
-		nMsgoffset += 4;
-
-		ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], fSecondaryFactoryAnalog);//模拟通道二次系数
-		nMsgoffset += 4;
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilesecond);//录波时刻（秒）
-		nMsgoffset += 4;
-		string strFileTime = FormatDfuMsgTime(uFilesecond);
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//录波时刻（纳秒）
-		nMsgoffset += 4;
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFaultsecond);//故障时间（秒）
-		nMsgoffset += 4;
-		string strFaultTime = FormatDfuMsgTime(uFaultsecond);
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//故障时刻（纳秒）
-		nMsgoffset += 4;
-
-		ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], fLinerate);//线路频率
-		nMsgoffset += 4;
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uSamplesectionNum);//采样段数目
-		nMsgoffset += 4;
-
-		ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDatablockNum);//数据块数目
-		nMsgoffset += 4;
-
-		for (uNo = 0; uNo < uSamplesectionNum; uNo++)//采样段
+		vector<DFU_COMMU_MSG>::iterator itFile = file_msg.result_msg.begin();
+		for (; itFile != file_msg.result_msg.end(); itFile++)
 		{
-			float fSamplerate(0);
-			UINT uDatapoint(0);
+			pOneMsg = &*itFile;
+			msgAttach.Attach(pOneMsg);
 
-			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], fSamplerate);//采样率
+			ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//模拟通道数目
+			head.aiCount += uAnalogchannelNum;
+			nMsgoffset += 2;
+
+			ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//开关通道数目
+			head.diCount += uAnalogchannelNum;
+			nMsgoffset += 2;
+
+			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.primary);//模拟通道一次系数
 			nMsgoffset += 4;
 
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDatapoint);//数据点
+			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.secondary);//模拟通道二次系数
 			nMsgoffset += 4;
-		}
 
-		for (uNo = 0; uNo < uDatablockNum; uNo++)//数据块
-		{
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilesecond);//录波时刻（秒）
+			nMsgoffset += 4;
+			head.startTime = FormatDfuMsgTime(uFilesecond);
+
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//录波时刻（纳秒）
+			nMsgoffset += 4;
+
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFaultsecond);//故障时间（秒）
+			nMsgoffset += 4;
+			head.faultTime = FormatDfuMsgTime(uFaultsecond);
+
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//故障时刻（纳秒）
+			nMsgoffset += 4;
+
+			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.lineFreq);//线路频率
+			nMsgoffset += 4;
+
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uSamplesectionNum);//采样段数目
+			head.rateCount += uSamplesectionNum;
+			nMsgoffset += 4;
+
+			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDatablockNum);//数据块数目
+			nMsgoffset += 4;
+
+			for (uNo = 0; uNo < uSamplesectionNum; uNo++)
+			{
+				sampleInfo sa;
+
+				ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], sa.rate);//采样率
+				nMsgoffset += 4;
+
+				ConvertInt32BigedianToL(&(*pOneMsg)[nMsgoffset], sa.lastIndex);//此采用频率最后一个采样的序号
+				nMsgoffset += 4;
+
+				samples.push_back(sa);
+			}
+
+			for (uNo = 0; uNo < uDatablockNum; uNo++)//数据块
+			{
+				aiChannel ai;
+				list<short> data_val;
+				for (uDataNo = 0; uDataNo < uAnalogchannelNum; uDataNo++)//模拟量
+				{
+					ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], ai.index);//模拟通道编号
+					nMsgoffset += 4;
+
+					ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDival);//模拟通道编号
+					nMsgoffset += 4;
+
+					aichs.push_back(ai);
+					data_val.push_back(uDival);
+				}
+
+				ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDival);
+				nMsgoffset += 4;//开关量
+				for (uDataNo = 0; uDataNo < uAnalogchannelNum; uDataNo++)
+				{
+					diChannel di;
+
+					dichs.push_back(di);
+					data_val.push_back();
+				}
+
+				datas.push_back(data_val);
+			}
 		}
 	}
+	catch (...)
+	{
+		m_LogFile.FormatAdd(CLogFile::error, "[ProcessFileResultMsg]find unknown exception!");
+		return false;
+	}
+
+	com.setComtradeHead(head);//设置数据头
+	com.setSampleInfos(samples);//采样段
+	com.setAiChannels(aichs);//模拟量通道
+	com.setDiChannels(dichs);//开关量通道
+
+	com.create(m_pConfigHandle->GetDfuCommuParam_FileSavePath(), "test");
 
 	return true;
 }
@@ -419,6 +470,51 @@ bool CRecordAPCIHandler::GetFileResultMsg(DFUMESSAGE& file_msg)
 	return true;
 }
 
+//get osc info
+bool CRecordAPCIHandler::GetOscInfo(comtradeHead& head)
+{
+	long lLen = 0;
+	auto_ptr<mongo::DBClientCursor> result;
+	m_MongoAccessHandler.QueryData("runstatus_info", result);
+	string strFieldval = "";
+	CGECodeConvert code_convert;
+	char* pVal = NULL;
+
+	while (result->more())
+	{
+		mongo::BSONObj obj = result->next();
+		BSONForEach(e, obj)
+		{
+			if (strcmp(e.fieldName(), "devname") == 0)
+			{
+				strFieldval = e.String();
+				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
+				if (lLen != -1)
+				{
+					head.devName = pVal;
+				}
+			}
+			else if (strcmp(e.fieldName(), "station") == 0)
+			{
+				strFieldval = e.String();
+				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
+				if (lLen != -1)
+				{
+					head.stationName = pVal;
+				}
+			}
+
+			if (NULL != pVal)
+			{
+				delete[] pVal;
+				pVal = NULL;
+			}
+		}
+	}
+
+	return true;
+}
+
 //init
 bool CRecordAPCIHandler::InitRecordApciHandler()
 {
@@ -446,7 +542,7 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 		}
 
 		string strError = "";
-		m_MongoAccessHandler.SetMongDbAccessparam(m_pMongoParam);
+		m_MongoAccessHandler.SetMongDbAccessparam(m_pConfigHandle->GetMongoParamHandle());
 		if (false == m_MongoAccessHandler.ConnectMongoServer(strError))
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
@@ -476,26 +572,26 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 		m_DfuRecvThread.Stop();
 
 		bRet = m_pNetSocket->ConnectServer(
-			m_pDfuCommuParam->chDfuAddr, 
-			m_pDfuCommuParam->nDfuport);
+			m_pConfigHandle->GetDfuCommuParam_Addr(true), 
+			m_pConfigHandle->GetDfuCommuParam_Port(true));
 
 		if (false == bRet)
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
 				"[StartRecordApciHandler]connect dfu server：%s port：%d failed！", 
-				m_pDfuCommuParam->chDfuAddr, 
-				m_pDfuCommuParam->nDfuport);
+				m_pConfigHandle->GetDfuCommuParam_Addr(true), 
+				m_pConfigHandle->GetDfuCommuParam_Port(true));
 
 			return false;
 		}
 
 		m_LogFile.FormatAdd(CLogFile::trace, 
 			"[StartRecordApciHandler]connect dfu server：%s port：%d succeed！", 
-			m_pDfuCommuParam->chDfuAddr, 
-			m_pDfuCommuParam->nDfuport);
+			m_pConfigHandle->GetDfuCommuParam_Addr(true), 
+			m_pConfigHandle->GetDfuCommuParam_Port(true));
 
-		m_pNetSocket->SetOptions(SENDTIME, m_pCollectorSysParam->nSendTimeout*1000, 0);
-		m_pNetSocket->SetOptions(RECVTIME, m_pCollectorSysParam->nRecvTimeout*1000, 0);
+		m_pNetSocket->SetOptions(SENDTIME, (m_pConfigHandle->GetSysParam_SendTimeOut() * 1000), 0);
+		m_pNetSocket->SetOptions(RECVTIME, (m_pConfigHandle->GetSysParam_RecTimeOut() * 1000), 0);
 
 		m_bExitFlag = false;
 
@@ -570,7 +666,8 @@ int CRecordAPCIHandler::DfuBuinessProcessLoop()
 
 			time(&tCur);//get cur time
 
-			if ((tCur - m_tCheckFile) >= m_pDfuCommuParam->nCheckNewFileTime)//query file
+			if ((tCur - m_tCheckFile) >= 
+				m_pConfigHandle->GetDfuCommuParam_ChecknewfileTime(true))//query file
 			{
 				if (bQueryNewFile == false)
 				{

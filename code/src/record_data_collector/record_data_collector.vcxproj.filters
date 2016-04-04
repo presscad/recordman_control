@@ -96,6 +96,9 @@
     <ClCompile Include="..\..\common\GECodeConvert.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\common\CreateComtrade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -180,6 +183,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\GECodeConvert.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\CreateComtrade.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

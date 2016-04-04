@@ -56,7 +56,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <OutputFile>../../bin/Debug/$(TargetName)/$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient-sgd.lib;libboost_chrono-vc100-mt-gd-1_60.lib;libboost_date_time-vc100-mt-gd-1_60.lib;libboost_system-vc100-mt-gd-1_60.lib;libboost_thread-vc100-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient-gd.lib;libboost_chrono-vc100-mt-gd-1_60.lib;libboost_date_time-vc100-mt-gd-1_60.lib;libboost_system-vc100-mt-gd-1_60.lib;libboost_thread-vc100-mt-gd-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../common_open_source/boost/boost-1_60/lib_win32/dbg/;../../common_open_source/mongo/lib/win32/dbg/;../../common_open_source/rabbitmq/lib/win32/dbg/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -76,14 +76,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient-s.lib;libboost_chrono-vc100-mt-1_60.lib;libboost_date_time-vc100-mt-1_60.lib;libboost_system-vc100-mt-1_60.lib;libboost_thread-vc100-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;librabbitmq.4.lib;libmongoclient.lib;libboost_chrono-vc100-mt-1_60.lib;libboost_date_time-vc100-mt-1_60.lib;libboost_system-vc100-mt-1_60.lib;libboost_thread-vc100-mt-1_60.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../common_open_source/boost/boost-1_60/lib_win32/;../../common_open_source/mongo/lib/win32/;../../common_open_source/rabbitmq/lib/win32/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <OutputFile>../../bin/$(TargetName)/$(TargetName)$(TargetExt)</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\common\CCommonFile.cpp" />
     <ClCompile Include="..\..\common\common_lib.cpp" />
     <ClCompile Include="..\..\common\common_time.cpp" />
+    <ClCompile Include="..\..\common\CreateComtrade.cpp" />
     <ClCompile Include="..\..\common\GECodeConvert.cpp" />
     <ClCompile Include="..\..\common\globalfun.cpp" />
     <ClCompile Include="..\..\common\Lock.cpp" />
@@ -113,6 +115,7 @@
     <ClInclude Include="..\..\common\CCommonFile.h" />
     <ClInclude Include="..\..\common\common_lib.h" />
     <ClInclude Include="..\..\common\common_time.h" />
+    <ClInclude Include="..\..\common\CreateComtrade.h" />
     <ClInclude Include="..\..\common\GECodeConvert.h" />
     <ClInclude Include="..\..\common\include.h" />
     <ClInclude Include="..\..\common\Lock.h" />

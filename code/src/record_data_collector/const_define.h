@@ -149,14 +149,16 @@ typedef vector<BYTE> DFU_COMMU_MSG;
 //dfuÅäÖÃ
 typedef struct _COLLECTOR_DFU_COMMU_PARAM
 {
-	char chDfuAddr[MAX_FIELD_NAME_LEN];//dfu¼àÌý¶Ë¿Ú
 	int nDfuport;
 	int nIdleTime;
 	int nCheckNewFileTime;
+	char chDfuAddr[MAX_FIELD_NAME_LEN];//dfu¼àÌý¶Ë¿Ú
+	char chFileSavePath[MAX_LINE_LENGTH];
 
 	_COLLECTOR_DFU_COMMU_PARAM()
 	{
 		bzero(chDfuAddr, sizeof(chDfuAddr));
+		bzero(chFileSavePath, sizeof(chFileSavePath));
 		nDfuport = COLLECTOR_DFU_LISTEN_PORT;
 		nIdleTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		nCheckNewFileTime = COLLECTOR_COMMU_CHECK_NEW_FILE_TIME;

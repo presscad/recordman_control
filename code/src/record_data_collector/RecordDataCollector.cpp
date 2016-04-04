@@ -33,15 +33,23 @@ bool CRecordDataCollector::InitRecordDataColletor()
 {
 	try
 	{
+		mongo::client::GlobalInstance mongo_instance;//init mongo
+		if (!mongo_instance.initialized())
+		{
+			m_Log.FormatAdd(CLogFile::error, "failed to initialize the client driver£¬reason£º%s", 
+				mongo_instance.status().codeString().c_str());
+			return false;
+		}
+
 		if (false == InitSysConfigVariable())
 		{
 			return false;
 		}
 
 		bzero(m_chLogpath, sizeof(m_chLogpath));
-		sprintf(m_chLogpath, "%s", m_pConfigvarialemgr->m_collector_sys_param.chLogpath);
-		m_nLogLevel = m_pConfigvarialemgr->m_collector_sys_param.nLoglevel;
-		m_nLogDays = m_pConfigvarialemgr->m_collector_sys_param.nLogDays;
+		sprintf(m_chLogpath, "%s", m_pConfigvarialemgr->GetSysParam_LogPath());
+		m_nLogLevel = m_pConfigvarialemgr->GetSysParam_LogLevel();
+		m_nLogDays = m_pConfigvarialemgr->GetSysParam_LogDays();
 
 		InitLogFile();
 
@@ -244,13 +252,7 @@ bool CRecordDataCollector::InitApciHandler()
 			return false;
 		}
 
-		m_pRecordApciHandler->SetCollectorSysParam(
-			&m_pConfigvarialemgr->m_collector_sys_param, 
-			&m_pConfigvarialemgr->m_fault_dfu_param);
-
-		m_pRecordApciHandler->SetMongoAccessParam(
-			&m_pConfigvarialemgr->m_mongo_access_param);
-
+		m_pRecordApciHandler->SetConfigVariableMgrHandle(m_pConfigvarialemgr);
 		if (false == m_pRecordApciHandler->InitRecordApciHandler())
 		{
 			m_Log.FormatAdd(CLogFile::error, "[InitApciHandler]InitRecordApciHandler failed£¡");
@@ -283,9 +285,8 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 			return false;
 		}
 
-		m_pInternalCommuMgr->SetRabbitmqAccessParam(&m_pConfigvarialemgr->m_rabbit_mq_param);
+		m_pInternalCommuMgr->SetConfigVariableMgrHandle(m_pConfigvarialemgr);
 		m_pInternalCommuMgr->SetRecordApciHandler(m_pRecordApciHandler);
-		m_pInternalCommuMgr->SetSystemParam(&m_pConfigvarialemgr->m_collector_sys_param);
 		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
 			m_Log.FormatAdd(CLogFile::error, "[InitInternalCommuMgr]InitCommandMonitorHandler failed£¡");

@@ -8,6 +8,8 @@
 #include "DfuMsgAttach.h"
 #include "DfuMsgToJson.h"
 #include "../../common/common_time.h"
+#include "../../common/CreateComtrade.h"
+#include "../../common/GECodeConvert.h"
 
 typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
 
@@ -24,11 +26,7 @@ public:
 	~CRecordAPCIHandler(void);
 
 public:
-	//set access param
-	void SetCollectorSysParam(COLLECTOR_DATA_SYS_PARAM* pParam, COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParam);
-
-	//mongodb access param
-	void SetMongoAccessParam(RECORD_MONGO_BASIC_PARAM* pMongoParam);
+	void SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle);
 
 	//set result json fun
 	void RegisterResultCallBackFunc(PRESULTMSGCALLBACKFUNC pFunc, XJHANDLE pObj);
@@ -101,6 +99,9 @@ private:
 	//get msg procedd
 	bool GetFileResultMsg(DFUMESSAGE& file_msg);
 
+	//osc info
+	bool GetOscInfo(comtradeHead& head);
+
 private:
 	//init logfile
 	bool InitLogFile();
@@ -125,13 +126,7 @@ private:
 
 private:
 	/**	\brief 配置参数对象*/
-	COLLECTOR_DATA_SYS_PARAM* m_pCollectorSysParam;
-
-	//dfu commu param
-	COLLECTOR_DFU_COMMU_PARAM* m_pDfuCommuParam;
-
-	//mongo param
-	RECORD_MONGO_BASIC_PARAM* m_pMongoParam;
+	CConfigVariableMgr* m_pConfigHandle;
 
 	//log handler
 	CMessageLog m_LogFile;

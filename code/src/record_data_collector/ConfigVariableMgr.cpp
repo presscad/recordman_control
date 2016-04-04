@@ -37,11 +37,13 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 		m_fault_dfu_param.nIdleTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		m_fault_dfu_param.nCheckNewFileTime = COLLECTOR_COMMU_CHECK_NEW_FILE_TIME;
 		sprintf(m_fault_dfu_param.chDfuAddr, "%s", "10.123.16.56");
+		sprintf(m_fault_dfu_param.chFileSavePath, "%s", "/fault_record_data/");
 
 		m_contin_dfu_param.nDfuport = COLLECTOR_DFU_LISTEN_PORT;
 		m_contin_dfu_param.nIdleTime = COLLECTOR_IDLE_CHECEK_DEFAULT_TIME;
 		m_contin_dfu_param.nCheckNewFileTime = COLLECTOR_COMMU_CHECK_NEW_FILE_TIME;
 		sprintf(m_contin_dfu_param.chDfuAddr, "%s", "10.123.16.57");
+		sprintf(m_contin_dfu_param.chFileSavePath, "%s", "/contin_record_data/");
 
 		m_rabbit_mq_param.nCollectorRecvChannel = RABBIT_MQ_DEFAULT_CHANNEL_ID;
 		sprintf(m_rabbit_mq_param.chCollectorRecvQueName, "%s", DATA_COLLECTOR_RECV_QUEUE_NAME);
@@ -144,6 +146,186 @@ bool CConfigVariableMgr::LoadCollectorSysParam()
 	}
 
 	return true;
+}
+
+char* CConfigVariableMgr::GetSysParam_LogPath()
+{
+	return m_collector_sys_param.chLogpath;
+}
+
+int CConfigVariableMgr::GetSysParam_LogLevel()
+{
+	return m_collector_sys_param.nLoglevel;
+}
+
+int CConfigVariableMgr::GetSysParam_LogDays()
+{
+	return m_collector_sys_param.nLogDays;
+}
+
+int CConfigVariableMgr::GetSysParam_RecTimeOut()
+{
+	return m_collector_sys_param.nRecvTimeout;
+}
+
+int CConfigVariableMgr::GetSysParam_SendTimeOut()
+{
+	return m_collector_sys_param.nSendTimeout;
+}
+
+int CConfigVariableMgr::GetRabmqadParam_RevChannel()
+{
+	return m_rabbit_mq_param.nCollectorRecvChannel;
+}
+
+char* CConfigVariableMgr::GetRabmqadParam_RevQueName()
+{
+	return m_rabbit_mq_param.chCollectorRecvQueName;
+}
+
+char* CConfigVariableMgr::GetRabmqadParam_WebResultQueName()
+{
+	return m_rabbit_mq_param.chWebResultQueName;
+}
+
+int CConfigVariableMgr::GetRabmqBasicParam_ServerPort()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.nserver_port;
+}
+
+int CConfigVariableMgr::GetRabmqBasicParam_ChannelID()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.nChannelID;
+}
+
+int CConfigVariableMgr::GetRabmqBasicParam_ChannelMax()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.nChannelMax;
+}
+
+int CConfigVariableMgr::GetRabmqBasicParam_FrameMax()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.nFrameMax;
+}
+
+int CConfigVariableMgr::GetRabmqBasicParam_HeartbeatTime()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.nHeartbeatTime;
+}
+
+char* CConfigVariableMgr::GetRabmqBasicParam_Hostname()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.chhostname;
+}
+
+char* CConfigVariableMgr::GetRabmqBasicParam_Username()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.chusrname;
+}
+
+char* CConfigVariableMgr::GetRabmqBasicParam_Password()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.chpassword;
+}
+
+char* CConfigVariableMgr::GetRabmqBasicParam_Vhost()
+{
+	return m_rabbit_mq_param.rabbitmq_basick_param.chVhost;
+}
+
+RABBIT_MQ_BASIC_ACCESS_PARAM* CConfigVariableMgr::GetRabmqBasicParamHandle()
+{
+	return &m_rabbit_mq_param.rabbitmq_basick_param;
+}
+
+int CConfigVariableMgr::GetDfuCommuParam_Port(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return m_fault_dfu_param.nDfuport;
+	}
+	else
+	{
+		return m_contin_dfu_param.nDfuport;
+	}
+}
+
+int CConfigVariableMgr::GetDfuCommuParam_Idletime(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return m_fault_dfu_param.nIdleTime;
+	}
+	else
+	{
+		return m_contin_dfu_param.nIdleTime;
+	}
+}
+
+int CConfigVariableMgr::GetDfuCommuParam_ChecknewfileTime(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return m_fault_dfu_param.nCheckNewFileTime;
+	}
+	else
+	{
+		return m_contin_dfu_param.nCheckNewFileTime;
+	}
+}
+
+char* CConfigVariableMgr::GetDfuCommuParam_Addr(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return m_fault_dfu_param.chDfuAddr;
+	}
+	else
+	{
+		return m_contin_dfu_param.chDfuAddr;
+	}
+}
+
+char* CConfigVariableMgr::GetDfuCommuParam_FileSavePath(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return m_fault_dfu_param.chFileSavePath;
+	}
+	else
+	{
+		return m_contin_dfu_param.chFileSavePath;
+	}
+}
+
+int CConfigVariableMgr::GetMongoParam_Port()
+{
+	return m_mongo_access_param.nPort;
+}
+
+char* CConfigVariableMgr::GetMongoParam_Addr()
+{
+	return m_mongo_access_param.chAddr;
+}
+
+char* CConfigVariableMgr::GetMongoParam_User()
+{
+	return m_mongo_access_param.chUser;
+}
+
+char* CConfigVariableMgr::GetMongoParam_Passwd()
+{
+	return m_mongo_access_param.chPasswd;
+}
+
+char* CConfigVariableMgr::GetMongoParam_DbName()
+{
+	return m_mongo_access_param.chDataBase;
+}
+
+RECORD_MONGO_BASIC_PARAM* CConfigVariableMgr::GetMongoParamHandle()
+{
+	return &m_mongo_access_param;
 }
 
 bool CConfigVariableMgr::LoadSystemLogConfig(TiXmlElement* pRootXmlElement)
@@ -295,6 +477,11 @@ bool CConfigVariableMgr::LoadDfuCommuConfig(TiXmlElement* pRootXmlElement)
 
 		GetCopyNodeValue(pXmlElement, "newfile_check_time", 
 			m_fault_dfu_param.nCheckNewFileTime);
+
+		bzero(m_fault_dfu_param.chFileSavePath, sizeof(m_fault_dfu_param.chFileSavePath));
+		GetCopyNodeValue(pXmlElement, "save_path", 
+			m_fault_dfu_param.chFileSavePath, 
+			sizeof(m_fault_dfu_param.chFileSavePath));
 	}
 	catch (...)
 	{
@@ -334,6 +521,11 @@ bool CConfigVariableMgr::LoadContinDfuCommuConfig(TiXmlElement* pRootXmlElement)
 
 		GetCopyNodeValue(pXmlElement, "newfile_check_time", 
 			m_contin_dfu_param.nCheckNewFileTime);
+
+		bzero(m_contin_dfu_param.chFileSavePath, sizeof(m_contin_dfu_param.chFileSavePath));
+		GetCopyNodeValue(pXmlElement, "save_path", 
+			m_contin_dfu_param.chFileSavePath, 
+			sizeof(m_contin_dfu_param.chFileSavePath));
 	}
 	catch (...)
 	{

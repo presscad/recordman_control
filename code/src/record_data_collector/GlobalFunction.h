@@ -24,6 +24,6 @@ string GetInt32VersionInfo(XJHANDLE pChar);
 
 string GetDfucrcInfo(XJHANDLE pChar);
 
-string FormatDfuMsgTime(UINT uMsgtime, int nTimetype = CCommonTime::STTP19Time);
+string FormatDfuMsgTime(UINT uMsgtime, int nTimetype = CCommonTime::COMTRADE26Time);
 
 #endif

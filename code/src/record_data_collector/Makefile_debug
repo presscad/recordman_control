@@ -32,7 +32,7 @@ VPATH = -I../../common \
 #define compile obj
 common_obj = CCommonFile.o common_lib.o common_time.o globalfun.o Lock.o \
 				LogFile.o MessageLog.o Net.o RecordmanThread.o SafeLock.o StrongString.o \
-				RabbitmqAccess.o MongodbAccess.o GECodeConvert.o
+				RabbitmqAccess.o MongodbAccess.o GECodeConvert.o CreateComtrade.o
 
 json_objects = cJSON.o
 

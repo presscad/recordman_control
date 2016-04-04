@@ -26,7 +26,7 @@ public:
 	CConfigVariableMgr(void);
 	~CConfigVariableMgr(void);
 
-public:
+private:
 /**	\brief 系统参数*/
 	COLLECTOR_DATA_SYS_PARAM m_collector_sys_param;
 
@@ -57,6 +57,69 @@ public:
 	//从配置文件中读取参数
 	//true：成功 false：失败
 	bool LoadCollectorSysParam();
+
+public:
+	char* GetSysParam_LogPath();
+
+	int GetSysParam_LogLevel();
+
+	int GetSysParam_LogDays();
+
+	int GetSysParam_RecTimeOut();
+
+	int GetSysParam_SendTimeOut();
+
+public:
+	int GetRabmqadParam_RevChannel();
+
+	char* GetRabmqadParam_RevQueName();
+
+	char* GetRabmqadParam_WebResultQueName();
+
+public:
+	int GetRabmqBasicParam_ServerPort();
+
+	int GetRabmqBasicParam_ChannelID();
+
+	int GetRabmqBasicParam_ChannelMax();
+
+	int GetRabmqBasicParam_FrameMax();
+
+	int GetRabmqBasicParam_HeartbeatTime();
+
+	char* GetRabmqBasicParam_Hostname();
+
+	char* GetRabmqBasicParam_Username();
+
+	char* GetRabmqBasicParam_Password();
+
+	char* GetRabmqBasicParam_Vhost();
+
+	RABBIT_MQ_BASIC_ACCESS_PARAM* GetRabmqBasicParamHandle();
+
+public:
+	int GetDfuCommuParam_Port(bool bFaultDfu = true);
+
+	int GetDfuCommuParam_Idletime(bool bFaultDfu = true);
+
+	int GetDfuCommuParam_ChecknewfileTime(bool bFaultDfu = true);
+
+	char* GetDfuCommuParam_Addr(bool bFaultDfu = true);
+
+	char* GetDfuCommuParam_FileSavePath(bool bFaultDfu = true);
+
+public:
+	int GetMongoParam_Port();
+
+	char* GetMongoParam_Addr();
+
+	char* GetMongoParam_User();
+
+	char* GetMongoParam_Passwd();
+
+	char* GetMongoParam_DbName();
+
+	RECORD_MONGO_BASIC_PARAM* GetMongoParamHandle();
 
 private:
 	bool LoadSystemLogConfig(TiXmlElement* pRootXmlElement);
