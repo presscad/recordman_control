@@ -25,6 +25,8 @@ public:
 public:
 	bool ConnectMongoServer(string& strErrorMsg);
 
+	bool QueryData(string strTbName, auto_ptr<mongo::DBClientCursor>& result);
+
 private:
 	//mongodb access param
 	RECORD_MONGO_BASIC_PARAM* m_pMongoParam;

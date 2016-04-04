@@ -205,6 +205,16 @@ std::string CCommonTime::GetTimeString( int pType )
             strDest[6] = ((year>=2000)?year-2000:year-1900) & 0x7f;
         }
         break;
+
+	case COMTRADE26Time:
+		{
+			int iTemp = m_dMilliSecond * 1000;
+			strDest.resize(26);
+			sprintf((char*)&strDest[0], "%02d/%02d/%04d,%02d:%02d:%02d.%06d", 
+				Day(), Month(), Year(), Hour(), Minute(), Second(), iTemp);
+		}
+		break;
+
     default:
         strDest.resize(0);
         break;

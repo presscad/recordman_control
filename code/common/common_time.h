@@ -69,6 +69,7 @@ public:
         STTP26Time = 4,/*STTP报文中的26位时间，格式：“  yyyy-mm-dd HH:MM:SS.6位ms”*/
         CP32Time2a = 5,/*103中的4位时间，{毫秒，分，备用1，无效，时，备用2，夏时制}*/
         CP56Time2a = 6,/*103中的7位时间，{毫秒，分，备用1，无效，时，备用2，夏时制，月的某天，星期的某天，月，备用3，年，备用4}*/
+		COMTRADE26Time = 7,/*comtrade time dd/MM/yyyy,hh:mm:ss.SSSSSS*/
     };
 
     /*

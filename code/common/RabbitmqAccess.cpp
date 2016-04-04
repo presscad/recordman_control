@@ -39,7 +39,7 @@ CRabbitmqAccess::~CRabbitmqAccess(void)
 	CloseRabbitMqConn();
 }
 
-void CRabbitmqAccess::SetRabbitAccessParam(_RABBIT_MQ_BASIC_ACCESS_PARAM* pObj)
+void CRabbitmqAccess::SetRabbitAccessParam(RABBIT_MQ_BASIC_ACCESS_PARAM* pObj)
 {
 	m_pRabbitBasicParam = pObj;
 }
