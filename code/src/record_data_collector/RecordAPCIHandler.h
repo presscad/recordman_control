@@ -103,6 +103,19 @@ private:
 	bool GetOscInfo(comtradeHead& head);
 
 private:
+	//analyze msg header
+	bool AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum);
+
+	//analyze msg samples
+	bool AnalyzeFileMsgSamples(list<sampleInfo>& samples, UINT uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset);
+
+	//analyze msg ai
+	bool AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
+
+	//analyze msg di
+	bool AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
+
+private:
 	//init logfile
 	bool InitLogFile();
 

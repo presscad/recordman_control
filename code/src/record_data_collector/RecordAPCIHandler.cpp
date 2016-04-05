@@ -304,20 +304,8 @@ bool CRecordAPCIHandler::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 
 	DFU_COMMU_MSG* pOneMsg = NULL;
 	CDFUMsgAttach msgAttach;
-	uint16 uAnalogchannelNum(0);//模拟量通道数
-	uint16 uDigitalchannelNum(0);//开关量通道数
-	UINT uFilesecond(0);//录波时刻，秒
-	UINT uFilenanosecond(0);//录波时刻，纳秒
-	UINT uFaultsecond(0);//故障时刻，秒
-	UINT uFaultnanosecond(0);//故障时刻，纳秒
-	UINT uSamplesectionNum(0);//采样段数目
 	UINT uDatablockNum(0);//数据块数目
-	UINT uAiVal(0);//模拟通道值
-	UINT uNo(0);
-	UINT uDataNo(0);
-	UINT uDival(0);
 	int nMsgoffset = RECORD_DFU_MSG_HEADER_OFFSET;
-
 	comtradeHead head;
 	CreateComtrade com;
 	list<aiChannel> aichs;//模拟量通道
@@ -343,82 +331,16 @@ bool CRecordAPCIHandler::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 			pOneMsg = &*itFile;
 			msgAttach.Attach(pOneMsg);
 
-			ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//模拟通道数目
-			head.aiCount += uAnalogchannelNum;
-			nMsgoffset += 2;
+			AnalyzeFileMsgHeader(head, pOneMsg, nMsgoffset, uDatablockNum);//报文头
+			AnalyzeFileMsgSamples(samples, head.rateCount, pOneMsg, nMsgoffset);//采样段
 
-			ConvertUint16BigedianToL(&(*pOneMsg)[nMsgoffset], uAnalogchannelNum);//开关通道数目
-			head.diCount += uAnalogchannelNum;
-			nMsgoffset += 2;
-
-			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.primary);//模拟通道一次系数
-			nMsgoffset += 4;
-
-			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.secondary);//模拟通道二次系数
-			nMsgoffset += 4;
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilesecond);//录波时刻（秒）
-			nMsgoffset += 4;
-			head.startTime = FormatDfuMsgTime(uFilesecond);
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//录波时刻（纳秒）
-			nMsgoffset += 4;
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFaultsecond);//故障时间（秒）
-			nMsgoffset += 4;
-			head.faultTime = FormatDfuMsgTime(uFaultsecond);
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uFilenanosecond);//故障时刻（纳秒）
-			nMsgoffset += 4;
-
-			ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], head.lineFreq);//线路频率
-			nMsgoffset += 4;
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uSamplesectionNum);//采样段数目
-			head.rateCount += uSamplesectionNum;
-			nMsgoffset += 4;
-
-			ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDatablockNum);//数据块数目
-			nMsgoffset += 4;
-
-			for (uNo = 0; uNo < uSamplesectionNum; uNo++)
+			for (UINT uNo = 0; uNo < uDatablockNum; uNo++)//数据块
 			{
-				sampleInfo sa;
-
-				ConvertFloat32BigedianToL(&(*pOneMsg)[nMsgoffset], sa.rate);//采样率
-				nMsgoffset += 4;
-
-				ConvertInt32BigedianToL(&(*pOneMsg)[nMsgoffset], sa.lastIndex);//此采用频率最后一个采样的序号
-				nMsgoffset += 4;
-
-				samples.push_back(sa);
-			}
-
-			for (uNo = 0; uNo < uDatablockNum; uNo++)//数据块
-			{
-				aiChannel ai;
 				list<short> data_val;
-				for (uDataNo = 0; uDataNo < uAnalogchannelNum; uDataNo++)//模拟量
-				{
-					ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], ai.index);//模拟通道编号
-					nMsgoffset += 4;
+				data_val.clear();
 
-					ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDival);//模拟通道编号
-					nMsgoffset += 4;
-
-					aichs.push_back(ai);
-					data_val.push_back(uDival);
-				}
-
-				ConvertUint32BigedianToL(&(*pOneMsg)[nMsgoffset], uDival);
-				nMsgoffset += 4;//开关量
-				for (uDataNo = 0; uDataNo < uAnalogchannelNum; uDataNo++)
-				{
-					diChannel di;
-
-					dichs.push_back(di);
-					data_val.push_back();
-				}
+				AnalyzeFileMsgAis(data_val, head.aiCount, pOneMsg, nMsgoffset);//模拟量
+				AnalyzeFileMsgDis(data_val, head.diCount, pOneMsg, nMsgoffset);//开关量
 
 				datas.push_back(data_val);
 			}
@@ -434,6 +356,7 @@ bool CRecordAPCIHandler::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 	com.setSampleInfos(samples);//采样段
 	com.setAiChannels(aichs);//模拟量通道
 	com.setDiChannels(dichs);//开关量通道
+	com.setDatas(datas);//通道的值
 
 	com.create(m_pConfigHandle->GetDfuCommuParam_FileSavePath(), "test");
 
@@ -510,6 +433,155 @@ bool CRecordAPCIHandler::GetOscInfo(comtradeHead& head)
 				pVal = NULL;
 			}
 		}
+	}
+
+	return true;
+}
+
+//analyze msg header
+bool CRecordAPCIHandler::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum)
+{
+	uint16 uAnalogchannelNum(0);//模拟量通道数
+	uint16 uDigitalchannelNum(0);//开关量通道数
+	UINT uFilesecond(0);//录波时刻，秒
+	UINT uFilenanosecond(0);//录波时刻，纳秒
+	UINT uFaultsecond(0);//故障时刻，秒
+	UINT uFaultnanosecond(0);//故障时刻，纳秒
+	UINT uSamplesectionNum(0);//采样段数目
+
+	try
+	{
+		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//模拟通道数目
+		head.aiCount += uAnalogchannelNum;
+		nOffset += 2;
+
+		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//开关通道数目
+		head.diCount += uAnalogchannelNum;
+		nOffset += 2;
+
+		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.primary);//模拟通道一次系数
+		nOffset += 4;
+
+		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.secondary);//模拟通道二次系数
+		nOffset += 4;
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilesecond);//录波时刻（秒）
+		nOffset += 4;
+		head.startTime = FormatDfuMsgTime(uFilesecond);
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//录波时刻（纳秒）
+		nOffset += 4;
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFaultsecond);//故障时间（秒）
+		nOffset += 4;
+		head.faultTime = FormatDfuMsgTime(uFaultsecond);
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//故障时刻（纳秒）
+		nOffset += 4;
+
+		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.lineFreq);//线路频率
+		nOffset += 4;
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uSamplesectionNum);//采样段数目
+		head.rateCount += uSamplesectionNum;
+		nOffset += 4;
+
+		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDatablockNum);//数据块数目
+		nOffset += 4;
+	}
+	catch (...)
+	{
+		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgHeader]analyze msg header exception！");
+		return false;
+	}
+
+	return true;
+}
+
+//analyze samples
+bool CRecordAPCIHandler::AnalyzeFileMsgSamples(list<sampleInfo>& samples, UINT uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset)
+{
+	try
+	{
+		for (UINT uNo = 0; uNo < uSampleNum; uNo++)
+		{
+			sampleInfo sa;
+
+			ConvertFloat32BigedianToL(&(*pMsg)[nOffset], sa.rate);//采样率
+			nOffset += 4;
+
+			ConvertInt32BigedianToL(&(*pMsg)[nOffset], sa.lastIndex);//此采用频率最后一个采样的序号
+			nOffset += 4;
+
+			samples.push_back(sa);
+		}
+	}
+	catch (...)
+	{
+		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgSamples]analyze msg samples exception！");
+		return false;
+	}
+
+	return true;
+}
+
+//analyze ais
+bool CRecordAPCIHandler::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
+{
+	UINT uDival(0);
+
+	try
+	{
+		for (UINT uDataNo = 0; uDataNo < uAiNum; uDataNo++)//模拟量
+		{
+			//ConvertUint32BigedianToL(&(*pMsg)[nOffset], ai.index);
+			nOffset += 4;//模拟通道编号
+
+			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);//模拟通道编号
+			nOffset += 4;
+
+			data_vals.push_back(uDival);
+		}
+	}
+	catch (...)
+	{
+		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgAis]analyze msg ai exception！");
+		return false;
+	}
+	
+	return true;
+}
+
+//analyze msg dis
+bool CRecordAPCIHandler::AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
+{
+	UINT uDiBlockNo = 0;
+	UINT uDival(0);
+	UINT uOneDival(0);
+	UINT uDiRealNum(0);
+	UINT uDataNo(0);
+
+	try
+	{
+		for (uDiBlockNo = 0; uDiBlockNo <= (uDiNum / 32); uDiBlockNo++)
+		{
+			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);
+			nOffset += 4;//开关量
+
+			uDiRealNum = (uDiBlockNo == (uDiNum / 32))?(uDiNum % 32):32;
+
+			for (uDataNo = 0; uDataNo < uDiRealNum; uDataNo++)
+			{
+				uOneDival = ((uDival >> uDataNo) & 0x1);
+
+				data_vals.push_back(uOneDival);
+			}
+		}
+	}
+	catch (...)
+	{
+		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgDis]analyze msg di exception！");
+		return false;
 	}
 
 	return true;
