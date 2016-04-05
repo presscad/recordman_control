@@ -14,7 +14,7 @@
 #pragma warning(disable : 4275)
 #pragma warning(disable : 4996)
 
-#include "RecordManServicesControl.h"
+#include "RecordManServerMonitor.h"
 
 /***********************全局变量******************************/
 /**	\brief 退出标志*/
@@ -24,7 +24,7 @@ bool bExitMain = false;
 bool bRunAsServices = false;
 
 /**	\brief 入口类实例*/
-CRecordManServicesControl g_services_control;
+CRecordManServerMonitor g_server_monitor;
 
 #ifdef OS_WINDOWS
 	/**	\brief 服务运行状态*/
@@ -58,7 +58,7 @@ void sigroutine(int nsig)
 	case SIGINT:
 	case SIGTERM:
 		{
-			g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+			g_server_monitor.m_Log.FormatAdd(CLogFile::trace, 
 				"recv exit sinal（%d），start exit program normal！", nsig);
 			bExitMain = true;
 		}
@@ -110,21 +110,21 @@ void WINAPI ServiceCtrlHandler(DWORD dwControl)
 //************************************
 bool Start()
 {
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "begin init param！");
-	if(false == g_record_data_collector.InitRecordDataColletor())
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "begin init param！");
+	if(false == g_server_monitor.InitServerMonitor())
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"init param fail，begin exit！");
 		return false;
 	}
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "init param succeed，begin start！");
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "init param succeed，begin start！");
 
-	if(false == g_record_data_collector.StartRecordDataColletor())
+	if(false == g_server_monitor.StartServerMonitor())
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, "start failed，begin to exit！");
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, "start failed，begin to exit！");
 		return false;
 	}
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start program succeed！");
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "start program succeed！");
 
 	return true;
 }
@@ -149,7 +149,7 @@ void WINAPI KServiceMain(DWORD argc, LPTSTR * argv)
 		servicestatus.dwServiceSpecificExitCode = 0;
 		servicestatus.dwCheckPoint = 0;
 		servicestatus.dwWaitHint = 0;
-		servicestatushandle = ::RegisterServiceCtrlHandler("record_data_collector", ServiceCtrlHandler);
+		servicestatushandle = ::RegisterServiceCtrlHandler("recordman_server_monitor", ServiceCtrlHandler);
 		if (servicestatushandle == (SERVICE_STATUS_HANDLE)0)
 		{
 			return;
@@ -206,14 +206,14 @@ void WINAPI KServiceMain(DWORD argc, LPTSTR * argv)
 	}
 
 	//停止业务
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start end program！");
-	g_record_data_collector.EndRecordDataColletor();	
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "end program succeed！");
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "start end program！");
+	g_server_monitor.EndServerMonitor();	
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "end program succeed！");
 
 	//退出并释放资源
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "start exit program！");
-	g_record_data_collector.ExitRecordDataColletor();
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, "exit program succeed！");
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "start exit program！");
+	g_server_monitor.ExitServerMonitor();
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, "exit program succeed！");
 	
 #ifdef OS_WINDOWS
 	if (bRunAsServices)
@@ -250,7 +250,7 @@ void InstallService(const char * szServiceName)
 	SC_HANDLE handle = ::OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
 	if (handle == NULL)
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"Couldn't open service manager！");
 		return ;
 	}
@@ -266,14 +266,14 @@ void InstallService(const char * szServiceName)
 	if (hService == NULL)
     {
         ::CloseServiceHandle(handle);
-        g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+        g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"can not register service，CreateService failed！");
         return ;
     }
 	::CloseServiceHandle(hService);
 	::CloseServiceHandle(handle);
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
-		"register succeed，please use command(Net Start record_data_collector) to start service！");
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, 
+		"register succeed，please use command(Net Start recordman_server_monitor) to start service！");
 #endif
 }
 
@@ -291,7 +291,7 @@ BOOL IsInstalled()
 	
     if (hSCM != NULL)
     {
-        SC_HANDLE hService = ::OpenService(hSCM, "record_data_collector", SERVICE_QUERY_CONFIG);
+        SC_HANDLE hService = ::OpenService(hSCM, "recordman_server_monitor", SERVICE_QUERY_CONFIG);
         if (hService != NULL)
         {
             bResult = TRUE;
@@ -301,7 +301,7 @@ BOOL IsInstalled()
     }
 	else
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"[IsInstalled]open windows sc manager failed！");
 	}
     return bResult;
@@ -324,16 +324,16 @@ BOOL Uninstall()
 	
     if (hSCM == NULL)
     {
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"[Uninstall] can not open service manager！");
         return FALSE;
     }
 	
-    SC_HANDLE hService = ::OpenService(hSCM, "record_data_collector", SERVICE_STOP | DELETE);
+    SC_HANDLE hService = ::OpenService(hSCM, "recordman_server_monitor", SERVICE_STOP | DELETE);
 	
     if (hService == NULL)
     {
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
 			"[Uninstall] can not open service！");
         ::CloseServiceHandle(hSCM);
         return FALSE;
@@ -347,14 +347,14 @@ BOOL Uninstall()
 	
     if (bDelete)
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
-			"[Uninstall]delete record_data_collector service succeed！");
+		g_server_monitor.m_Log.FormatAdd(CLogFile::trace, 
+			"[Uninstall]delete recordman_server_monitor service succeed！");
         return TRUE;
 	}
 	else
 	{
-		g_record_data_collector.m_Log.FormatAdd(CLogFile::error, 
-			"[Uninstall]delete record_data_collector service failed！");
+		g_server_monitor.m_Log.FormatAdd(CLogFile::error, 
+			"[Uninstall]delete recordman_server_monitor service failed！");
 	}
 #endif
     return FALSE;
@@ -377,7 +377,7 @@ int main(int argc, char *argv[])
 	::GetModuleFileName(NULL, exeFullPath, MAX_LINE_LENGTH);
 	string strProgramFullPath = GetFilePathFromFullFileName(exeFullPath);
 
-	g_record_data_collector.m_Log.FormatAdd(CLogFile::trace, 
+	g_server_monitor.m_Log.FormatAdd(CLogFile::trace, 
 		"program run path：%s", strProgramFullPath.c_str());
 
 	SetCurrentDirectory(strProgramFullPath.c_str());//设置路径
@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
 	//服务方式
 	if ((argc==2) && (strcmp(argv[1], "install")==0))//安装
 	{
-		InstallService("record_data_collector");
+		InstallService("recordman_server_monitor");
 		return 0;
 	}
 	else if ((argc==2) && stricmp(argv[1], "uninstall") == 0)//卸载
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
 		bRunAsServices = true;
 		SERVICE_TABLE_ENTRY   service_table_entry[] =
  		{
- 			{ "record_data_collector", KServiceMain },
+ 			{ "recordman_server_monitor", KServiceMain },
  			{ NULL, NULL }
  		};
  		Result = ::StartServiceCtrlDispatcher(service_table_entry);
@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			printf("\n服务已注册,请使用\"Net Start record_data_collector\"启动服务 \n");
+			printf("\n服务已注册,请使用\"Net Start recordman_server_monitor\"启动服务 \n");
 			return 0;
 		}
 	}

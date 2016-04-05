@@ -11,21 +11,21 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{FF365352-0830-43C6-A3A1-067EF74EDEB9}</ProjectGuid>
+    <ProjectGuid>{7FFFE3B6-9714-47B1-977E-60077926B21D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>recordman_services_control</RootNamespace>
+    <RootNamespace>recordman_server_monitor</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -95,8 +95,10 @@
     <ClCompile Include="..\..\common\RecordmanThread.cpp" />
     <ClCompile Include="..\..\common\SafeLock.cpp" />
     <ClCompile Include="..\..\common\StrongString.cpp" />
+    <ClCompile Include="..\..\common_open_source\cJSON\cJSON.c" />
+    <ClCompile Include="..\..\common_open_source\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="RecordManServicesControl.cpp" />
+    <ClCompile Include="RecordManServerMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\common\CCommonFile.h" />
@@ -112,7 +114,10 @@
     <ClInclude Include="..\..\common\SafeLock.h" />
     <ClInclude Include="..\..\common\StrongString.h" />
     <ClInclude Include="..\..\common\sys_define.h" />
-    <ClInclude Include="RecordManServicesControl.h" />
+    <ClInclude Include="..\..\common_open_source\cJSON\cJSON.h" />
+    <ClInclude Include="..\..\common_open_source\tinyxml2\tinyxml2.h" />
+    <ClInclude Include="const_define.h" />
+    <ClInclude Include="RecordManServerMonitor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
