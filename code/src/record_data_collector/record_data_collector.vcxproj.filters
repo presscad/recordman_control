@@ -99,6 +99,9 @@
     <ClCompile Include="..\..\common\CreateComtrade.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="DfuMainFlow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -186,6 +189,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\common\CreateComtrade.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DfuMainFlow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
