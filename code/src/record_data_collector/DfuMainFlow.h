@@ -5,7 +5,16 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "const_define.h"
+#include "../../common/MongodbAccess.h"
+#include "ConfigVariableMgr.h"
+#include "JsonMsgParser.h"
+#include "../../common/MessageLog.h"
+#include "DfuMsgAttach.h"
+#include "DfuMsgToJson.h"
+#include "../../common/common_time.h"
+#include "../../common/CreateComtrade.h"
+#include "../../common/GECodeConvert.h"
+#include "../../common/SafeDeque.h"
 
 class CDfuMainFlow
 {

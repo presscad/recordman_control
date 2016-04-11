@@ -126,6 +126,7 @@
     <ClInclude Include="..\..\common\Net.h" />
     <ClInclude Include="..\..\common\RabbitmqAccess.h" />
     <ClInclude Include="..\..\common\RecordmanThread.h" />
+    <ClInclude Include="..\..\common\SafeDeque.h" />
     <ClInclude Include="..\..\common\SafeLock.h" />
     <ClInclude Include="..\..\common\StrongString.h" />
     <ClInclude Include="..\..\common\sys_define.h" />
