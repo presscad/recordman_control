@@ -5,7 +5,8 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "RecordAPCIHandler.h"
+#include "../../common/MongodbAccess.h"
+#include "DfuMainFlow.h"
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "CommandHandlerMgr.h"
@@ -41,10 +42,14 @@ private:
 	//load config param
 	//true：success false：failed
 	bool InitSysConfigVariable();
+
+	//init mongodb access handler
+	//true:success false:failed
+	bool InitMongoDbAccessHandler();
 	
 	//初始化dfu通讯类对象
 	//true：成功 false：失败
-	bool InitApciHandler();
+	bool InitDfuMainFlowHandler();
 
 	//init internalcommu mgr
 	bool InitInternalCommuMgr();
@@ -61,10 +66,12 @@ private:
 	CCommandHandlerMgr* m_pCommandHandlerMgr;
 
 /**	\brief 与dfu通信管理类*/
-	CRecordAPCIHandler* m_pRecordApciHandler;
+	CDfuMainFlow* m_pDfuMainFlow;
 
 /**	\brief 系统内部消息管理*/
 	CInternalCommuMgr* m_pInternalCommuMgr;
+
+	CMongodbAccess* m_pMongodbAccessHandler;
 
 public:
 /**	\brief logfile*/

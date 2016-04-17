@@ -263,5 +263,11 @@ typedef struct _DFUMESSAGE
 	}
 }DFUMESSAGE;
 
+typedef vector<DFUMESSAGE> DFUMESSAGE_BUF;
+
+typedef vector<DFU_COMMU_MSG> DFUCOMMUMSG_BUF;
+
+typedef int (*PRESULTDFUMSGCALLBACKFUNC)(DFU_COMMU_MSG& result_msg, XJHANDLE pReserved);
+
 /////////////////////////////////////////////////////////////////////////
 #endif

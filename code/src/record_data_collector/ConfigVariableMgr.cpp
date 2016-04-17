@@ -173,6 +173,11 @@ int CConfigVariableMgr::GetSysParam_SendTimeOut()
 	return m_collector_sys_param.nSendTimeout;
 }
 
+COLLECTOR_DATA_SYS_PARAM* CConfigVariableMgr::GetSysParamHandler()
+{
+	return &m_collector_sys_param;
+}
+
 int CConfigVariableMgr::GetRabmqadParam_RevChannel()
 {
 	return m_rabbit_mq_param.nCollectorRecvChannel;
@@ -295,6 +300,18 @@ char* CConfigVariableMgr::GetDfuCommuParam_FileSavePath(bool bFaultDfu /*= true*
 	else
 	{
 		return m_contin_dfu_param.chFileSavePath;
+	}
+}
+
+COLLECTOR_DFU_COMMU_PARAM* CConfigVariableMgr::GetDfuCommuParamHandler(bool bFaultDfu /*= true*/)
+{
+	if (bFaultDfu == true)
+	{
+		return &m_fault_dfu_param;
+	}
+	else
+	{
+		return &m_contin_dfu_param;
 	}
 }
 

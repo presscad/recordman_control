@@ -1,23 +1,13 @@
 #if !defined(RECORD_APCI_HANDLER_INCLUDE)
 #define RECORD_APCI_HANDLER_INCLUDE
 
-#include "../../common/MongodbAccess.h"
 #include "ConfigVariableMgr.h"
-#include "JsonMsgParser.h"
 #include "../../common/MessageLog.h"
 #include "DfuMsgAttach.h"
-#include "DfuMsgToJson.h"
-#include "../../common/common_time.h"
-#include "../../common/CreateComtrade.h"
-#include "../../common/GECodeConvert.h"
-
-typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
 
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
-
-typedef vector<DFUMESSAGE> dfumsg_list;
 
 class CRecordAPCIHandler
 {
@@ -26,10 +16,12 @@ public:
 	~CRecordAPCIHandler(void);
 
 public:
-	void SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle);
+	void SetDfuCommuParamHandler(COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler);
 
-	//set result json fun
-	void RegisterResultCallBackFunc(PRESULTMSGCALLBACKFUNC pFunc, XJHANDLE pObj);
+	void SetSysParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler);
+
+	//set result call back fun
+	void RegisterDfuResultCallBackFunc(PRESULTDFUMSGCALLBACKFUNC pFunc, XJHANDLE pObj);
 
 public:
 
@@ -46,21 +38,17 @@ public:
 	bool StopRecordApciHandler();
 
 	//Post msg
-	int PostDfuMsg(DFUMESSAGE& command);
+	int PushMsgToDfu(DFU_COMMU_MSG& command);
 
 	//get msg trans mask
 	UINT CreateTransMask();
 
 public:
-	//与dfu通讯主线程函数
-	//0：线程退出
-	int DfuBuinessProcessLoop();
+	//send loop
+	int DfuSendOperationLoop();
 
 	//recv loop
 	int DfuRecvOperationLoop();
-
-	//save new osc file
-	int FileBuinessProcessLoop();
 
 private:
 	//read msg from socket
@@ -70,50 +58,8 @@ private:
 	//send msg
 	int SendDfuMessage(DFU_COMMU_MSG& record_msg);
 
-private:
 	//get send msg from list
 	bool GetDfuSendMsg(DFU_COMMU_MSG& sendmsg);
-
-	//add result msg to list
-	bool AddDfuResultMsg(DFU_COMMU_MSG& recv_msg);
-
-	//check msg is over
-	bool CheckCommandOver(DFUMESSAGE& full_command_msg);
-
-	//get follow up msg
-	bool GetFollowUpMsg(int nMsgTrans, int nCommandID, DFU_COMMU_MSG& follow_up_msg);
-
-	//process client result msg
-	bool ProcessClientResultMsg(DFUMESSAGE& client_result_msg);
-
-	//query file list msg
-	bool PorocessFListResultMsg(DFUMESSAGE& file_list_msg);
-
-	//process file msg(analyze and save)
-	bool ProcessFileResultMsg(DFUMESSAGE& file_msg);
-
-private:
-	//add file result msg
-	bool AddFileResultMsg(DFUMESSAGE& file_result_msg);
-
-	//get msg procedd
-	bool GetFileResultMsg(DFUMESSAGE& file_msg);
-
-	//osc info
-	bool GetOscInfo(comtradeHead& head);
-
-private:
-	//analyze msg header
-	bool AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum);
-
-	//analyze msg samples
-	bool AnalyzeFileMsgSamples(list<sampleInfo>& samples, UINT uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset);
-
-	//analyze msg ai
-	bool AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
-
-	//analyze msg di
-	bool AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
 
 private:
 	//init logfile
@@ -138,8 +84,9 @@ private:
 	void WriteDfuMessageLog(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead);
 
 private:
-	/**	\brief 配置参数对象*/
-	CConfigVariableMgr* m_pConfigHandle;
+	COLLECTOR_DFU_COMMU_PARAM* m_pDfuCommuParamHandler;
+
+	COLLECTOR_DATA_SYS_PARAM* m_pSysParamHandler;
 
 	//log handler
 	CMessageLog m_LogFile;
@@ -154,15 +101,9 @@ private:
 	//recv thread
 	CRecordmanThread m_DfuRecvThread;
 
-	//save file thread
-	CRecordmanThread m_FileBuinessThread;
-
 private:
 	/**	\brief net对象*/
 	CNet* m_pNetSocket;
-
-	//mongo access
-	CMongodbAccess m_MongoAccessHandler;
 
 	//msg process lock
 	CSafeLock m_LockSocketSend;
@@ -170,27 +111,18 @@ private:
 	//command list lock
 	CSafeLock m_LockCommandList;
 
-	//File list lock
-	CSafeLock m_LockFileList;
-
 private:
 	//dfu msg list
-	dfumsg_list m_command_msg_list;
-
-	//file list
-	dfumsg_list m_file_msg_list; 
+	DFUCOMMUMSG_BUF m_command_msg_buf;
 
 	//json result fun
-	PRESULTMSGCALLBACKFUNC m_pResultCallBackFunc;
+	PRESULTDFUMSGCALLBACKFUNC m_pDfuResultCallBackFunc;
 
 	//result class handle
 	XJHANDLE m_pResultProcessClassHandle;
 
 	//link last active time
 	time_t m_tLinkActive;
-
-	//check new file time
-	time_t m_tCheckFile;
 
 	//transmask
 	UINT m_utTransMask;

@@ -59,7 +59,7 @@ LINK_THIRD_PATY_FLAGS = $(RABBITMQ_LINK_FLAGS) $(MONGODB_LINK_FLAGS) $(BOOST_LIN
 LINK_FLAGS = -lpthread -ldl $(LINK_THIRD_PATY_FLAGS) -L/usr/lib/ -lz -lkrb5 -lssl -lcrypto
 
 #define compile program param
-VERSION = D1.0.1
+VERSION = D1.0.2
 TARGETFILENAME = record_data_collector
 TARGETPATH = ../../bin/record_data_collector/
 

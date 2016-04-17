@@ -1,14 +1,7 @@
 #include "RecordAPCIHandler.h"
 
-//************************************
-// Method:    DFU_BUINESS_PROCESS_THREAD_PROC
-// FullName:  DFU_BUINESS_PROCESS_THREAD_PROC
-// Access:    public 
-// Returns:   THREAD_FUNC WINAPI
-// Qualifier: 与dfu的业务处理线程
-// Parameter: LPVOID param
-//************************************
-THREAD_FUNC WINAPI DFU_BUINESS_PROCESS_THREAD_PROC(LPVOID param)
+//msg send thread
+THREAD_FUNC WINAPI DFU_MSG_SEND_THREAD_PROC(LPVOID param)
 {
 	CRecordAPCIHandler* pRecordApciHandler = (CRecordAPCIHandler*)param;
 
@@ -19,11 +12,11 @@ THREAD_FUNC WINAPI DFU_BUINESS_PROCESS_THREAD_PROC(LPVOID param)
 			return THREAD_RETURN;
 		}
 
-		pRecordApciHandler->DfuBuinessProcessLoop();
+		pRecordApciHandler->DfuSendOperationLoop();
 	}
 	catch (...)
 	{
-		printf("DFU_APCI_OPERATION_THREAD_PROC thread exit abnormal！\n");
+		printf("DFU_MSG_SEND_THREAD_PROC thread exit abnormal！\n");
 		return THREAD_RETURN;
 	}
 
@@ -52,45 +45,21 @@ THREAD_FUNC WINAPI DFU_MSG_RECV_THREAD_PROC(LPVOID param)
 	return THREAD_RETURN;
 }
 
-//save new file thread
-THREAD_FUNC WINAPI FILE_BUINESS_THREAD_PROC(LPVOID param)
-{
-	CRecordAPCIHandler* pRecordApciHandler = (CRecordAPCIHandler*)param;
-
-	try
-	{
-		if (NULL == pRecordApciHandler)
-		{
-			return THREAD_RETURN;
-		}
-
-		pRecordApciHandler->FileBuinessProcessLoop();
-	}
-	catch (...)
-	{
-		printf("FILE_BUINESS_THREAD_PROC thread exit abnormal！\n");
-		return THREAD_RETURN;
-	}
-
-	return THREAD_RETURN;
-}
-
 CRecordAPCIHandler::CRecordAPCIHandler(void):
-m_LockSocketSend("LOCK_SOCKET_SEND"),
-m_LockCommandList("LOCK_COMMAND_LIST"),
-m_LockFileList("LOCK_FILE_LIST")
+m_LockSocketSend("LOCK_SOCKET"),
+m_LockCommandList("LOCK_COMMAND_BUF")
 {
 	m_bExitFlag = true;
-	m_pConfigHandle = NULL;
+	m_pDfuCommuParamHandler = NULL;
 	m_pNetSocket = NULL;
-	m_pResultCallBackFunc = NULL;
+	m_pDfuResultCallBackFunc = NULL;
 	m_pResultProcessClassHandle = NULL;
+	m_pSysParamHandler = NULL;
+
 	m_utTransMask = 0;
 	time(&m_tLinkActive);
-	time(&m_tCheckFile);
 
-	m_command_msg_list.clear();
-	m_file_msg_list.clear();
+	m_command_msg_buf.clear();
 }
 
 
@@ -106,15 +75,20 @@ CRecordAPCIHandler::~CRecordAPCIHandler(void)
 	m_LogFile.Close();
 }
 
-void CRecordAPCIHandler::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle)
+void CRecordAPCIHandler::SetDfuCommuParamHandler(COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler)
 {
-	m_pConfigHandle = pConfigHandle;
+	m_pDfuCommuParamHandler = pDfuCommuParamHandler;
+}
+
+void CRecordAPCIHandler::SetSysParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler)
+{
+	m_pSysParamHandler = pSysParamHandler;
 }
 
 //result json fun
-void CRecordAPCIHandler::RegisterResultCallBackFunc(PRESULTMSGCALLBACKFUNC pFunc, XJHANDLE pObj)
+void CRecordAPCIHandler::RegisterDfuResultCallBackFunc(PRESULTDFUMSGCALLBACKFUNC pFunc, XJHANDLE pObj)
 {
-	m_pResultCallBackFunc = pFunc;
+	m_pDfuResultCallBackFunc = pFunc;
 	m_pResultProcessClassHandle = pObj;
 }
 
@@ -123,11 +97,11 @@ bool CRecordAPCIHandler::InitLogFile()
 {
 	m_LogFile.Close();
 
-	m_LogFile.SetLogLevel(m_pConfigHandle->GetSysParam_LogLevel());
-	m_LogFile.SetLogSaveDays(m_pConfigHandle->GetSysParam_LogDays());
-	m_LogFile.SetLogPath(m_pConfigHandle->GetSysParam_LogPath());
+	m_LogFile.SetLogLevel(m_pSysParamHandler->nLoglevel);
+	m_LogFile.SetLogSaveDays(m_pSysParamHandler->nLogDays);
+	m_LogFile.SetLogPath(m_pSysParamHandler->chLogpath);
 
-	return (TRUE == m_LogFile.Open(m_pConfigHandle->GetDfuCommuParam_Addr(true)))?true:false;
+	return (TRUE == m_LogFile.Open(m_pDfuCommuParamHandler->chDfuAddr))?true:false;
 }
 
 //get send msg
@@ -135,454 +109,14 @@ bool CRecordAPCIHandler::GetDfuSendMsg(DFU_COMMU_MSG& sendmsg)
 {
 	CLockUp lockup(&m_LockCommandList);
 
-	if (m_command_msg_list.size() <= 0)
+	if (m_command_msg_buf.size() <= 0)
 	{
 		return false;
 	}
 
-	dfumsg_list::iterator it = m_command_msg_list.begin();
-	for (; it != m_command_msg_list.end(); it++)
-	{
-		if (it->bProcessed == true)
-		{
-			return false;
-		}
-	}
-
-	it = m_command_msg_list.begin();
-	it->bProcessed = true;
-	time(&it->tSendTime);
-	sendmsg = it->command_msg.front();
-
-	return true;
-}
-
-//add result msg
-bool CRecordAPCIHandler::AddDfuResultMsg(DFU_COMMU_MSG& recv_msg)
-{
-	CLockUp lockup(&m_LockCommandList);
-
-	CDFUMsgAttach recv_msg_attach;
-	recv_msg_attach.Attach(&recv_msg);
-
-	dfumsg_list::iterator it = m_command_msg_list.begin();
-	for (; it != m_command_msg_list.end(); it++)
-	{
-		if ((it->nTransMask == recv_msg_attach.GetMsgTransMask()) && 
-			(it->nDfuCommandID == recv_msg_attach.GetMsgCommand()))
-		{
-			it->bRecvEnd = recv_msg_attach.GetMsgEndFlag();
-			it->result_msg.push_back(recv_msg);
-			it->nCommandProcessResult = recv_msg_attach.GetMsgErrorFlag();
-			return true;
-		}
-	}
-
-	m_LogFile.FormatAdd(CLogFile::error, 
-		"[AddDfuResultMsg]can not find result belong struct，drop（trans_mask：%d，command_id：%d）！", 
-		recv_msg_attach.GetMsgTransMask(), recv_msg_attach.GetMsgCommand());
-
-	return false;
-}
-
-//check command is process over
-bool CRecordAPCIHandler::CheckCommandOver(DFUMESSAGE& full_command_msg)
-{
-	CLockUp lockup(&m_LockCommandList);
-
-	dfumsg_list::iterator it = m_command_msg_list.begin();
-	for (; it != m_command_msg_list.end(); it++)
-	{
-		if (it->bRecvEnd == true)
-		{
-			full_command_msg = *it;
-			m_command_msg_list.erase(it);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-//get follow-up msg
-bool CRecordAPCIHandler::GetFollowUpMsg(int nMsgTrans, int nCommandID, DFU_COMMU_MSG& follow_up_msg)
-{
-	CLockUp lockup(&m_LockCommandList);
-
-	dfumsg_list::iterator it = m_command_msg_list.begin();
-	for (; it != m_command_msg_list.end(); it++)
-	{
-		if ((it->nTransMask == nMsgTrans) && 
-			(it->nDfuCommandID == nCommandID))
-		{
-			if (it->command_msg.size() > 0)
-			{
-				follow_up_msg = it->command_msg.front();
-				it->command_msg.erase(it->command_msg.begin());
-				return true;
-			}
-		}
-	}
-
-	return false;
-}
-
-//process client result msg
-bool CRecordAPCIHandler::ProcessClientResultMsg(DFUMESSAGE& client_result_msg)
-{
-	CDfuMsgToJson dfu_to_json;
-	cJSON* pJsonMsg = NULL;
-	dfu_to_json.Attach(&client_result_msg);
-	dfu_to_json.DfuMsgToJson(pJsonMsg);
-
-	if (NULL != m_pResultCallBackFunc)
-	{
-		int nRet = m_pResultCallBackFunc(
-			client_result_msg.nTransMask, 
-			client_result_msg.nInternalCommandID, 
-			pJsonMsg, 
-			m_pResultProcessClassHandle);
-
-		if (nRet != 1)
-		{
-			if (NULL != pJsonMsg)
-			{
-				cJSON_Delete(pJsonMsg);
-				pJsonMsg = NULL;
-			}
-		}
-	}
-
-	return true;
-}
-
-//query file list msg
-bool CRecordAPCIHandler::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
-{
-	if (file_list_msg.result_msg.size() <= 0)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, 
-			"[PorocessFListResultMsg]find new file list，but no result！");
-		return false;
-	}
-
-	DFU_COMMU_MSG* pOneMsg = NULL;
-	CDFUMsgAttach msgAttach;
-	UINT uFileIndex(0);
-	UINT uFileNum(0);
-	int nOffset = 18;
-
-	pOneMsg = &file_list_msg.result_msg.front();
-	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset], uFileIndex);
-	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset + 4], uFileNum);
-
-	m_LogFile.FormatAdd(CLogFile::trace, 
-		"[PorocessFListResultMsg]search new file complete，result（index：%d，num：%d）", 
-		uFileIndex, uFileNum);
-
-	if (uFileIndex > 0)
-	{
-		LaunchReadNewFile(uFileIndex);
-	}
-	else
-	{
-		LaunchManualFile();
-	}
-
-	return true;
-}
-
-//process file msg(analyze and save)
-bool CRecordAPCIHandler::ProcessFileResultMsg(DFUMESSAGE& file_msg)
-{
-	if (file_msg.result_msg.size() <= 0)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, 
-			"[ProcessFileResultMsg]read new file finish，but no result！");
-		return false;
-	}
-
-	DFU_COMMU_MSG* pOneMsg = NULL;
-	CDFUMsgAttach msgAttach;
-	UINT uDatablockNum(0);//数据块数目
-	int nMsgoffset = RECORD_DFU_MSG_HEADER_OFFSET;
-	comtradeHead head;
-	CreateComtrade com;
-	list<aiChannel> aichs;//模拟量通道
-	list<diChannel> dichs;//开关量通道
-	list<sampleInfo> samples;//采样段
-	list<list<short> > datas;//数据
-	aichs.clear();
-	dichs.clear();
-	samples.clear();
-	datas.clear();
-
-	try
-	{
-		head.revYear = 1991;
-		head.datType="ascii";
-		head.timemult=1.0;
-
-		GetOscInfo(head);//get osc info
-
-		vector<DFU_COMMU_MSG>::iterator itFile = file_msg.result_msg.begin();
-		for (; itFile != file_msg.result_msg.end(); itFile++)
-		{
-			pOneMsg = &*itFile;
-			msgAttach.Attach(pOneMsg);
-
-			AnalyzeFileMsgHeader(head, pOneMsg, nMsgoffset, uDatablockNum);//报文头
-			AnalyzeFileMsgSamples(samples, head.rateCount, pOneMsg, nMsgoffset);//采样段
-
-			for (UINT uNo = 0; uNo < uDatablockNum; uNo++)//数据块
-			{
-				list<short> data_val;
-				data_val.clear();
-
-				AnalyzeFileMsgAis(data_val, head.aiCount, pOneMsg, nMsgoffset);//模拟量
-				AnalyzeFileMsgDis(data_val, head.diCount, pOneMsg, nMsgoffset);//开关量
-
-				datas.push_back(data_val);
-			}
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[ProcessFileResultMsg]find unknown exception!");
-		return false;
-	}
-
-	com.setComtradeHead(head);//设置数据头
-	com.setSampleInfos(samples);//采样段
-	com.setAiChannels(aichs);//模拟量通道
-	com.setDiChannels(dichs);//开关量通道
-	com.setDatas(datas);//通道的值
-
-	com.create(m_pConfigHandle->GetDfuCommuParam_FileSavePath(), "test");
-
-	return true;
-}
-
-//add file msg
-bool CRecordAPCIHandler::AddFileResultMsg(DFUMESSAGE& file_result_msg)
-{
-	CLockUp lockUp(&m_LockFileList);
-
-	m_file_msg_list.push_back(file_result_msg);
-
-	m_LogFile.FormatAdd(CLogFile::trace, "[AddFileResultMsg]add a file msg to list，list size：%d", 
-		m_file_msg_list.size());
-
-	return true;
-}
-
-//get file save
-bool CRecordAPCIHandler::GetFileResultMsg(DFUMESSAGE& file_msg)
-{
-	CLockUp lockUp(&m_LockFileList);
-
-	if (m_file_msg_list.size() <= 0)
-	{
-		return false;
-	}
-
-	dfumsg_list::iterator it = m_file_msg_list.begin();
-	file_msg = *it;
-	m_file_msg_list.erase(it);
-
-	return true;
-}
-
-//get osc info
-bool CRecordAPCIHandler::GetOscInfo(comtradeHead& head)
-{
-	long lLen = 0;
-	auto_ptr<mongo::DBClientCursor> result;
-	m_MongoAccessHandler.QueryData("runstatus_info", result);
-	string strFieldval = "";
-	CGECodeConvert code_convert;
-	char* pVal = NULL;
-
-	while (result->more())
-	{
-		mongo::BSONObj obj = result->next();
-		BSONForEach(e, obj)
-		{
-			if (strcmp(e.fieldName(), "devname") == 0)
-			{
-				strFieldval = e.String();
-				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
-				if (lLen != -1)
-				{
-					head.devName = pVal;
-				}
-			}
-			else if (strcmp(e.fieldName(), "station") == 0)
-			{
-				strFieldval = e.String();
-				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
-				if (lLen != -1)
-				{
-					head.stationName = pVal;
-				}
-			}
-
-			if (NULL != pVal)
-			{
-				delete[] pVal;
-				pVal = NULL;
-			}
-		}
-	}
-
-	return true;
-}
-
-//analyze msg header
-bool CRecordAPCIHandler::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum)
-{
-	uint16 uAnalogchannelNum(0);//模拟量通道数
-	uint16 uDigitalchannelNum(0);//开关量通道数
-	UINT uFilesecond(0);//录波时刻，秒
-	UINT uFilenanosecond(0);//录波时刻，纳秒
-	UINT uFaultsecond(0);//故障时刻，秒
-	UINT uFaultnanosecond(0);//故障时刻，纳秒
-	UINT uSamplesectionNum(0);//采样段数目
-
-	try
-	{
-		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//模拟通道数目
-		head.aiCount += uAnalogchannelNum;
-		nOffset += 2;
-
-		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//开关通道数目
-		head.diCount += uAnalogchannelNum;
-		nOffset += 2;
-
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.primary);//模拟通道一次系数
-		nOffset += 4;
-
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.secondary);//模拟通道二次系数
-		nOffset += 4;
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilesecond);//录波时刻（秒）
-		nOffset += 4;
-		head.startTime = FormatDfuMsgTime(uFilesecond);
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//录波时刻（纳秒）
-		nOffset += 4;
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFaultsecond);//故障时间（秒）
-		nOffset += 4;
-		head.faultTime = FormatDfuMsgTime(uFaultsecond);
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//故障时刻（纳秒）
-		nOffset += 4;
-
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.lineFreq);//线路频率
-		nOffset += 4;
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uSamplesectionNum);//采样段数目
-		head.rateCount += uSamplesectionNum;
-		nOffset += 4;
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDatablockNum);//数据块数目
-		nOffset += 4;
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgHeader]analyze msg header exception！");
-		return false;
-	}
-
-	return true;
-}
-
-//analyze samples
-bool CRecordAPCIHandler::AnalyzeFileMsgSamples(list<sampleInfo>& samples, UINT uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	try
-	{
-		for (UINT uNo = 0; uNo < uSampleNum; uNo++)
-		{
-			sampleInfo sa;
-
-			ConvertFloat32BigedianToL(&(*pMsg)[nOffset], sa.rate);//采样率
-			nOffset += 4;
-
-			ConvertInt32BigedianToL(&(*pMsg)[nOffset], sa.lastIndex);//此采用频率最后一个采样的序号
-			nOffset += 4;
-
-			samples.push_back(sa);
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgSamples]analyze msg samples exception！");
-		return false;
-	}
-
-	return true;
-}
-
-//analyze ais
-bool CRecordAPCIHandler::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	UINT uDival(0);
-
-	try
-	{
-		for (UINT uDataNo = 0; uDataNo < uAiNum; uDataNo++)//模拟量
-		{
-			//ConvertUint32BigedianToL(&(*pMsg)[nOffset], ai.index);
-			nOffset += 4;//模拟通道编号
-
-			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);//模拟通道编号
-			nOffset += 4;
-
-			data_vals.push_back(uDival);
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgAis]analyze msg ai exception！");
-		return false;
-	}
-	
-	return true;
-}
-
-//analyze msg dis
-bool CRecordAPCIHandler::AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	UINT uDiBlockNo = 0;
-	UINT uDival(0);
-	UINT uOneDival(0);
-	UINT uDiRealNum(0);
-	UINT uDataNo(0);
-
-	try
-	{
-		for (uDiBlockNo = 0; uDiBlockNo <= (uDiNum / 32); uDiBlockNo++)
-		{
-			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);
-			nOffset += 4;//开关量
-
-			uDiRealNum = (uDiBlockNo == (uDiNum / 32))?(uDiNum % 32):32;
-
-			for (uDataNo = 0; uDataNo < uDiRealNum; uDataNo++)
-			{
-				uOneDival = ((uDival >> uDataNo) & 0x1);
-
-				data_vals.push_back(uOneDival);
-			}
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgDis]analyze msg di exception！");
-		return false;
-	}
+	DFUCOMMUMSG_BUF::iterator it = m_command_msg_buf.begin();
+	sendmsg = *it;
+	m_command_msg_buf.erase(it);
 
 	return true;
 }
@@ -612,17 +146,6 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 			m_LogFile.FormatAdd(CLogFile::error, "socket init failed！");
 			return false;
 		}
-
-		string strError = "";
-		m_MongoAccessHandler.SetMongDbAccessparam(m_pConfigHandle->GetMongoParamHandle());
-		if (false == m_MongoAccessHandler.ConnectMongoServer(strError))
-		{
-			m_LogFile.FormatAdd(CLogFile::error, 
-				"[InitRecordApciHandler]connect mongodb failed，reason：%s", 
-				strError.c_str());
-			return false;
-		}
-		m_LogFile.FormatAdd(CLogFile::trace, "[InitRecordApciHandler]connect mongodb succeed！");
 	}
 	catch (...)
 	{
@@ -644,36 +167,36 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 		m_DfuRecvThread.Stop();
 
 		bRet = m_pNetSocket->ConnectServer(
-			m_pConfigHandle->GetDfuCommuParam_Addr(true), 
-			m_pConfigHandle->GetDfuCommuParam_Port(true));
+			m_pDfuCommuParamHandler->chDfuAddr, 
+			m_pDfuCommuParamHandler->nDfuport);
 
 		if (false == bRet)
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
 				"[StartRecordApciHandler]connect dfu server：%s port：%d failed！", 
-				m_pConfigHandle->GetDfuCommuParam_Addr(true), 
-				m_pConfigHandle->GetDfuCommuParam_Port(true));
+				m_pDfuCommuParamHandler->chDfuAddr, 
+				m_pDfuCommuParamHandler->nDfuport);
 
 			return false;
 		}
 
 		m_LogFile.FormatAdd(CLogFile::trace, 
 			"[StartRecordApciHandler]connect dfu server：%s port：%d succeed！", 
-			m_pConfigHandle->GetDfuCommuParam_Addr(true), 
-			m_pConfigHandle->GetDfuCommuParam_Port(true));
+			m_pDfuCommuParamHandler->chDfuAddr, 
+			m_pDfuCommuParamHandler->nDfuport);
 
-		m_pNetSocket->SetOptions(SENDTIME, (m_pConfigHandle->GetSysParam_SendTimeOut() * 1000), 0);
-		m_pNetSocket->SetOptions(RECVTIME, (m_pConfigHandle->GetSysParam_RecTimeOut() * 1000), 0);
+		m_pNetSocket->SetOptions(SENDTIME, (m_pSysParamHandler->nSendTimeout * 1000), 0);
+		m_pNetSocket->SetOptions(RECVTIME, (m_pSysParamHandler->nRecvTimeout * 1000), 0);
 
 		m_bExitFlag = false;
 
-		if (false == m_DfuBuinessThread.Start(DFU_BUINESS_PROCESS_THREAD_PROC, this))
+		if (false == m_DfuBuinessThread.Start(DFU_MSG_SEND_THREAD_PROC, this))
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
-				"[StartRecordApciHandler]start dfu operation thread failed！");
+				"[StartRecordApciHandler]start dfu send thread failed！");
 			return false;
 		}
-		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start dfu operation thread succeed！");
+		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start dfu send thread succeed！");
 
 		if (false == m_DfuRecvThread.Start(DFU_MSG_RECV_THREAD_PROC, this))
 		{
@@ -682,14 +205,6 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 			return false;
 		}
 		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start dfu recv thread succeed！");
-
-		if (false == m_DfuRecvThread.Start(FILE_BUINESS_THREAD_PROC, this))
-		{
-			m_LogFile.FormatAdd(CLogFile::error, 
-				"[StartRecordApciHandler]start file buiness thread failed！");
-			return false;
-		}
-		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start file buiness thread succeed！");
 	}
 	catch (...)
 	{
@@ -712,18 +227,16 @@ bool CRecordAPCIHandler::StopRecordApciHandler()
 
 	m_DfuRecvThread.Stop();
 	m_DfuBuinessThread.Stop();
-	m_FileBuinessThread.Stop();
 
 	return true;
 }
 
 //commu operation thread main loop
-int CRecordAPCIHandler::DfuBuinessProcessLoop()
+int CRecordAPCIHandler::DfuSendOperationLoop()
 {
 	time_t tCur;
 	time(&tCur);
 	DFU_COMMU_MSG sendMsg;
-	DFUMESSAGE over_msg;
 	bool bTestSend = false;
 	bool bQueryNewFile = false;
 
@@ -737,69 +250,25 @@ int CRecordAPCIHandler::DfuBuinessProcessLoop()
 			}
 
 			time(&tCur);//get cur time
-
-			if ((tCur - m_tCheckFile) >= 
-				m_pConfigHandle->GetDfuCommuParam_ChecknewfileTime(true))//query file
+			if ((tCur - m_tLinkActive) >= m_pDfuCommuParamHandler->nIdleTime)//test frame
 			{
-				if (bQueryNewFile == false)
+				if (bTestSend == false)
 				{
-					LaunchQueryNewFile();
-					bQueryNewFile = true;
+					LaunchLinkTest();//send test msg
+					bTestSend = true;
 				}
-				time(&m_tCheckFile);
+				time(&m_tLinkActive);
 			}
-
-// 			if ((tCur - m_tLinkActive) >= m_pDfuCommuParam->nIdleTime)//test frame
-// 			{
-// 				if (bTestSend == false)
-// 				{
-// 					LaunchLinkTest();//send test msg
-// 					bTestSend = true;
-// 				}
-// 				time(&m_tLinkActive);
-// 			}
 
 			sendMsg.clear();
 			if (true == GetDfuSendMsg(sendMsg))
 			{
 				SendDfuMessage(sendMsg);//send msg
 			}
-
-			if (false == CheckCommandOver(over_msg))//find process over msg
+			else
 			{
 				MySleep(200);
-				continue;
 			}
-
-			switch (over_msg.nMsgType)
-			{
-			case RECORD_DFU_MESSAGE_TYPE_JSON: //client result msg
-				{
-					ProcessClientResultMsg(over_msg);
-				}
-				break;
-
-			case RECORD_DFU_MESSAGE_TYPE_OSC_LIST: //query osc list result
-				{
-					PorocessFListResultMsg(over_msg);
-					bQueryNewFile = false;
-				}
-				break;
-
-			case RECORD_DFU_MESSAGE_TYPE_OSC_FILE: //file msg
-				{
-					AddFileResultMsg(over_msg);
-				}
-				break;
-
-			case RECORD_DFU_MESSAGE_TYPE_TEST: //test msg
-				{
-					bTestSend = false;
-				}
-				break;
-			}
-
-			MySleep(200);
 		}
 		catch (...)
 		{
@@ -834,17 +303,8 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 			if (nRecvRet >= 20)
 			{
 				resultMsgAttach.Attach(&pRecvMsg);
-				if (resultMsgAttach.GetMsgErrorFlag() == true)
-				{
-					m_LogFile.FormatAdd(CLogFile::error, 
-						"msg（transmask：%d，command_id：%d） execute failed，error num：%d，error msg：%s", 
-						resultMsgAttach.GetMsgTransMask(), resultMsgAttach.GetMsgCommand(), 
-						resultMsgAttach.GetErrorNum(), 
-						GetDfuErrorMsgString(resultMsgAttach.GetErrorNum()).c_str());
-					
-					AddDfuResultMsg(pRecvMsg);//错误
-				}
-				else if ((resultMsgAttach.GetMsgdirection() == 0) && 
+				
+				if ((resultMsgAttach.GetMsgdirection() == 0) && 
 					(resultMsgAttach.GetMsgCommand() == 1))//测试报文
 				{
 					DFU_COMMU_MSG reply_msg;
@@ -855,25 +315,9 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 				{
 					
 				}
-				else if (resultMsgAttach.GetMsgMutiFrameConfirmFlag() == 1)//确认帧
-				{
-					DFU_COMMU_MSG follow_up_msg;
-					follow_up_msg.clear();
-					if (true == GetFollowUpMsg(
-						resultMsgAttach.GetMsgTransMask(), resultMsgAttach.GetMsgCommand(), follow_up_msg))
-					{
-						nSendRet = SendDfuMessage(follow_up_msg);
-					}
-					else
-					{
-						m_LogFile.FormatAdd(CLogFile::error, 
-							"[DfuRecvOperationLoop]not found msg（transmask：%d，commandid：%d） follow-up msg", 
-							resultMsgAttach.GetMsgTransMask(), resultMsgAttach.GetMsgCommand());
-					}
-				}
 				else
 				{
-					AddDfuResultMsg(pRecvMsg);//正常结果报文
+					m_pDfuResultCallBackFunc(pRecvMsg, m_pResultProcessClassHandle);
 				}
 			}
 		}
@@ -887,59 +331,12 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 	return 0;
 }
 
-//save new osc file
-int CRecordAPCIHandler::FileBuinessProcessLoop()
-{
-	bool bRet(false);
-
-	try
-	{
-		while (!m_bExitFlag)
-		{
-			if (true == m_bExitFlag)
-			{
-				break;
-			}
-
-			DFUMESSAGE file_msg;
-			if (GetFileResultMsg(file_msg) == false)
-			{
-				MySleep(200);
-				continue;
-			}
-
-			bRet = ProcessFileResultMsg(file_msg);
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[FileBuinessProcessLoop]file buiness loop exception！");
-		return -1;
-	}
-
-	m_LogFile.FormatAdd(CLogFile::trace, "[FileBuinessProcessLoop]file buiness exit normal！");
-
-	return 0;
-}
-
 //post msg
-int CRecordAPCIHandler::PostDfuMsg(DFUMESSAGE& command)
+int CRecordAPCIHandler::PushMsgToDfu(DFU_COMMU_MSG& command)
 {
 	CLockUp lockup(&m_LockCommandList);
 
-	CDFUMsgAttach command_attach;
-
-	vector<DFU_COMMU_MSG>::iterator it = command.command_msg.begin();
-	for (; it != command.command_msg.end(); it++)
-	{
-		command_attach.Attach(&*it);
-		command_attach.SetMsgTransMask(command.nTransMask);
-	}
-
-	m_command_msg_list.push_back(command);
-
-	m_LogFile.FormatAdd(CLogFile::trace, "[PostDfuMsg]收到命令加入待发送队列，当前队列大小：%d", 
-		m_command_msg_list.size());
+	m_command_msg_buf.push_back(command);
 	
 	return 1;
 }
@@ -1228,7 +625,6 @@ UINT CRecordAPCIHandler::CreateTransMask()
 //start test
 bool CRecordAPCIHandler::LaunchLinkTest()
 {
-	DFUMESSAGE test_msg_list;
 	DFU_COMMU_MSG test_msg;
 	int nTransMask = CreateTransMask();
 
@@ -1245,17 +641,7 @@ bool CRecordAPCIHandler::LaunchLinkTest()
 	msg_parser.SetMsgLength();
 	msg_parser.SetEndMask();
 
-	test_msg_list.command_msg.push_back(test_msg);
-
-	test_msg_list.bProcessed = false;
-	test_msg_list.bRecvEnd = false;
-	test_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_TEST;
-	//test_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_OSC_LIST;
-	//test_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_JSON;
-	test_msg_list.nDfuCommandID = msg_parser.GetMsgCommand();
-	test_msg_list.nCommandNum = test_msg_list.command_msg.size();
-	test_msg_list.nTransMask = nTransMask;
-	PostDfuMsg(test_msg_list);
+	PushMsgToDfu(test_msg);
 
 	return true;
 }
@@ -1263,7 +649,6 @@ bool CRecordAPCIHandler::LaunchLinkTest()
 //process query new file
 bool CRecordAPCIHandler::LaunchQueryNewFile()
 {
-	DFUMESSAGE newfile_msg_list;
 	DFU_COMMU_MSG newfile_msg;
 	int nTransMask = CreateTransMask();
 
@@ -1280,15 +665,7 @@ bool CRecordAPCIHandler::LaunchQueryNewFile()
 	msg_parser.SetMsgLength();
 	msg_parser.SetEndMask();
 
-	newfile_msg_list.command_msg.push_back(newfile_msg);
-
-	newfile_msg_list.bProcessed = false;
-	newfile_msg_list.bRecvEnd = false;
-	newfile_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_OSC_LIST;
-	newfile_msg_list.nDfuCommandID = msg_parser.GetMsgCommand();
-	newfile_msg_list.nCommandNum = newfile_msg_list.command_msg.size();
-	newfile_msg_list.nTransMask = nTransMask;
-	PostDfuMsg(newfile_msg_list);
+	PushMsgToDfu(newfile_msg);
 
 	return true;
 }
@@ -1296,7 +673,6 @@ bool CRecordAPCIHandler::LaunchQueryNewFile()
 //get new file
 bool CRecordAPCIHandler::LaunchReadNewFile(UINT& uIndex)
 {
-	DFUMESSAGE newfile_msg_list;
 	DFU_COMMU_MSG newfile_msg;
 	int nTransMask = CreateTransMask();
 
@@ -1314,23 +690,13 @@ bool CRecordAPCIHandler::LaunchReadNewFile(UINT& uIndex)
 	msg_parser.SetMsgLength();
 	msg_parser.SetEndMask();
 
-	newfile_msg_list.command_msg.push_back(newfile_msg);
-
-	newfile_msg_list.bProcessed = false;
-	newfile_msg_list.bRecvEnd = false;
-	newfile_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_OSC_FILE;
-	newfile_msg_list.nDfuCommandID = msg_parser.GetMsgCommand();
-	newfile_msg_list.nCommandNum = newfile_msg_list.command_msg.size();
-	newfile_msg_list.nTransMask = nTransMask;
-
-	PostDfuMsg(newfile_msg_list);
+	PushMsgToDfu(newfile_msg);
 
 	return true;
 }
 
 bool CRecordAPCIHandler::LaunchManualFile()
 {
-	DFUMESSAGE manual_file_msg_list;
 	DFU_COMMU_MSG manual_file_msg;
 	int nTransMask = CreateTransMask();
 
@@ -1347,15 +713,7 @@ bool CRecordAPCIHandler::LaunchManualFile()
 	msg_parser.SetMsgLength();
 	msg_parser.SetEndMask();
 
-	manual_file_msg_list.command_msg.push_back(manual_file_msg);
-
-	manual_file_msg_list.bProcessed = false;
-	manual_file_msg_list.bRecvEnd = false;
-	manual_file_msg_list.nMsgType = RECORD_DFU_MESSAGE_TYPE_JSON;
-	manual_file_msg_list.nDfuCommandID = msg_parser.GetMsgCommand();
-	manual_file_msg_list.nCommandNum = manual_file_msg_list.command_msg.size();
-	manual_file_msg_list.nTransMask = nTransMask;
-	PostDfuMsg(manual_file_msg_list);
+	PushMsgToDfu(manual_file_msg);
 
 	return true;
 }

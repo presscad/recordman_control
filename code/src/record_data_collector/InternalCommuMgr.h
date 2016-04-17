@@ -5,7 +5,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include "RecordAPCIHandler.h"
+#include "DfuMainFlow.h"
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "../../common/RabbitmqAccess.h"
@@ -45,7 +45,7 @@ public:
 public:
 	void SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle);
 
-	void SetRecordApciHandler(CRecordAPCIHandler* pApciHandler);
+	void SetDfuMainFlowHandler(CDfuMainFlow* pMainFlowHandler);
 
 public:
 	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
@@ -80,7 +80,7 @@ private:
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;
 
-	CRecordAPCIHandler* m_pRecordApciHandler;
+	CDfuMainFlow* m_pMainFlow;
 
 	CSafeLock m_LockAmqpRecvMsg;
 

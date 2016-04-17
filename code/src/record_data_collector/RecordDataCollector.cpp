@@ -4,9 +4,10 @@
 CRecordDataCollector::CRecordDataCollector(void)
 {
 	m_pConfigvarialemgr = NULL;
-	m_pRecordApciHandler = NULL;
+	m_pDfuMainFlow = NULL;
 	m_pCommandHandlerMgr = NULL;
 	m_pInternalCommuMgr = NULL;
+	m_pMongodbAccessHandler = NULL;
 
 	bzero(m_chLogpath, sizeof(m_chLogpath));
 	sprintf(m_chLogpath, "%s", MANAGER_BOARD_DEFAULT_ROOT_LOG);
@@ -33,14 +34,6 @@ bool CRecordDataCollector::InitRecordDataColletor()
 {
 	try
 	{
-		mongo::client::GlobalInstance mongo_instance;//init mongo
-		if (!mongo_instance.initialized())
-		{
-			m_Log.FormatAdd(CLogFile::error, "failed to initialize the client driver£¬reason£º%s", 
-				mongo_instance.status().codeString().c_str());
-			return false;
-		}
-
 		if (false == InitSysConfigVariable())
 		{
 			return false;
@@ -53,7 +46,12 @@ bool CRecordDataCollector::InitRecordDataColletor()
 
 		InitLogFile();
 
-		if (false == InitApciHandler())
+		if (false == InitMongoDbAccessHandler())
+		{
+			return false;
+		}
+
+		if (false == InitDfuMainFlowHandler())
 		{
 			return false;
 		}
@@ -84,7 +82,7 @@ bool CRecordDataCollector::StartRecordDataColletor()
 {
 	try
 	{
-		if (false == m_pRecordApciHandler->StartRecordApciHandler())
+		if (false == m_pDfuMainFlow->StartMainFlow())
 		{
 			return false;
 		}
@@ -114,9 +112,9 @@ bool CRecordDataCollector::EndRecordDataColletor()
 {
 	try
 	{
-		if (NULL != m_pRecordApciHandler)
+		if (NULL != m_pDfuMainFlow)
 		{
-			m_pRecordApciHandler->StopRecordApciHandler();
+			m_pDfuMainFlow->StopMainFlow();
 		}
 
 		if (NULL != m_pInternalCommuMgr)
@@ -144,16 +142,22 @@ bool CRecordDataCollector::ExitRecordDataColletor()
 {
 	try
 	{
-		if (NULL != m_pRecordApciHandler)
+		if (NULL != m_pDfuMainFlow)
 		{
-			delete m_pRecordApciHandler;
-			m_pRecordApciHandler = NULL;
+			delete m_pDfuMainFlow;
+			m_pDfuMainFlow = NULL;
 		}
 		
 		if (NULL != m_pInternalCommuMgr)
 		{
 			delete m_pInternalCommuMgr;
 			m_pInternalCommuMgr = NULL;
+		}
+
+		if (NULL != m_pMongodbAccessHandler)
+		{
+			delete m_pMongodbAccessHandler;
+			m_pMongodbAccessHandler = NULL;
 		}
 
 		if (NULL != m_pConfigvarialemgr)
@@ -230,6 +234,51 @@ bool CRecordDataCollector::InitSysConfigVariable()
 	return true;
 }
 
+//init mongodb access handler
+bool CRecordDataCollector::InitMongoDbAccessHandler()
+{
+	string strError = "";
+
+	try
+	{
+		mongo::client::GlobalInstance mongo_instance;//init mongo
+		if (!mongo_instance.initialized())
+		{
+			m_Log.FormatAdd(CLogFile::error, "failed to initialize the client driver£¬reason£º%s", 
+				mongo_instance.status().codeString().c_str());
+			return false;
+		}
+
+		if (NULL == m_pMongodbAccessHandler)
+		{
+			m_pMongodbAccessHandler = new CMongodbAccess;
+		}
+
+		if (NULL == m_pMongodbAccessHandler)
+		{
+			m_Log.FormatAdd(CLogFile::error, "new class CMongodbAccess failed£¡");
+			return false;
+		}
+
+		m_pMongodbAccessHandler->SetMongDbAccessparam(m_pConfigvarialemgr->GetMongoParamHandle());
+		if (false == m_pMongodbAccessHandler->ConnectMongoServer(strError))
+		{
+			m_Log.FormatAdd(CLogFile::error, 
+				"connect mongodb failed£¬reason£º%s", strError.c_str());
+			return false;
+		}
+		m_Log.FormatAdd(CLogFile::trace, "connect mongodb succeed£¡");
+	}
+	catch (...)
+	{
+		m_Log.FormatAdd(CLogFile::error, 
+			"[InitSysConfigVariable]init collector system param find exception£¡");
+		return false;
+	}
+
+	return true;
+}
+
 //************************************
 // Method:    InitApciHandler
 // FullName:  CRecordDataCollector::InitApciHandler
@@ -237,33 +286,35 @@ bool CRecordDataCollector::InitSysConfigVariable()
 // Returns:   bool
 // Qualifier:
 //************************************
-bool CRecordDataCollector::InitApciHandler()
+bool CRecordDataCollector::InitDfuMainFlowHandler()
 {
 	try
 	{
-		if (NULL == m_pRecordApciHandler)
+		if (NULL == m_pDfuMainFlow)
 		{
-			m_pRecordApciHandler = new CRecordAPCIHandler;
+			m_pDfuMainFlow = new CDfuMainFlow;
 		}
 
-		if (NULL == m_pRecordApciHandler)
+		if (NULL == m_pDfuMainFlow)
 		{
-			m_Log.FormatAdd(CLogFile::error, "new class CRecordAPCIHandler failed£¡");
+			m_Log.FormatAdd(CLogFile::error, "[InitDfuMainFlowHandler]new class CDfuMainFlow failed£¡");
 			return false;
 		}
 
-		m_pRecordApciHandler->SetConfigVariableMgrHandle(m_pConfigvarialemgr);
-		if (false == m_pRecordApciHandler->InitRecordApciHandler())
+		m_pDfuMainFlow->SetMainFlowParamHandler(
+			m_pConfigvarialemgr->GetSysParamHandler(), m_pConfigvarialemgr->GetDfuCommuParamHandler(true));
+		m_pDfuMainFlow->SetMongoDbAccessHandler(m_pMongodbAccessHandler);
+		if (false == m_pDfuMainFlow->InitMainFlow())
 		{
-			m_Log.FormatAdd(CLogFile::error, "[InitApciHandler]InitRecordApciHandler failed£¡");
+			m_Log.FormatAdd(CLogFile::error, "[InitDfuMainFlowHandler]InitMainFlow failed£¡");
 			return false;
 		}
 
-		m_Log.FormatAdd(CLogFile::trace, "[InitApciHandler]InitRecordApciHandler succeed£¡");
+		m_Log.FormatAdd(CLogFile::trace, "[InitDfuMainFlowHandler]InitMainFlow succeed£¡");
 	}
 	catch (...)
 	{
-		m_Log.FormatAdd(CLogFile::error, "[InitApciHandler]InitRecordApciHandler find exception£¡");
+		m_Log.FormatAdd(CLogFile::error, "[InitDfuMainFlowHandler]InitMainFlow find exception£¡");
 		return false;
 	}
 	
@@ -286,7 +337,7 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 		}
 
 		m_pInternalCommuMgr->SetConfigVariableMgrHandle(m_pConfigvarialemgr);
-		m_pInternalCommuMgr->SetRecordApciHandler(m_pRecordApciHandler);
+		m_pInternalCommuMgr->SetDfuMainFlowHandler(m_pDfuMainFlow);
 		if (false == m_pInternalCommuMgr->InitCommandMonitorHandler())
 		{
 			m_Log.FormatAdd(CLogFile::error, "[InitInternalCommuMgr]InitCommandMonitorHandler failed£¡");

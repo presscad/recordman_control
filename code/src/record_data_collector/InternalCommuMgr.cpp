@@ -94,7 +94,7 @@ m_LockResultMsg("LOCK_RESULT_MSG_LIST")
 	m_bExit = true;
 	m_pConfigHandle = NULL;
 	m_pInterRabbitCommuHandler = NULL;
-	m_pRecordApciHandler = NULL;
+	m_pMainFlow = NULL;
 
 	m_veAmqpCommand.clear();
 	m_veJsonSendList.clear();
@@ -111,9 +111,9 @@ void CInternalCommuMgr::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHa
 	m_pConfigHandle = pConfigHandle;
 }
 
-void CInternalCommuMgr::SetRecordApciHandler(CRecordAPCIHandler* pApciHandler)
+void CInternalCommuMgr::SetDfuMainFlowHandler(CDfuMainFlow* pMainFlowHandler)
 {
-	m_pRecordApciHandler = pApciHandler;
+	m_pMainFlow = pMainFlowHandler;
 }
 
 //init class member or other class
@@ -123,7 +123,7 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 	{
 		InitLogFile();
 
-		m_pRecordApciHandler->RegisterResultCallBackFunc(CommandResultRecvFunc, this);
+		m_pMainFlow->RegisterCommandResultCallBack(CommandResultRecvFunc, this);
 
 		if (NULL == m_pInterRabbitCommuHandler)
 		{
@@ -319,7 +319,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 		JSON_SENDMSG json_send_msg;
 		json_send_msg.bEnd = false;
 		json_send_msg.nCommandID = jsonMsgparser.GetCommandID();
-		json_send_msg.nTransMask = m_pRecordApciHandler->CreateTransMask();
+		json_send_msg.nTransMask = m_pMainFlow->GetMsgTransMask();
 		json_send_msg.sender_channel = pAmqpComand->channel;
 		json_send_msg.sender_info = pAmqpComand->message.properties;
 		AddResultWaitMsg(json_send_msg);//加入等待队列
@@ -330,7 +330,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 		dfuMsg.nMsgType = RECORD_DFU_MESSAGE_TYPE_JSON;
 		dfuMsg.nTransMask = json_send_msg.nTransMask;
 		dfuMsg.bRecvEnd = false;
-		m_pRecordApciHandler->PostDfuMsg(dfuMsg);//发送给dfu
+		m_pMainFlow->PushCommandToDfuApci(dfuMsg);
 
 		m_LogFile.FormatAdd(CLogFile::error, "[ProcessAmqpCommand]post commmand：%d to dfu！", 
 			jsonMsgparser.GetCommandID());

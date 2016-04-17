@@ -69,6 +69,8 @@ public:
 
 	int GetSysParam_SendTimeOut();
 
+	COLLECTOR_DATA_SYS_PARAM* GetSysParamHandler();
+
 public:
 	int GetRabmqadParam_RevChannel();
 
@@ -107,6 +109,8 @@ public:
 	char* GetDfuCommuParam_Addr(bool bFaultDfu = true);
 
 	char* GetDfuCommuParam_FileSavePath(bool bFaultDfu = true);
+
+	COLLECTOR_DFU_COMMU_PARAM* GetDfuCommuParamHandler(bool bFaultDfu = true);
 
 public:
 	int GetMongoParam_Port();
