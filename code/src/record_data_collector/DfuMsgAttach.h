@@ -71,6 +71,7 @@ public:
 
 public:
 	void SetMsgSettingZone(int nZone);
+
 	int GetMsgSettingZone();
 
 	void SetMsgSettingGroup(int nGroup);

@@ -27,35 +27,24 @@ public:
 	~CConfigVariableMgr(void);
 
 private:
-/**	\brief 系统参数*/
 	COLLECTOR_DATA_SYS_PARAM m_collector_sys_param;
 
-/**	\brief rabbit参数*/
 	COLLECTOR_ADVANCE_RABBITMQ_PARAM m_rabbit_mq_param;
 
-	//fault osc dfu
 	COLLECTOR_DFU_COMMU_PARAM m_fault_dfu_param;
 
-	//continue osc dfu
 	COLLECTOR_DFU_COMMU_PARAM m_contin_dfu_param;
 
-	//mogodb access param
 	RECORD_MONGO_BASIC_PARAM m_mongo_access_param;
 
 private:
-	//log handler
 	CMessageLog* m_pLogFile;
 
 public:
-	//set log handler
 	void SetLogAccessHandler(CMessageLog* pLog);
 
-	//初始化参数
-	//true：成功 false：失败
 	bool InitCollectorSysparam();
 
-	//从配置文件中读取参数
-	//true：成功 false：失败
 	bool LoadCollectorSysParam();
 
 public:
@@ -139,24 +128,8 @@ private:
 	bool LoadMongoDbConfig(TiXmlElement* pRootXmlElement);
 
 private:
-/*
- *  @brief   	GetCopyNodeValue	 读取指定子节点值 
- *  @param 		[In]a param of Type  TiXmlElement*  父节点指针
- *  @param 		[In]a param of Type  const char*  子节点名
- *  @param 		[Out]a param of Type  int&  数字型的值
- *  @param 		[In]a param of Type  int&  长度
- *  @return 	bool true：成功 false：失败
- */
 	bool GetCopyNodeValue(TiXmlElement* pRootNode, const char* pNodeName, int& nParam, int nParamSize = -1);
 
-/*
- *  @brief   	GetCopyNodeValue	 读取指定子节点值 
- *  @param 		[In]a param of Type  TiXmlElement*  父节点指针
- *  @param 		[In]a param of Type  const char*  子节点名
- *  @param 		[Out]a param of Type  int&  字符型的值
- *  @param 		[Out]a param of Type  int  允许存储的最大长度
- *  @return 	bool true：成功 false：失败
- */
 	bool GetCopyNodeValue(TiXmlElement* pRootNode, const char* pNodeName, char* pParam, int nParamSize);
 };
 

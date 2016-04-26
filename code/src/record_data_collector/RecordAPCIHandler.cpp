@@ -1,7 +1,6 @@
 #include "RecordAPCIHandler.h"
 
-//msg send thread
-THREAD_FUNC WINAPI DFU_MSG_SEND_THREAD_PROC(LPVOID param)
+THREAD_FUNC WINAPI send_dfu_msg_proc(LPVOID param)
 {
 	CRecordAPCIHandler* pRecordApciHandler = (CRecordAPCIHandler*)param;
 
@@ -12,7 +11,7 @@ THREAD_FUNC WINAPI DFU_MSG_SEND_THREAD_PROC(LPVOID param)
 			return THREAD_RETURN;
 		}
 
-		pRecordApciHandler->DfuSendOperationLoop();
+		pRecordApciHandler->Send_dfu_msg_operation_loop();
 	}
 	catch (...)
 	{
@@ -23,8 +22,7 @@ THREAD_FUNC WINAPI DFU_MSG_SEND_THREAD_PROC(LPVOID param)
 	return THREAD_RETURN;
 }
 
-//recv from dfu thread
-THREAD_FUNC WINAPI DFU_MSG_RECV_THREAD_PROC(LPVOID param)
+THREAD_FUNC WINAPI recv_dfu_msg_proc(LPVOID param)
 {
 	CRecordAPCIHandler* pRecordApciHandler = (CRecordAPCIHandler*)param;
 
@@ -35,7 +33,7 @@ THREAD_FUNC WINAPI DFU_MSG_RECV_THREAD_PROC(LPVOID param)
 			return THREAD_RETURN;
 		}
 
-		pRecordApciHandler->DfuRecvOperationLoop();
+		pRecordApciHandler->Recv_dfu_msg_operation_loop();
 	}
 	catch (...)
 	{
@@ -85,14 +83,12 @@ void CRecordAPCIHandler::SetSysParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamH
 	m_pSysParamHandler = pSysParamHandler;
 }
 
-//result json fun
 void CRecordAPCIHandler::RegisterDfuResultCallBackFunc(PRESULTDFUMSGCALLBACKFUNC pFunc, XJHANDLE pObj)
 {
 	m_pDfuResultCallBackFunc = pFunc;
 	m_pResultProcessClassHandle = pObj;
 }
 
-//init logfile
 bool CRecordAPCIHandler::InitLogFile()
 {
 	m_LogFile.Close();
@@ -104,8 +100,7 @@ bool CRecordAPCIHandler::InitLogFile()
 	return (TRUE == m_LogFile.Open(m_pDfuCommuParamHandler->chDfuAddr))?true:false;
 }
 
-//get send msg
-bool CRecordAPCIHandler::GetDfuSendMsg(DFU_COMMU_MSG& sendmsg)
+bool CRecordAPCIHandler::GetSendMsgFromList(DFU_COMMU_MSG& sendmsg)
 {
 	CLockUp lockup(&m_LockCommandList);
 
@@ -121,7 +116,6 @@ bool CRecordAPCIHandler::GetDfuSendMsg(DFU_COMMU_MSG& sendmsg)
 	return true;
 }
 
-//init
 bool CRecordAPCIHandler::InitRecordApciHandler()
 {
 	try
@@ -156,7 +150,6 @@ bool CRecordAPCIHandler::InitRecordApciHandler()
 	return true;
 }
 
-//start 
 bool CRecordAPCIHandler::StartRecordApciHandler()
 {
 	bool bRet = false;
@@ -190,7 +183,7 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 
 		m_bExitFlag = false;
 
-		if (false == m_DfuBuinessThread.Start(DFU_MSG_SEND_THREAD_PROC, this))
+		if (false == m_DfuBuinessThread.Start(send_dfu_msg_proc, this))
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
 				"[StartRecordApciHandler]start dfu send thread failed！");
@@ -198,7 +191,7 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 		}
 		m_LogFile.FormatAdd(CLogFile::trace, "[StartRecordApciHandler]start dfu send thread succeed！");
 
-		if (false == m_DfuRecvThread.Start(DFU_MSG_RECV_THREAD_PROC, this))
+		if (false == m_DfuRecvThread.Start(recv_dfu_msg_proc, this))
 		{
 			m_LogFile.FormatAdd(CLogFile::error, 
 				"[StartRecordApciHandler]start dfu recv thread failed！");
@@ -215,7 +208,6 @@ bool CRecordAPCIHandler::StartRecordApciHandler()
 	return true;
 }
 
-//stop
 bool CRecordAPCIHandler::StopRecordApciHandler()
 {
 	m_bExitFlag = true;
@@ -231,8 +223,7 @@ bool CRecordAPCIHandler::StopRecordApciHandler()
 	return true;
 }
 
-//commu operation thread main loop
-int CRecordAPCIHandler::DfuSendOperationLoop()
+int CRecordAPCIHandler::Send_dfu_msg_operation_loop()
 {
 	time_t tCur;
 	time(&tCur);
@@ -261,9 +252,9 @@ int CRecordAPCIHandler::DfuSendOperationLoop()
 			}
 
 			sendMsg.clear();
-			if (true == GetDfuSendMsg(sendMsg))
+			if (true == GetSendMsgFromList(sendMsg))
 			{
-				SendDfuMessage(sendMsg);//send msg
+				SendMessage(sendMsg);//send msg
 			}
 			else
 			{
@@ -280,8 +271,7 @@ int CRecordAPCIHandler::DfuSendOperationLoop()
 	return 0;
 }
 
-//recv loop
-int CRecordAPCIHandler::DfuRecvOperationLoop()
+int CRecordAPCIHandler::Recv_dfu_msg_operation_loop()
 {
 	DFU_COMMU_MSG pRecvMsg;
 	int nRecvRet(0);
@@ -309,7 +299,7 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 				{
 					DFU_COMMU_MSG reply_msg;
 					CreateTestReplyMsg(reply_msg, pRecvMsg);
-					nSendRet = SendDfuMessage(reply_msg);
+					nSendRet = SendMessage(reply_msg);
 				}
 				else if (resultMsgAttach.GetMsgEndFlag() == false)//还有后续帧
 				{
@@ -331,7 +321,6 @@ int CRecordAPCIHandler::DfuRecvOperationLoop()
 	return 0;
 }
 
-//post msg
 int CRecordAPCIHandler::PushMsgToDfu(DFU_COMMU_MSG& command)
 {
 	CLockUp lockup(&m_LockCommandList);
@@ -341,7 +330,6 @@ int CRecordAPCIHandler::PushMsgToDfu(DFU_COMMU_MSG& command)
 	return 1;
 }
 
-//recv msg from socket
 int CRecordAPCIHandler::ReceiveMsg(DFU_COMMU_MSG& pMsg)
 {
 	CDFUMsgAttach dfuMsgParser;
@@ -467,21 +455,14 @@ int CRecordAPCIHandler::ReceiveMsg(DFU_COMMU_MSG& pMsg)
 	bzero(&recv_log_header, sizeof(LOG_BUFFER_HEAD));
 	recv_log_header.nWay = MSG_RECV;
 	m_pNetSocket->GetOpponentAddr(&recv_log_header.addr);
-	WriteDfuMessageLog(pMsg, recv_log_header);
+	Write_message_log(pMsg, recv_log_header);
 
 	time(&m_tLinkActive);
 	
 	return nRet;
 }
 
-//************************************
-// 函 数 名： SendDfuMessage
-// 功能概要： send msg
-// 访问权限： private 
-// 返 回 值： int -1：failed other：send bytes length
-// 参    数： RECORD_DFUMSG& record_msg 
-//************************************
-int CRecordAPCIHandler::SendDfuMessage(DFU_COMMU_MSG& record_msg)
+int CRecordAPCIHandler::SendMessage(DFU_COMMU_MSG& record_msg)
 {
 	int nRet(0);
 	int nWriteRet(0);
@@ -523,7 +504,7 @@ int CRecordAPCIHandler::SendDfuMessage(DFU_COMMU_MSG& record_msg)
 		send_log_header.nWay = MSG_SEND;
 		m_pNetSocket->GetOpponentAddr(&send_log_header.addr);
 
-		WriteDfuMessageLog(record_msg, send_log_header);
+		Write_message_log(record_msg, send_log_header);
 	}
 
 	time(&m_tLinkActive);
@@ -531,15 +512,7 @@ int CRecordAPCIHandler::SendDfuMessage(DFU_COMMU_MSG& record_msg)
 	return nRet;
 }
 
-//************************************
-// 函 数 名： LogMessage
-// 功能概要： print log to screen
-// 访问权限： private 
-// 返 回 值： void 
-// 参    数： const RECORD_DFU_MSG& pMsg msg struct
-// 参    数： const LOG_BUFFER_HEAD & pHead log header
-//************************************
-void CRecordAPCIHandler::WriteDfuMessageLog(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead)
+void CRecordAPCIHandler::Write_message_log(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead)
 {	
 	string strLog = "";
 	CDFUMsgAttach msg_parser;
@@ -587,14 +560,14 @@ void CRecordAPCIHandler::WriteDfuMessageLog(const DFU_COMMU_MSG& pMsg, const LOG
 		{
 			if (pMsg[i] < 16)
 			{
-				Record_Itoa(pMsg[i], temp1, 16);
+				recordman_itoa(pMsg[i], temp1, 16);
 				temp[1] = temp1[0];
 				temp[0] = '0';
 				memset(temp1, 0, 1);
 			}
 			else
 			{
-				Record_Itoa(pMsg[i], temp, 16);
+				recordman_itoa(pMsg[i], temp, 16);
 			}
 
 			memcpy(pchar,temp,2);
@@ -614,19 +587,17 @@ void CRecordAPCIHandler::WriteDfuMessageLog(const DFU_COMMU_MSG& pMsg, const LOG
 	}		
 }
 
-//get msg trans mask
-UINT CRecordAPCIHandler::CreateTransMask()
+UINT CRecordAPCIHandler::Create_link_transmask()
 {
 	m_utTransMask++;
 	m_utTransMask = (m_utTransMask < 65536)?m_utTransMask:(m_utTransMask/65535);
 	return m_utTransMask;
 }
 
-//start test
 bool CRecordAPCIHandler::LaunchLinkTest()
 {
 	DFU_COMMU_MSG test_msg;
-	int nTransMask = CreateTransMask();
+	int nTransMask = Create_link_transmask();
 
 	CDFUMsgAttach msg_parser;
 	msg_parser.Attach(&test_msg);
@@ -646,11 +617,10 @@ bool CRecordAPCIHandler::LaunchLinkTest()
 	return true;
 }
 
-//process query new file
 bool CRecordAPCIHandler::LaunchQueryNewFile()
 {
 	DFU_COMMU_MSG newfile_msg;
-	int nTransMask = CreateTransMask();
+	int nTransMask = Create_link_transmask();
 
 	CDFUMsgAttach msg_parser;
 	msg_parser.Attach(&newfile_msg);
@@ -670,11 +640,10 @@ bool CRecordAPCIHandler::LaunchQueryNewFile()
 	return true;
 }
 
-//get new file
 bool CRecordAPCIHandler::LaunchReadNewFile(UINT& uIndex)
 {
 	DFU_COMMU_MSG newfile_msg;
-	int nTransMask = CreateTransMask();
+	int nTransMask = Create_link_transmask();
 
 	CDFUMsgAttach msg_parser;
 	msg_parser.Attach(&newfile_msg);
@@ -698,7 +667,7 @@ bool CRecordAPCIHandler::LaunchReadNewFile(UINT& uIndex)
 bool CRecordAPCIHandler::LaunchManualFile()
 {
 	DFU_COMMU_MSG manual_file_msg;
-	int nTransMask = CreateTransMask();
+	int nTransMask = Create_link_transmask();
 
 	CDFUMsgAttach msg_parser;
 	msg_parser.Attach(&manual_file_msg);
@@ -718,7 +687,6 @@ bool CRecordAPCIHandler::LaunchManualFile()
 	return true;
 }
 
-//create test reply msg
 void CRecordAPCIHandler::CreateTestReplyMsg(DFU_COMMU_MSG& reply_msg, DFU_COMMU_MSG recv_msg)
 {
 	CDFUMsgAttach resultMsgAttach;

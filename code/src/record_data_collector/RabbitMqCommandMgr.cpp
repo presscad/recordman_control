@@ -1,14 +1,6 @@
 #include "InternalCommuMgr.h"
 
-//************************************
-// 函 数 名： AmqpCommandRecvFun
-// 功能概要： 从rabbitmq接收报文的函数
-// 访问权限： public 
-// 返 回 值： int 
-// 参    数： amqp_envelope_t * pAmqp_envelope_t 
-// 参    数： void * pReserved 
-//************************************
-int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
+int rmq_msg_recv_callback(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
 {
 	if (NULL == pAmqp_envelope_t)
 	{
@@ -20,14 +12,13 @@ int AmqpCommandRecvFun(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
 		return 0;
 	}
 
-	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pReserved;
-	pInternalCommuMgr->AddAmqpCommand(pAmqp_envelope_t);
+	CRabbitMqCommandMgr* pInternalCommuMgr = (CRabbitMqCommandMgr*)pReserved;
+	pInternalCommuMgr->Add_rmq_command_list(pAmqp_envelope_t);
 
 	return 1;
 }
 
-//json result msg recv fun
-int CommandResultRecvFunc(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved)
+int command_result_recv_callback(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved)
 {
 	if (NULL == pJsonMsg)
 	{
@@ -39,16 +30,15 @@ int CommandResultRecvFunc(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHAN
 		return 0;
 	}
 
-	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pReserved;
-	bool bRet = pInternalCommuMgr->AddAmqpResultMsg(pJsonMsg, nTransMask, nCommandID);
+	CRabbitMqCommandMgr* pInternalCommuMgr = (CRabbitMqCommandMgr*)pReserved;
+	bool bRet = pInternalCommuMgr->Add_rmq_result_list(pJsonMsg, nTransMask, nCommandID);
 
 	return (true == bRet)?1:0;
 }
 
-//process amqp msg thread
-THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
+THREAD_FUNC WINAPI rmq_command_operation_proc(LPVOID pParam)
 {
-	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pParam;
+	CRabbitMqCommandMgr* pInternalCommuMgr = (CRabbitMqCommandMgr*)pParam;
 	if (NULL == pInternalCommuMgr)
 	{
 		return THREAD_RETURN;
@@ -56,7 +46,7 @@ THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
 
 	try
 	{
-		pInternalCommuMgr->AmqpCommandOperationLoop();
+		pInternalCommuMgr->rmq_command_operation_loop();
 	}
 	catch (...)
 	{
@@ -66,10 +56,9 @@ THREAD_FUNC WINAPI AmqpCommandOperationProc(LPVOID pParam)
 	return THREAD_RETURN;
 }
 
-//json msg send thread
-THREAD_FUNC WINAPI AmqpResultSendProc(LPVOID pParam)
+THREAD_FUNC WINAPI send_result_to_rmq_proc(LPVOID pParam)
 {
-	CInternalCommuMgr* pInternalCommuMgr = (CInternalCommuMgr*)pParam;
+	CRabbitMqCommandMgr* pInternalCommuMgr = (CRabbitMqCommandMgr*)pParam;
 	if (NULL == pInternalCommuMgr)
 	{
 		return THREAD_RETURN;
@@ -77,7 +66,7 @@ THREAD_FUNC WINAPI AmqpResultSendProc(LPVOID pParam)
 
 	try
 	{
-		pInternalCommuMgr->AmqpMsgSendLoop();
+		pInternalCommuMgr->send_msg_to_rmq_loop();
 	}
 	catch (...)
 	{
@@ -87,7 +76,7 @@ THREAD_FUNC WINAPI AmqpResultSendProc(LPVOID pParam)
 	return THREAD_RETURN;
 }
 
-CInternalCommuMgr::CInternalCommuMgr(void):
+CRabbitMqCommandMgr::CRabbitMqCommandMgr(void):
 m_LockAmqpRecvMsg("LOCK_AMQP_RECV_LIST"),
 m_LockResultMsg("LOCK_RESULT_MSG_LIST")
 {
@@ -101,29 +90,28 @@ m_LockResultMsg("LOCK_RESULT_MSG_LIST")
 }
 
 
-CInternalCommuMgr::~CInternalCommuMgr(void)
+CRabbitMqCommandMgr::~CRabbitMqCommandMgr(void)
 {
 	m_LogFile.Close();
 }
 
-void CInternalCommuMgr::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle)
+void CRabbitMqCommandMgr::SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle)
 {
 	m_pConfigHandle = pConfigHandle;
 }
 
-void CInternalCommuMgr::SetDfuMainFlowHandler(CDfuMainFlow* pMainFlowHandler)
+void CRabbitMqCommandMgr::SetDfuMainFlowHandler(CDfuMainFlow* pMainFlowHandler)
 {
 	m_pMainFlow = pMainFlowHandler;
 }
 
-//init class member or other class
-bool CInternalCommuMgr::InitCommandMonitorHandler()
+bool CRabbitMqCommandMgr::InitCommandMonitorHandler()
 {
 	try
 	{
 		InitLogFile();
 
-		m_pMainFlow->RegisterCommandResultCallBack(CommandResultRecvFunc, this);
+		m_pMainFlow->RegisterCommandResultCallBack(command_result_recv_callback, this);
 
 		if (NULL == m_pInterRabbitCommuHandler)
 		{
@@ -157,13 +145,12 @@ bool CInternalCommuMgr::InitCommandMonitorHandler()
 	return true;
 }
 
-//start recv thread and msg process thread
-bool CInternalCommuMgr::StartCommandMonitorHandler()
+bool CRabbitMqCommandMgr::StartCommandMonitorHandler()
 {
 	RABBIT_RECV_PARAM rabbit_rcv_param;
 	sprintf(rabbit_rcv_param.chQueueName, "%s", m_pConfigHandle->GetRabmqadParam_RevQueName());
 
-	m_pInterRabbitCommuHandler->RegisterRecvHandler(AmqpCommandRecvFun, this);//注册接收回调函数
+	m_pInterRabbitCommuHandler->RegisterRecvHandler(rmq_msg_recv_callback, this);//注册接收回调函数
 	if (false == m_pInterRabbitCommuHandler->StartAmqpRecv(rabbit_rcv_param))
 	{
 		m_LogFile.FormatAdd(CLogFile::error, "[StartCommandMonitorHandler]start amqp recv failed！");
@@ -176,7 +163,7 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	m_AmqpMsgSendThread.Stop();
 
 	m_bExit = false;
-	if (false == m_AmqpCommandProcessThread.Start(AmqpCommandOperationProc, this))
+	if (false == m_AmqpCommandProcessThread.Start(rmq_command_operation_proc, this))
 	{
 		m_LogFile.FormatAdd(CLogFile::error, 
 			"[StartCommandMonitorHandler]start amqp command process thread failed！");
@@ -185,7 +172,7 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	m_LogFile.FormatAdd(CLogFile::trace, 
 		"[StartCommandMonitorHandler]start amqp command process thread succeed！");
 
-	if (false == m_AmqpMsgSendThread.Start(AmqpResultSendProc, this))
+	if (false == m_AmqpMsgSendThread.Start(send_result_to_rmq_proc, this))
 	{
 		m_LogFile.FormatAdd(CLogFile::error, 
 			"[StartCommandMonitorHandler]start json result send thread failed！");
@@ -197,8 +184,7 @@ bool CInternalCommuMgr::StartCommandMonitorHandler()
 	return true;
 }
 
-//stop monitor
-bool CInternalCommuMgr::StopCommandMonitorHandler()
+bool CRabbitMqCommandMgr::StopCommandMonitorHandler()
 {
 	if (NULL == m_pInterRabbitCommuHandler)
 	{
@@ -220,9 +206,7 @@ bool CInternalCommuMgr::StopCommandMonitorHandler()
 	return true;
 }
 
-//process msg from rabbitmq
-//get a msg from queue one by one
-int CInternalCommuMgr::AmqpCommandOperationLoop()
+int CRabbitMqCommandMgr::rmq_command_operation_loop()
 {
 	amqp_envelope_t* pAmqpEnveLop = NULL;
 
@@ -233,21 +217,20 @@ int CInternalCommuMgr::AmqpCommandOperationLoop()
 			break;;
 		}
 
-		if (false == GetAmqpCommand(pAmqpEnveLop))
+		if (false == Get_rmq_command_from_list(pAmqpEnveLop))
 		{
 			MySleep(300);
 			continue;
 		}
 
-		ProcessAmqpCommand(pAmqpEnveLop);
+		Process_rmp_command(pAmqpEnveLop);
 		m_pInterRabbitCommuHandler->FreeAmqpEnveloptObj(pAmqpEnveLop);
 	}
 
 	return 0;
 }
 
-//json result msg send thread main loop
-int CInternalCommuMgr::AmqpMsgSendLoop()
+int CRabbitMqCommandMgr::send_msg_to_rmq_loop()
 {
 	while (!m_bExit)
 	{
@@ -257,7 +240,7 @@ int CInternalCommuMgr::AmqpMsgSendLoop()
 		}
 
 		JSON_SENDMSG json_send_msg;
-		if (false == GetAmqpResultMsg(json_send_msg))
+		if (false == Get_command_result(json_send_msg))
 		{
 			MySleep(200);
 			continue;
@@ -281,8 +264,7 @@ int CInternalCommuMgr::AmqpMsgSendLoop()
 	return 0;
 }
 
-//process msg function
-bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
+bool CRabbitMqCommandMgr::Process_rmp_command(amqp_envelope_t* pAmqpComand)
 {
 	cJSON* pRecvRootJson = NULL;
 	cJSON* pResultJson = NULL;
@@ -322,7 +304,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 		json_send_msg.nTransMask = m_pMainFlow->GetMsgTransMask();
 		json_send_msg.sender_channel = pAmqpComand->channel;
 		json_send_msg.sender_info = pAmqpComand->message.properties;
-		AddResultWaitMsg(json_send_msg);//加入等待队列
+		Add_result_wait_msg(json_send_msg);//加入等待队列
 
 		dfuMsg.nDfuCommandID = nDfuMsgID;
 		dfuMsg.nInternalCommandID = jsonMsgparser.GetCommandID();
@@ -357,8 +339,7 @@ bool CInternalCommuMgr::ProcessAmqpCommand(amqp_envelope_t* pAmqpComand)
 	return true;
 }
 
-//get a send json msg
-bool CInternalCommuMgr::GetAmqpResultMsg(JSON_SENDMSG& json_send_msg)
+bool CRabbitMqCommandMgr::Get_command_result(JSON_SENDMSG& json_send_msg)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
@@ -376,16 +357,14 @@ bool CInternalCommuMgr::GetAmqpResultMsg(JSON_SENDMSG& json_send_msg)
 	return false;
 }
 
-//add a wait result command
-void CInternalCommuMgr::AddResultWaitMsg(JSON_SENDMSG& json_send_msg)
+void CRabbitMqCommandMgr::Add_result_wait_msg(JSON_SENDMSG& json_send_msg)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
 	m_veJsonSendList.push_back(json_send_msg);
 }
 
-//add a result msg
-bool CInternalCommuMgr::AddAmqpResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID)
+bool CRabbitMqCommandMgr::Add_rmq_result_list(cJSON* pResultMsg, int nTransMask, int nCommmandID)
 {
 	CLockUp lockUp(&m_LockResultMsg);
 
@@ -403,16 +382,14 @@ bool CInternalCommuMgr::AddAmqpResultMsg(cJSON* pResultMsg, int nTransMask, int 
 	return false;
 }
 
-//add msg from rabbitmq to msg queue
-void CInternalCommuMgr::AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope)
+void CRabbitMqCommandMgr::Add_rmq_command_list(amqp_envelope_t* pAmqpEnvelope)
 {
 	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
 	m_veAmqpCommand.push_back(pAmqpEnvelope);
 }
 
-//get msg fron queue
-bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
+bool CRabbitMqCommandMgr::Get_rmq_command_from_list(amqp_envelope_t*& pAmqpComand)
 {
 	CLockUp lockUp(&m_LockAmqpRecvMsg);
 
@@ -428,8 +405,7 @@ bool CInternalCommuMgr::GetAmqpCommand(amqp_envelope_t*& pAmqpComand)
 	return true;
 }
 
-//init logfile
-bool CInternalCommuMgr::InitLogFile()
+bool CRabbitMqCommandMgr::InitLogFile()
 {
 	m_LogFile.Close();
 

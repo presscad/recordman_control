@@ -1,6 +1,5 @@
 #include "DfuMainFlow.h"
 
-//main buiness thread
 THREAD_FUNC WINAPI MAIN_BUINESS_THREAD_PROC(LPVOID param)
 {
 	CDfuMainFlow* pMainFlow = (CDfuMainFlow*)param;
@@ -23,7 +22,6 @@ THREAD_FUNC WINAPI MAIN_BUINESS_THREAD_PROC(LPVOID param)
 	return THREAD_RETURN;
 }
 
-//result buiness thread
 THREAD_FUNC WINAPI RESULT_BUINESS_THREAD_PROC(LPVOID param)
 {
 	CDfuMainFlow* pMainFlow = (CDfuMainFlow*)param;
@@ -46,7 +44,6 @@ THREAD_FUNC WINAPI RESULT_BUINESS_THREAD_PROC(LPVOID param)
 	return THREAD_RETURN;
 }
 
-//save new file thread
 THREAD_FUNC WINAPI FILE_BUINESS_THREAD_PROC(LPVOID param)
 {
 	CDfuMainFlow* pMainFlow = (CDfuMainFlow*)param;
@@ -69,7 +66,6 @@ THREAD_FUNC WINAPI FILE_BUINESS_THREAD_PROC(LPVOID param)
 	return THREAD_RETURN;
 }
 
-//dfu result msg callback
 int push_dfu_result_msg_callback(DFU_COMMU_MSG& result_msg, XJHANDLE pReserved)
 {
 	CDfuMainFlow* pDfumaiflow = (CDfuMainFlow*)pReserved;
@@ -111,7 +107,6 @@ void CDfuMainFlow::SetMongoDbAccessHandler(CMongodbAccess* pMongodbObj)
 	m_pMongoAccessHandler = pMongodbObj;
 }
 
-//init logfile
 bool CDfuMainFlow::InitLogFile()
 {
 	m_LogFile.Close();
@@ -210,7 +205,6 @@ bool CDfuMainFlow::StopMainFlow()
 	return true;
 }
 
-//push command msg
 bool CDfuMainFlow::PushCommandToDfuApci(DFUMESSAGE& command_msg)
 {
 	CLockUp lockup(&m_LockCommandBuf);
@@ -232,7 +226,6 @@ bool CDfuMainFlow::PushCommandToDfuApci(DFUMESSAGE& command_msg)
 	return 1;
 }
 
-//push result msg
 bool CDfuMainFlow::PushDfuResultMsg(DFU_COMMU_MSG result_msg)
 {
 	CLockUp lockup(&m_LockCommandBuf);
@@ -260,13 +253,11 @@ bool CDfuMainFlow::PushDfuResultMsg(DFU_COMMU_MSG result_msg)
 	return false;
 }
 
-//get msg trans mask
 int CDfuMainFlow::GetMsgTransMask()
 {
-	return m_pApciHandler->CreateTransMask();
+	return m_pApciHandler->Create_link_transmask();
 }
 
-//check command is process over
 bool CDfuMainFlow::CheckCommandFinish(DFUMESSAGE& full_command_msg)
 {
 	CLockUp lockup(&m_LockCommandBuf);
@@ -367,7 +358,6 @@ int CDfuMainFlow::ResultBuinessLoop()
 	return 0;
 }
 
-//save new osc file
 int CDfuMainFlow::FileBuinessLoop()
 {
 	bool bRet(false);
@@ -402,7 +392,6 @@ int CDfuMainFlow::FileBuinessLoop()
 	return 0;
 }
 
-//process client result msg
 bool CDfuMainFlow::ProcessClientResultMsg(DFUMESSAGE& client_result_msg)
 {
 	CDfuMsgToJson dfu_to_json;
@@ -431,7 +420,6 @@ bool CDfuMainFlow::ProcessClientResultMsg(DFUMESSAGE& client_result_msg)
 	return true;
 }
 
-//query file list msg
 bool CDfuMainFlow::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
 {
 	if (file_list_msg.result_msg.size() <= 0)
@@ -448,8 +436,8 @@ bool CDfuMainFlow::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
 	int nOffset = 18;
 
 	pOneMsg = &file_list_msg.result_msg.front();
-	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset], uFileIndex);
-	ConvertUint32BigedianToL(&(*pOneMsg)[nOffset + 4], uFileNum);
+	convert_btol_uint32(&(*pOneMsg)[nOffset], uFileIndex);
+	convert_btol_uint32(&(*pOneMsg)[nOffset + 4], uFileNum);
 
 	m_LogFile.FormatAdd(CLogFile::trace, 
 		"[PorocessFListResultMsg]search new file complete，result（index：%d，num：%d）", 
@@ -467,7 +455,6 @@ bool CDfuMainFlow::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
 	return true;
 }
 
-//process file msg(analyze and save)
 bool CDfuMainFlow::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 {
 	if (file_msg.result_msg.size() <= 0)
@@ -538,7 +525,6 @@ bool CDfuMainFlow::ProcessFileResultMsg(DFUMESSAGE& file_msg)
 	return true;
 }
 
-//get osc info
 bool CDfuMainFlow::GetOscInfo(comtradeHead& head)
 {
 	long lLen = 0;
@@ -583,7 +569,6 @@ bool CDfuMainFlow::GetOscInfo(comtradeHead& head)
 	return true;
 }
 
-//analyze msg header
 bool CDfuMainFlow::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum)
 {
 	uint16 uAnalogchannelNum(0);//模拟量通道数
@@ -596,42 +581,42 @@ bool CDfuMainFlow::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg,
 
 	try
 	{
-		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//模拟通道数目
+		convert_btol_uint16(&(*pMsg)[nOffset], uAnalogchannelNum);//模拟通道数目
 		head.aiCount += uAnalogchannelNum;
 		nOffset += 2;
 
-		ConvertUint16BigedianToL(&(*pMsg)[nOffset], uAnalogchannelNum);//开关通道数目
+		convert_btol_uint16(&(*pMsg)[nOffset], uAnalogchannelNum);//开关通道数目
 		head.diCount += uAnalogchannelNum;
 		nOffset += 2;
 
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.primary);//模拟通道一次系数
+		convert_btol_float32(&(*pMsg)[nOffset], head.primary);//模拟通道一次系数
 		nOffset += 4;
 
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.secondary);//模拟通道二次系数
+		convert_btol_float32(&(*pMsg)[nOffset], head.secondary);//模拟通道二次系数
 		nOffset += 4;
 
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilesecond);//录波时刻（秒）
+		convert_btol_uint32(&(*pMsg)[nOffset], uFilesecond);//录波时刻（秒）
 		nOffset += 4;
-		head.startTime = FormatDfuMsgTime(uFilesecond);
+		head.startTime = format_dfu_msg_time(uFilesecond);
 
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//录波时刻（纳秒）
-		nOffset += 4;
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFaultsecond);//故障时间（秒）
-		nOffset += 4;
-		head.faultTime = FormatDfuMsgTime(uFaultsecond);
-
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uFilenanosecond);//故障时刻（纳秒）
+		convert_btol_uint32(&(*pMsg)[nOffset], uFilenanosecond);//录波时刻（纳秒）
 		nOffset += 4;
 
-		ConvertFloat32BigedianToL(&(*pMsg)[nOffset], head.lineFreq);//线路频率
+		convert_btol_uint32(&(*pMsg)[nOffset], uFaultsecond);//故障时间（秒）
+		nOffset += 4;
+		head.faultTime = format_dfu_msg_time(uFaultsecond);
+
+		convert_btol_uint32(&(*pMsg)[nOffset], uFilenanosecond);//故障时刻（纳秒）
 		nOffset += 4;
 
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uSamplesectionNum);//采样段数目
+		convert_btol_float32(&(*pMsg)[nOffset], head.lineFreq);//线路频率
+		nOffset += 4;
+
+		convert_btol_uint32(&(*pMsg)[nOffset], uSamplesectionNum);//采样段数目
 		head.rateCount += uSamplesectionNum;
 		nOffset += 4;
 
-		ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDatablockNum);//数据块数目
+		convert_btol_uint32(&(*pMsg)[nOffset], uDatablockNum);//数据块数目
 		nOffset += 4;
 	}
 	catch (...)
@@ -643,7 +628,6 @@ bool CDfuMainFlow::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg,
 	return true;
 }
 
-//analyze samples
 bool CDfuMainFlow::AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset)
 {
 	try
@@ -652,10 +636,10 @@ bool CDfuMainFlow::AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampl
 		{
 			sampleInfo sa;
 
-			ConvertFloat32BigedianToL(&(*pMsg)[nOffset], sa.rate);//采样率
+			convert_btol_float32(&(*pMsg)[nOffset], sa.rate);//采样率
 			nOffset += 4;
 
-			ConvertInt32BigedianToL(&(*pMsg)[nOffset], sa.lastIndex);//此采用频率最后一个采样的序号
+			convert_btol_int32(&(*pMsg)[nOffset], sa.lastIndex);//此采用频率最后一个采样的序号
 			nOffset += 4;
 
 			samples.push_back(sa);
@@ -670,7 +654,6 @@ bool CDfuMainFlow::AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampl
 	return true;
 }
 
-//analyze ais
 bool CDfuMainFlow::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
 {
 	UINT uDival(0);
@@ -682,7 +665,7 @@ bool CDfuMainFlow::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_CO
 			//ConvertUint32BigedianToL(&(*pMsg)[nOffset], ai.index);
 			nOffset += 4;//模拟通道编号
 
-			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);//模拟通道编号
+			convert_btol_uint32(&(*pMsg)[nOffset], uDival);//模拟通道编号
 			nOffset += 4;
 
 			data_vals.push_back(uDival);
@@ -697,7 +680,6 @@ bool CDfuMainFlow::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_CO
 	return true;
 }
 
-//analyze msg dis
 bool CDfuMainFlow::AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
 {
 	UINT uDiBlockNo = 0;
@@ -710,7 +692,7 @@ bool CDfuMainFlow::AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_CO
 	{
 		for (uDiBlockNo = 0; uDiBlockNo <= (uDiNum / 32); uDiBlockNo++)
 		{
-			ConvertUint32BigedianToL(&(*pMsg)[nOffset], uDival);
+			convert_btol_uint32(&(*pMsg)[nOffset], uDival);
 			nOffset += 4;//开关量
 
 			uDiRealNum = (uDiBlockNo == (uDiNum / 32))?(uDiNum % 32):32;

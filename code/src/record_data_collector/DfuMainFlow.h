@@ -49,35 +49,24 @@ public:
 	int FileBuinessLoop();
 
 private:
-	//init logfile
 	bool InitLogFile();
 
-private:
-	//check msg is over
 	bool CheckCommandFinish(DFUMESSAGE& full_command_msg);
 
-	//process client result msg
 	bool ProcessClientResultMsg(DFUMESSAGE& client_result_msg);
 
-	//query file list msg
 	bool PorocessFListResultMsg(DFUMESSAGE& file_list_msg);
 
-	//process file msg(analyze and save)
 	bool ProcessFileResultMsg(DFUMESSAGE& file_msg);
 
-	//osc info
 	bool GetOscInfo(comtradeHead& head);
 
-	//analyze msg header
 	bool AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum);
 
-	//analyze msg samples
 	bool AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset);
 
-	//analyze msg ai
 	bool AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
 
-	//analyze msg di
 	bool AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
 
 private:
@@ -87,20 +76,7 @@ private:
 
 	COLLECTOR_DFU_COMMU_PARAM* m_pDfuCommuParamHandler;
 
-	CMessageLog m_LogFile;
-
-	//mongo access
 	CMongodbAccess* m_pMongoAccessHandler;
-
-	//command list lock
-	CSafeLock m_LockCommandBuf;
-
-	//File list lock
-	CSafeLock m_LockFileBuf;
-
-	PRESULTMSGCALLBACKFUNC m_pCommandResultCallBackFunc;
-
-	XJHANDLE m_pCallBackCallObj;
 
 private:
 	DFUMESSAGE_BUF m_CommandMsgBuf;
@@ -113,11 +89,20 @@ private:
 
 	CRecordmanThread m_FileBuinessThread;
 
+	CSafeLock m_LockCommandBuf;
+
+	CSafeLock m_LockFileBuf;
+
 private:
+	CMessageLog m_LogFile;
+
 	bool m_bExitFlag;
 
-	//check new file time
 	time_t m_tCheckFile;
+
+	PRESULTMSGCALLBACKFUNC m_pCommandResultCallBackFunc;
+
+	XJHANDLE m_pCallBackCallObj;
 };
 
 #endif

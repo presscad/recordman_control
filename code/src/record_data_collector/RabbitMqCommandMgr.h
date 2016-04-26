@@ -36,11 +36,11 @@ typedef struct _JSON_SENDMSG
 
 }JSON_SENDMSG;
 
-class CInternalCommuMgr
+class CRabbitMqCommandMgr
 {
 public:
-	CInternalCommuMgr(void);
-	~CInternalCommuMgr(void);
+	CRabbitMqCommandMgr(void);
+	~CRabbitMqCommandMgr(void);
 
 public:
 	void SetConfigVariableMgrHandle(CConfigVariableMgr* pConfigHandle);
@@ -48,15 +48,15 @@ public:
 	void SetDfuMainFlowHandler(CDfuMainFlow* pMainFlowHandler);
 
 public:
-	void AddAmqpCommand(amqp_envelope_t* pAmqpEnvelope);
+	void Add_rmq_command_list(amqp_envelope_t* pAmqpEnvelope);
 
-	void AddResultWaitMsg(JSON_SENDMSG& json_send_msg);
+	void Add_result_wait_msg(JSON_SENDMSG& json_send_msg);
 
-	bool AddAmqpResultMsg(cJSON* pResultMsg, int nTransMask, int nCommmandID);
+	bool Add_rmq_result_list(cJSON* pResultMsg, int nTransMask, int nCommmandID);
 
-	int AmqpCommandOperationLoop();
+	int rmq_command_operation_loop();
 
-	int AmqpMsgSendLoop();
+	int send_msg_to_rmq_loop();
 
 public:
 	bool InitCommandMonitorHandler();
@@ -68,14 +68,13 @@ public:
 private:
 	bool InitLogFile();
 
-	bool GetAmqpCommand(amqp_envelope_t*& pAmqpComand);
+	bool Get_rmq_command_from_list(amqp_envelope_t*& pAmqpComand);
 
-	bool ProcessAmqpCommand(amqp_envelope_t* pAmqpComand);
+	bool Process_rmp_command(amqp_envelope_t* pAmqpComand);
 
-	bool GetAmqpResultMsg(JSON_SENDMSG& json_send_msg);
+	bool Get_command_result(JSON_SENDMSG& json_send_msg);
 
 private:
-/**	\brief 配置维护类对象*/
 	CConfigVariableMgr* m_pConfigHandle;
 
 	CRabbitmqAccess* m_pInterRabbitCommuHandler;

@@ -10,7 +10,7 @@
 #include "const_define.h"
 #include "ConfigVariableMgr.h"
 #include "CommandHandlerMgr.h"
-#include "InternalCommuMgr.h"
+#include "RabbitMqCommandMgr.h"
 
 class CRecordDataCollector
 {
@@ -69,7 +69,7 @@ private:
 	CDfuMainFlow* m_pDfuMainFlow;
 
 /**	\brief 系统内部消息管理*/
-	CInternalCommuMgr* m_pInternalCommuMgr;
+	CRabbitMqCommandMgr* m_pInternalCommuMgr;
 
 	CMongodbAccess* m_pMongodbAccessHandler;
 

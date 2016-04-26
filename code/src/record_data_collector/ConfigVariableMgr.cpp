@@ -16,13 +16,6 @@ void CConfigVariableMgr::SetLogAccessHandler(CMessageLog* pLog)
 	m_pLogFile = pLog;
 }
 
-//************************************
-// Method:    InitCollectorSysparam
-// FullName:  CConfigVariableMgr::InitCollectorSysparam
-// Access:    public 
-// Returns:   bool true：成功 false：失败
-// Qualifier: 初始化参数
-//************************************
 bool CConfigVariableMgr::InitCollectorSysparam()
 {
 	try
@@ -73,13 +66,6 @@ bool CConfigVariableMgr::InitCollectorSysparam()
 	return true;
 }
 
-//************************************
-// Method:    LoadCollectorSysParam
-// FullName:  CConfigVariableMgr::LoadCollectorSysParam
-// Access:    public 
-// Returns:   bool true：成功 false：失败
-// Qualifier: 从配置文件中读取参数
-//************************************
 bool CConfigVariableMgr::LoadCollectorSysParam()
 {
 	TiXmlDocument doc;
@@ -602,16 +588,6 @@ bool CConfigVariableMgr::LoadMongoDbConfig(TiXmlElement* pRootXmlElement)
 	return true;
 }
 
-//************************************
-// 函 数 名:  GetCopyNodeValue
-// 功能概要:  读取指定子节点值
-// 访问权限:  private 
-// 返 回 值:  bool true：成功 false：失败
-// 参    数:  TiXmlElement * pRootNode 父节点指针
-// 参    数:  const char * pNodeName 子节点名
-// 参    数:  int & nParam 数字型的值
-// 参    数:  int nParamSize 长度
-//************************************
 bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* pNodeName, int& nParam, int nParamSize)
 {
 	TiXmlElement* pXMlChild = NULL;
@@ -641,16 +617,6 @@ bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* p
 	return true;
 }
 
-//************************************
-// 函 数 名:  GetCopyNodeValue
-// 功能概要:  读取指定子节点值
-// 访问权限:  private 
-// 返 回 值:  bool true：成功 false：失败
-// 参    数:  TiXmlElement * pRootNode 父节点指针
-// 参    数:  const char * pNodeName 子节点名
-// 参    数:  int & nParam 字符型的值
-// 参    数:  int nParam nParamSize
-//************************************
 bool CConfigVariableMgr::GetCopyNodeValue(TiXmlElement* pRootNode, const char* pNodeName, char* pParam, int nParamSize)
 {
 	TiXmlElement* pXMlChild = NULL;

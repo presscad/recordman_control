@@ -106,9 +106,9 @@
     <ClCompile Include="DfuMsgAttach.cpp" />
     <ClCompile Include="DfuMsgToJson.cpp" />
     <ClCompile Include="GlobalFunction.cpp" />
-    <ClCompile Include="InternalCommuMgr.cpp" />
     <ClCompile Include="JsonMsgParser.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RabbitMqCommandMgr.cpp" />
     <ClCompile Include="RecordAPCIHandler.cpp" />
     <ClCompile Include="RecordDataCollector.cpp" />
   </ItemGroup>
@@ -140,8 +140,8 @@
     <ClInclude Include="DfuMsgAttach.h" />
     <ClInclude Include="DfuMsgToJson.h" />
     <ClInclude Include="GlobalFunction.h" />
-    <ClInclude Include="InternalCommuMgr.h" />
     <ClInclude Include="JsonMsgParser.h" />
+    <ClInclude Include="RabbitMqCommandMgr.h" />
     <ClInclude Include="RecordAPCIHandler.h" />
     <ClInclude Include="RecordDataCollector.h" />
   </ItemGroup>

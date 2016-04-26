@@ -327,7 +327,7 @@ bool CRecordDataCollector::InitInternalCommuMgr()
 	{
 		if (NULL == m_pInternalCommuMgr)
 		{
-			m_pInternalCommuMgr = new CInternalCommuMgr;
+			m_pInternalCommuMgr = new CRabbitMqCommandMgr;
 		}
 
 		if (NULL == m_pInternalCommuMgr)

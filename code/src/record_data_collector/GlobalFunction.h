@@ -4,26 +4,24 @@
 #include "const_define.h"
 #include "../../common/common_time.h"
 
-//
-char* Record_Strrev(char* szT);
+char* recordman_strrev(char* szT);
 
-//×Ö·û×ª»»
-char* Record_Itoa(int value, char* str, int radix);
+char* recordman_itoa(int value, char* str, int radix);
 
-string GetDfuErrorMsgString(int nErrorNum);
+string get_dfu_error_msg_string(int nErrorNum);
 
-void ConvertInt32BigedianToL(XJHANDLE pChar, int& nVal);
+void convert_btol_int32(XJHANDLE pChar, int& nVal);
 
-void ConvertUint32BigedianToL(XJHANDLE pChar, UINT& nVal);
+void convert_btol_uint32(XJHANDLE pChar, UINT& nVal);
 
-void ConvertFloat32BigedianToL(XJHANDLE pChar, float& fVal);
+void convert_btol_float32(XJHANDLE pChar, float& fVal);
 
-void ConvertUint16BigedianToL(XJHANDLE pChar, uint16& uVal);
+void convert_btol_uint16(XJHANDLE pChar, uint16& uVal);
 
-string GetInt32VersionInfo(XJHANDLE pChar);
+string get_int32_version(XJHANDLE pChar);
 
-string GetDfucrcInfo(XJHANDLE pChar);
+string get_dfu_crc(XJHANDLE pChar);
 
-string FormatDfuMsgTime(UINT uMsgtime, int nTimetype = CCommonTime::COMTRADE26Time);
+string format_dfu_msg_time(UINT uMsgtime, int nTimetype = CCommonTime::COMTRADE26Time);
 
 #endif

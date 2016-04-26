@@ -38,7 +38,7 @@ json_objects = cJSON.o
 
 tiny_xml_objects = tinyxml2.o
 
-cur_objects = CommandHandlerMgr.o CommandHandlerSession.o InternalCommuMgr.o ConfigVariableMgr.o \
+cur_objects = CommandHandlerMgr.o CommandHandlerSession.o RabbitMqCommandMgr.o ConfigVariableMgr.o \
 				GlobalFunction.o Main.o RecordAPCIHandler.o RecordDataCollector.o DfuMsgAttach.o \
 				JsonMsgParser.o DfuMsgToJson.o
 
