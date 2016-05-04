@@ -75,17 +75,21 @@ int push_dfu_result_msg_callback(DFU_COMMU_MSG& result_msg, XJHANDLE pReserved)
 	return 0;
 }
 
-CDfuMainFlow::CDfuMainFlow(void):
+CDfuMainFlow::CDfuMainFlow(
+	COLLECTOR_DATA_SYS_PARAM* pSysParamHandler, 
+	COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler, 
+	CMongodbAccess* pMongodbObj):
 m_LockFileBuf("LOCK_FILE_BUF"),
 m_LockCommandBuf("LOCK_COMMAND_BUF")
 {
+	m_pSysParamHandler = pSysParamHandler;
+	m_pDfuCommuParamHandler = pDfuCommuParamHandler;
+	m_pMongoAccessHandler = pMongodbObj;
+	
 	m_bExitFlag = true;
 	m_pApciHandler = NULL;
-	m_pSysParamHandler = NULL;
 	m_pCommandResultCallBackFunc = NULL;
 	m_pCallBackCallObj = NULL;
-	m_pMongoAccessHandler = NULL;
-	m_pDfuCommuParamHandler = NULL;
 
 	m_CommandMsgBuf.clear();
 }
@@ -94,17 +98,6 @@ m_LockCommandBuf("LOCK_COMMAND_BUF")
 CDfuMainFlow::~CDfuMainFlow(void)
 {
 	m_LogFile.Close();
-}
-
-void CDfuMainFlow::SetMainFlowParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler, COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler)
-{
-	m_pSysParamHandler = pSysParamHandler;
-	m_pDfuCommuParamHandler = pDfuCommuParamHandler;
-}
-
-void CDfuMainFlow::SetMongoDbAccessHandler(CMongodbAccess* pMongodbObj)
-{
-	m_pMongoAccessHandler = pMongodbObj;
 }
 
 bool CDfuMainFlow::InitLogFile()
@@ -124,7 +117,7 @@ bool CDfuMainFlow::InitMainFlow()
 	{
 		if (NULL == m_pApciHandler)
 		{
-			m_pApciHandler = new CRecordAPCIHandler;
+			m_pApciHandler = new CRecordAPCIHandler(m_pDfuCommuParamHandler, m_pSysParamHandler);
 		}
 
 		if (NULL == m_pApciHandler)
@@ -133,8 +126,6 @@ bool CDfuMainFlow::InitMainFlow()
 			return false;
 		}
 
-		m_pApciHandler->SetDfuCommuParamHandler(m_pDfuCommuParamHandler);
-		m_pApciHandler->SetSysParamHandler(m_pSysParamHandler);
 		m_pApciHandler->RegisterDfuResultCallBackFunc(push_dfu_result_msg_callback, this);
 		m_pApciHandler->InitRecordApciHandler();
 	}

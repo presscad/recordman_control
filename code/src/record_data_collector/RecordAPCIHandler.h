@@ -12,17 +12,14 @@
 class CRecordAPCIHandler
 {
 public:
-	CRecordAPCIHandler(void);
+	CRecordAPCIHandler(
+		COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler, 
+		COLLECTOR_DATA_SYS_PARAM* pSysParamHandler);
 	~CRecordAPCIHandler(void);
 
 public:
-	void SetDfuCommuParamHandler(COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler);
-
-	void SetSysParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler);
-
 	void RegisterDfuResultCallBackFunc(PRESULTDFUMSGCALLBACKFUNC pFunc, XJHANDLE pObj);
 
-public:
 	bool InitRecordApciHandler();
 
 	bool StartRecordApciHandler();

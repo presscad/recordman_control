@@ -43,16 +43,19 @@ THREAD_FUNC WINAPI recv_dfu_msg_proc(LPVOID param)
 	return THREAD_RETURN;
 }
 
-CRecordAPCIHandler::CRecordAPCIHandler(void):
+CRecordAPCIHandler::CRecordAPCIHandler(
+	COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler, 
+	COLLECTOR_DATA_SYS_PARAM* pSysParamHandler):
 m_LockSocketSend("LOCK_SOCKET"),
 m_LockCommandList("LOCK_COMMAND_BUF")
 {
+	m_pDfuCommuParamHandler = pDfuCommuParamHandler;
+	m_pSysParamHandler = pSysParamHandler;
+	
 	m_bExitFlag = true;
-	m_pDfuCommuParamHandler = NULL;
 	m_pNetSocket = NULL;
 	m_pDfuResultCallBackFunc = NULL;
 	m_pResultProcessClassHandle = NULL;
-	m_pSysParamHandler = NULL;
 
 	m_utTransMask = 0;
 	time(&m_tLinkActive);
@@ -71,16 +74,6 @@ CRecordAPCIHandler::~CRecordAPCIHandler(void)
 	}
 
 	m_LogFile.Close();
-}
-
-void CRecordAPCIHandler::SetDfuCommuParamHandler(COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler)
-{
-	m_pDfuCommuParamHandler = pDfuCommuParamHandler;
-}
-
-void CRecordAPCIHandler::SetSysParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler)
-{
-	m_pSysParamHandler = pSysParamHandler;
 }
 
 void CRecordAPCIHandler::RegisterDfuResultCallBackFunc(PRESULTDFUMSGCALLBACKFUNC pFunc, XJHANDLE pObj)

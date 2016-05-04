@@ -292,7 +292,10 @@ bool CRecordDataCollector::InitDfuMainFlowHandler()
 	{
 		if (NULL == m_pDfuMainFlow)
 		{
-			m_pDfuMainFlow = new CDfuMainFlow;
+			m_pDfuMainFlow = new CDfuMainFlow(
+				m_pConfigvarialemgr->GetSysParamHandler(), 
+				m_pConfigvarialemgr->GetDfuCommuParamHandler(true), 
+				m_pMongodbAccessHandler);
 		}
 
 		if (NULL == m_pDfuMainFlow)
@@ -301,9 +304,6 @@ bool CRecordDataCollector::InitDfuMainFlowHandler()
 			return false;
 		}
 
-		m_pDfuMainFlow->SetMainFlowParamHandler(
-			m_pConfigvarialemgr->GetSysParamHandler(), m_pConfigvarialemgr->GetDfuCommuParamHandler(true));
-		m_pDfuMainFlow->SetMongoDbAccessHandler(m_pMongodbAccessHandler);
 		if (false == m_pDfuMainFlow->InitMainFlow())
 		{
 			m_Log.FormatAdd(CLogFile::error, "[InitDfuMainFlowHandler]InitMainFlow failed£¡");

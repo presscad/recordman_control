@@ -18,17 +18,16 @@ typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJs
 class CDfuMainFlow
 {
 public:
-	CDfuMainFlow(void);
+	CDfuMainFlow(
+		COLLECTOR_DATA_SYS_PARAM* pSysParamHandler, 
+		COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler, 
+		CMongodbAccess* pMongodbObj);
+
 	~CDfuMainFlow(void);
 
 public:
-	void SetMainFlowParamHandler(COLLECTOR_DATA_SYS_PARAM* pSysParamHandler, COLLECTOR_DFU_COMMU_PARAM* pDfuCommuParamHandler);
-
-	void SetMongoDbAccessHandler(CMongodbAccess* pMongodbObj);
-
 	void RegisterCommandResultCallBack(PRESULTMSGCALLBACKFUNC pCallBack, XJHANDLE pReserved);
 
-public:
 	bool InitMainFlow();
 
 	bool StartMainFlow();

@@ -1,4 +1,4 @@
-#include "InternalCommuMgr.h"
+#include "RabbitMqCommandMgr.h"
 
 int rmq_msg_recv_callback(amqp_envelope_t* pAmqp_envelope_t, XJHANDLE pReserved)
 {
