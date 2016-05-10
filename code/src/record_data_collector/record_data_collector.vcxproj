@@ -102,6 +102,7 @@
     <ClCompile Include="CommandHandlerMgr.cpp" />
     <ClCompile Include="CommandHandlerSession.cpp" />
     <ClCompile Include="ConfigVariableMgr.cpp" />
+    <ClCompile Include="ConvertMsgToComtradeFile.cpp" />
     <ClCompile Include="DfuMainFlow.cpp" />
     <ClCompile Include="DfuMsgAttach.cpp" />
     <ClCompile Include="DfuMsgToJson.cpp" />
@@ -136,6 +137,7 @@
     <ClInclude Include="CommandHandlerSession.h" />
     <ClInclude Include="ConfigVariableMgr.h" />
     <ClInclude Include="const_define.h" />
+    <ClInclude Include="ConvertMsgToComtradeFile.h" />
     <ClInclude Include="DfuMainFlow.h" />
     <ClInclude Include="DfuMsgAttach.h" />
     <ClInclude Include="DfuMsgToJson.h" />

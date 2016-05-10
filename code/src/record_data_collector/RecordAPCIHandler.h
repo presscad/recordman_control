@@ -47,12 +47,6 @@ private:
 
 	bool LaunchLinkTest();
 
-	bool LaunchQueryNewFile();
-
-	bool LaunchReadNewFile(UINT& uIndex);
-
-	bool LaunchManualFile();
-
 	void CreateTestReplyMsg(DFU_COMMU_MSG& reply_msg, DFU_COMMU_MSG recv_msg);
 
 	void Write_message_log(const DFU_COMMU_MSG& pMsg, const LOG_BUFFER_HEAD& pHead);
@@ -87,6 +81,8 @@ private:
 	UINT m_utTransMask;
 
 	bool m_bExitFlag;
+
+	bool m_bTestSend;
 
 	CMessageLog m_LogFile;
 };

@@ -127,7 +127,7 @@ bool CDFUMsgAttach::CheckMsgProtocolMask()
 	}
 
 	if ((RECORD_COMMU_CHAR_PROTOCOL_START_VAR != (*m_pMsg)[4] || 
-		(0x00 != (*m_pMsg)[5])))
+		(0x01 != (*m_pMsg)[5])))
 	{
 		printf("recv wrong protocol code msg£¡\n");
 	}
@@ -303,7 +303,9 @@ bool CDFUMsgAttach::GetMsgEndFlag()
 		return false;
 	}
 
-	if((*m_pMsg)[17] == 0x01)
+	BYTE byteEnd = ((*m_pMsg)[17] & 0x01);
+
+	if(byteEnd == 0x01)
 	{
 		return true;
 	}

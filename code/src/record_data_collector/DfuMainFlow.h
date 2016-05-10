@@ -8,10 +8,8 @@
 #include "../../common/MongodbAccess.h"
 #include "JsonMsgParser.h"
 #include "DfuMsgToJson.h"
-#include "../../common/common_time.h"
-#include "../../common/CreateComtrade.h"
-#include "../../common/GECodeConvert.h"
 #include "RecordAPCIHandler.h"
+#include "ConvertMsgToComtradeFile.h"
 
 typedef int (*PRESULTMSGCALLBACKFUNC)(int nTransMask, int nCommandID, cJSON* pJsonMsg, XJHANDLE pReserved);
 
@@ -36,7 +34,7 @@ public:
 
 	bool PushCommandToDfuApci(DFUMESSAGE& command_msg);
 
-	bool PushDfuResultMsg(DFU_COMMU_MSG result_msg);
+	bool PushDfuResultMsg(DFU_COMMU_MSG& result_msg);
 
 	int GetMsgTransMask();
 
@@ -50,23 +48,23 @@ public:
 private:
 	bool InitLogFile();
 
+	bool PullCommandToDfuApci(DFU_COMMU_MSG& command_msg);
+
 	bool CheckCommandFinish(DFUMESSAGE& full_command_msg);
+
+	bool PushFileResultBuf(DFUMESSAGE& file_result);
+
+	bool PullFileFromList(DFUMESSAGE& file_result);
 
 	bool ProcessClientResultMsg(DFUMESSAGE& client_result_msg);
 
 	bool PorocessFListResultMsg(DFUMESSAGE& file_list_msg);
 
-	bool ProcessFileResultMsg(DFUMESSAGE& file_msg);
+	bool LaunchQueryNewFile();
 
-	bool GetOscInfo(comtradeHead& head);
+	bool LaunchReadNewFile(UINT& uIndex);
 
-	bool AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum);
-
-	bool AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset);
-
-	bool AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
-
-	bool AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset);
+	bool LaunchManualFile();
 
 private:
 	CRecordAPCIHandler* m_pApciHandler;
@@ -76,6 +74,8 @@ private:
 	COLLECTOR_DFU_COMMU_PARAM* m_pDfuCommuParamHandler;
 
 	CMongodbAccess* m_pMongoAccessHandler;
+
+	CConvertMsgToComtradeFile* m_pComtradeFileConverter;
 
 private:
 	DFUMESSAGE_BUF m_CommandMsgBuf;
@@ -97,8 +97,11 @@ private:
 
 	bool m_bExitFlag;
 
+	bool m_bQueryNewFile;
+
 	time_t m_tCheckFile;
 
+private:
 	PRESULTMSGCALLBACKFUNC m_pCommandResultCallBackFunc;
 
 	XJHANDLE m_pCallBackCallObj;

@@ -23,7 +23,7 @@ typedef tinyxml2::XMLPrinter TiXmlPrinter;
 class CConfigVariableMgr
 {
 public:
-	CConfigVariableMgr(void);
+	CConfigVariableMgr(CMessageLog* pLogFile);
 	~CConfigVariableMgr(void);
 
 private:
@@ -41,8 +41,6 @@ private:
 	CMessageLog* m_pLogFile;
 
 public:
-	void SetLogAccessHandler(CMessageLog* pLog);
-
 	bool InitCollectorSysparam();
 
 	bool LoadCollectorSysParam();

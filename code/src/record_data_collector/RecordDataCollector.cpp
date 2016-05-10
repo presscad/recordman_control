@@ -200,7 +200,7 @@ bool CRecordDataCollector::InitSysConfigVariable()
 	{
 		if (NULL == m_pConfigvarialemgr)
 		{
-			m_pConfigvarialemgr = new CConfigVariableMgr;
+			m_pConfigvarialemgr = new CConfigVariableMgr(&m_Log);
 		}
 
 		if (NULL == m_pConfigvarialemgr)
@@ -209,7 +209,6 @@ bool CRecordDataCollector::InitSysConfigVariable()
 			return false;
 		}
 
-		m_pConfigvarialemgr->SetLogAccessHandler(&m_Log);
 		if (false == m_pConfigvarialemgr->InitCollectorSysparam())
 		{
 			m_Log.FormatAdd(CLogFile::error, "[InitSysConfigVariable]InitCollectorSysparam failed£¡");

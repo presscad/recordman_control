@@ -1,19 +1,14 @@
 #include "ConfigVariableMgr.h"
 
 
-CConfigVariableMgr::CConfigVariableMgr(void)
+CConfigVariableMgr::CConfigVariableMgr(CMessageLog* pLogFile)
 {
-	m_pLogFile = NULL;
+	m_pLogFile = pLogFile;
 }
 
 
 CConfigVariableMgr::~CConfigVariableMgr(void)
 {
-}
-
-void CConfigVariableMgr::SetLogAccessHandler(CMessageLog* pLog)
-{
-	m_pLogFile = pLog;
 }
 
 bool CConfigVariableMgr::InitCollectorSysparam()

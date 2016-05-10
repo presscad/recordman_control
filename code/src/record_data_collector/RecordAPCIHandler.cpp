@@ -53,6 +53,7 @@ m_LockCommandList("LOCK_COMMAND_BUF")
 	m_pSysParamHandler = pSysParamHandler;
 	
 	m_bExitFlag = true;
+	m_bTestSend = false;
 	m_pNetSocket = NULL;
 	m_pDfuResultCallBackFunc = NULL;
 	m_pResultProcessClassHandle = NULL;
@@ -221,8 +222,6 @@ int CRecordAPCIHandler::Send_dfu_msg_operation_loop()
 	time_t tCur;
 	time(&tCur);
 	DFU_COMMU_MSG sendMsg;
-	bool bTestSend = false;
-	bool bQueryNewFile = false;
 
 	while (!m_bExitFlag)
 	{
@@ -236,10 +235,10 @@ int CRecordAPCIHandler::Send_dfu_msg_operation_loop()
 			time(&tCur);//get cur time
 			if ((tCur - m_tLinkActive) >= m_pDfuCommuParamHandler->nIdleTime)//test frame
 			{
-				if (bTestSend == false)
+				if (m_bTestSend == false)
 				{
 					LaunchLinkTest();//send test msg
-					bTestSend = true;
+					m_bTestSend = true;
 				}
 				time(&m_tLinkActive);
 			}
@@ -269,6 +268,8 @@ int CRecordAPCIHandler::Recv_dfu_msg_operation_loop()
 	DFU_COMMU_MSG pRecvMsg;
 	int nRecvRet(0);
 	int nSendRet(0);
+	int nDirection = -1;
+	int nCommand = -1;
 	CDFUMsgAttach resultMsgAttach;
 
 	try
@@ -286,17 +287,22 @@ int CRecordAPCIHandler::Recv_dfu_msg_operation_loop()
 			if (nRecvRet >= 20)
 			{
 				resultMsgAttach.Attach(&pRecvMsg);
-				
-				if ((resultMsgAttach.GetMsgdirection() == 0) && 
-					(resultMsgAttach.GetMsgCommand() == 1))//测试报文
+				nDirection = resultMsgAttach.GetMsgdirection();
+				nCommand = resultMsgAttach.GetMsgCommand();
+
+				if ((nDirection == 0) && (nCommand == 1))//测试报文
 				{
 					DFU_COMMU_MSG reply_msg;
 					CreateTestReplyMsg(reply_msg, pRecvMsg);
 					nSendRet = SendMessage(reply_msg);
 				}
+				else if ((nDirection == 1) && (nCommand == 1))
+				{
+					m_bTestSend = false;
+				}
 				else if (resultMsgAttach.GetMsgEndFlag() == false)//还有后续帧
 				{
-					
+					printf("has other file........... \n");
 				}
 				else
 				{
@@ -513,7 +519,7 @@ void CRecordAPCIHandler::Write_message_log(const DFU_COMMU_MSG& pMsg, const LOG_
 	int    nHeadLen  = 0;
 	int nMsgLen = pMsg.size();
 
-	strLog.resize(nMsgLen*3 + sizeof(LOG_BUFFER_HEAD) + 30);
+	strLog.resize(nMsgLen*3 + sizeof(LOG_BUFFER_HEAD) + 30 + 4);
 	
 	char * pchar = (char *)&strLog[0];
 	
@@ -563,10 +569,18 @@ void CRecordAPCIHandler::Write_message_log(const DFU_COMMU_MSG& pMsg, const LOG_
 				recordman_itoa(pMsg[i], temp, 16);
 			}
 
-			memcpy(pchar,temp,2);
+			memcpy(pchar, temp, 2);
 			pchar += 2;
-			memcpy(pchar," ",1);
+			memcpy(pchar, " ", 1);
 			pchar += 1;
+
+			if (i == 17)
+			{
+				memcpy(pchar, "-->", 3);
+				pchar += 3;
+				memcpy(pchar, " ", 1);
+				pchar += 1;
+			}
 		}
 		// add enter
 		memcpy(pchar, "\r\n", 2);
@@ -606,76 +620,6 @@ bool CRecordAPCIHandler::LaunchLinkTest()
 	msg_parser.SetEndMask();
 
 	PushMsgToDfu(test_msg);
-
-	return true;
-}
-
-bool CRecordAPCIHandler::LaunchQueryNewFile()
-{
-	DFU_COMMU_MSG newfile_msg;
-	int nTransMask = Create_link_transmask();
-
-	CDFUMsgAttach msg_parser;
-	msg_parser.Attach(&newfile_msg);
-
-	msg_parser.SetMsgStartMask();
-	msg_parser.SetMsgTransMask(nTransMask);
-	msg_parser.SetMsgProtocolMask();
-	msg_parser.SetMsgReserve();
-	msg_parser.SetMsgFuncMask();
-	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_NEW_OSC_QUERY_VAR);
-	msg_parser.SetMsgEndFlag(true);
-	msg_parser.SetMsgLength();
-	msg_parser.SetEndMask();
-
-	PushMsgToDfu(newfile_msg);
-
-	return true;
-}
-
-bool CRecordAPCIHandler::LaunchReadNewFile(UINT& uIndex)
-{
-	DFU_COMMU_MSG newfile_msg;
-	int nTransMask = Create_link_transmask();
-
-	CDFUMsgAttach msg_parser;
-	msg_parser.Attach(&newfile_msg);
-
-	msg_parser.SetMsgStartMask();
-	msg_parser.SetMsgTransMask(nTransMask);
-	msg_parser.SetMsgProtocolMask();
-	msg_parser.SetMsgReserve();
-	msg_parser.SetMsgFuncMask();
-	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_OSC_FILE_READ_VAR);
-	msg_parser.SetMsgEndFlag(true);
-	msg_parser.SetFileIndex(uIndex);
-	msg_parser.SetMsgLength();
-	msg_parser.SetEndMask();
-
-	PushMsgToDfu(newfile_msg);
-
-	return true;
-}
-
-bool CRecordAPCIHandler::LaunchManualFile()
-{
-	DFU_COMMU_MSG manual_file_msg;
-	int nTransMask = Create_link_transmask();
-
-	CDFUMsgAttach msg_parser;
-	msg_parser.Attach(&manual_file_msg);
-
-	msg_parser.SetMsgStartMask();
-	msg_parser.SetMsgTransMask(nTransMask);
-	msg_parser.SetMsgProtocolMask();
-	msg_parser.SetMsgReserve();
-	msg_parser.SetMsgFuncMask();
-	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_MANUAL_OSC_VAR);
-	msg_parser.SetMsgEndFlag(true);
-	msg_parser.SetMsgLength();
-	msg_parser.SetEndMask();
-
-	PushMsgToDfu(manual_file_msg);
 
 	return true;
 }

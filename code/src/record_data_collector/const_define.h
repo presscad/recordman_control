@@ -50,6 +50,8 @@ const int RECORD_DFU_MESSAGE_TYPE_OSC_LIST = 1;
 const int RECORD_DFU_MESSAGE_TYPE_OSC_FILE = 2;
 /** @brief           test command*/
 const int RECORD_DFU_MESSAGE_TYPE_TEST = 3;
+/** @brief           manual file*/
+const int RECORD_DFU_MESSAGE_TYPE_MANUAL_FILE = 4;
 
 //command result
 //result is unknown

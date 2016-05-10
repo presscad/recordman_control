@@ -105,6 +105,9 @@
     <ClCompile Include="RabbitMqCommandMgr.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ConvertMsgToComtradeFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="RecordDataCollector.h">
@@ -198,6 +201,9 @@
       <Filter>common</Filter>
     </ClInclude>
     <ClInclude Include="RabbitMqCommandMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConvertMsgToComtradeFile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

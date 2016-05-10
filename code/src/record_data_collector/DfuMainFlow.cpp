@@ -87,9 +87,12 @@ m_LockCommandBuf("LOCK_COMMAND_BUF")
 	m_pMongoAccessHandler = pMongodbObj;
 	
 	m_bExitFlag = true;
+	m_bQueryNewFile = false;
+
 	m_pApciHandler = NULL;
 	m_pCommandResultCallBackFunc = NULL;
 	m_pCallBackCallObj = NULL;
+	m_pComtradeFileConverter = NULL;
 
 	m_CommandMsgBuf.clear();
 }
@@ -98,6 +101,12 @@ m_LockCommandBuf("LOCK_COMMAND_BUF")
 CDfuMainFlow::~CDfuMainFlow(void)
 {
 	m_LogFile.Close();
+}
+
+void CDfuMainFlow::RegisterCommandResultCallBack(PRESULTMSGCALLBACKFUNC pCallBack, XJHANDLE pReserved)
+{
+	m_pCommandResultCallBackFunc = pCallBack;
+	m_pCallBackCallObj = pReserved;
 }
 
 bool CDfuMainFlow::InitLogFile()
@@ -123,6 +132,17 @@ bool CDfuMainFlow::InitMainFlow()
 		if (NULL == m_pApciHandler)
 		{
 			m_LogFile.FormatAdd(CLogFile::error, "[InitMainFlow]malloc memory for CRecordAPCIHandler failed！");
+			return false;
+		}
+
+		if (NULL == m_pComtradeFileConverter)
+		{
+			m_pComtradeFileConverter = new CConvertMsgToComtradeFile(m_pMongoAccessHandler);
+		}
+
+		if (NULL == m_pComtradeFileConverter)
+		{
+			m_LogFile.FormatAdd(CLogFile::error, "[InitMainFlow]malloc memory for CConvertMsgToComtradeFile failed！");
 			return false;
 		}
 
@@ -196,6 +216,34 @@ bool CDfuMainFlow::StopMainFlow()
 	return true;
 }
 
+bool CDfuMainFlow::PullCommandToDfuApci(DFU_COMMU_MSG& command_msg)
+{
+	CLockUp lockup(&m_LockCommandBuf);
+
+	if (m_CommandMsgBuf.size() <= 0)
+	{
+		return false;
+	}
+
+	DFUMESSAGE_BUF::iterator it = m_CommandMsgBuf.begin();
+	for (; it != m_CommandMsgBuf.end(); it++)
+	{
+		if (true == it->bProcessed)
+		{
+			return false;
+		}
+		else
+		{
+			vector<DFU_COMMU_MSG>::iterator itCommand = it->command_msg.begin();
+			command_msg = *itCommand;
+			it->bProcessed = true;
+			break;
+		}
+	}
+
+	return true;
+}
+
 bool CDfuMainFlow::PushCommandToDfuApci(DFUMESSAGE& command_msg)
 {
 	CLockUp lockup(&m_LockCommandBuf);
@@ -217,7 +265,7 @@ bool CDfuMainFlow::PushCommandToDfuApci(DFUMESSAGE& command_msg)
 	return 1;
 }
 
-bool CDfuMainFlow::PushDfuResultMsg(DFU_COMMU_MSG result_msg)
+bool CDfuMainFlow::PushDfuResultMsg(DFU_COMMU_MSG& result_msg)
 {
 	CLockUp lockup(&m_LockCommandBuf);
 
@@ -233,6 +281,7 @@ bool CDfuMainFlow::PushDfuResultMsg(DFU_COMMU_MSG result_msg)
 			it->bRecvEnd = recv_msg_attach.GetMsgEndFlag();
 			it->result_msg.push_back(result_msg);
 			it->nCommandProcessResult = recv_msg_attach.GetMsgErrorFlag();
+
 			return true;
 		}
 	}
@@ -267,11 +316,37 @@ bool CDfuMainFlow::CheckCommandFinish(DFUMESSAGE& full_command_msg)
 	return false;
 }
 
+bool CDfuMainFlow::PushFileResultBuf(DFUMESSAGE& file_result)
+{
+	CLockUp lockup(&m_LockFileBuf);
+
+	m_FileMsgBuf.push_back(file_result);
+
+	return true;
+}
+
+bool CDfuMainFlow::PullFileFromList(DFUMESSAGE& file_result)
+{
+	CLockUp lockup(&m_LockFileBuf);
+
+	if (m_FileMsgBuf.size() <= 0)
+	{
+		return false;
+	}
+
+	DFUMESSAGE_BUF::iterator it = m_FileMsgBuf.begin();
+	file_result = *it;
+	m_FileMsgBuf.erase(it);
+
+	return true;
+}
+
 int CDfuMainFlow::MainBuinessLoop()
 {
 	time_t tCur;
 	time(&tCur);
 	time(&m_tCheckFile);
+	DFU_COMMU_MSG command_msg;
 
 	try
 	{
@@ -282,14 +357,24 @@ int CDfuMainFlow::MainBuinessLoop()
 				break;
 			}
 
+			command_msg.clear();
+			if (true == PullCommandToDfuApci(command_msg))//pull a command
+			{
+				m_pApciHandler->PushMsgToDfu(command_msg);
+				MySleep(30);
+				continue;
+			}
+
+			time(&tCur);
 			if ((tCur - m_tCheckFile) >= m_pDfuCommuParamHandler->nCheckNewFileTime)//query file
 			{
-// 				if (bQueryNewFile == false)
-// 				{
-// 					LaunchQueryNewFile();
-// 					bQueryNewFile = true;
-// 				}
+				if (m_bQueryNewFile == false)
+				{
+					LaunchQueryNewFile();
+					m_bQueryNewFile = true;
+				}
 				time(&m_tCheckFile);
+				continue;
 			}
 
 		}
@@ -336,7 +421,16 @@ int CDfuMainFlow::ResultBuinessLoop()
 
 			case RECORD_DFU_MESSAGE_TYPE_OSC_FILE: //file msg
 				{
-					//AddFileResultMsg(over_msg);
+					PushFileResultBuf(finish_command_msg);
+					m_bQueryNewFile = false;
+				}
+				break;
+
+			case RECORD_DFU_MESSAGE_TYPE_MANUAL_FILE:
+				{
+					m_bQueryNewFile = false;
+					m_LogFile.FormatAdd(CLogFile::trace, "manual file %s", 
+						(0 == finish_command_msg.nCommandProcessResult)?"succeed":"failed");
 				}
 				break;
 			}
@@ -362,14 +456,15 @@ int CDfuMainFlow::FileBuinessLoop()
 				break;
 			}
 
-// 			DFUMESSAGE file_msg;
-// 			if (GetFileResultMsg(file_msg) == false)
-// 			{
-// 				MySleep(200);
-// 				continue;
-// 			}
-// 
-// 			bRet = ProcessFileResultMsg(file_msg);
+			DFUMESSAGE file_msg;
+			if (PullFileFromList(file_msg) == false)
+			{
+				MySleep(200);
+				continue;
+			}
+
+			m_pComtradeFileConverter->AttachDfuMsg(&file_msg);
+			bRet = m_pComtradeFileConverter->ConvertMsgToFile(m_pDfuCommuParamHandler->chFileSavePath);
 		}
 	}
 	catch (...)
@@ -424,7 +519,7 @@ bool CDfuMainFlow::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
 	CDFUMsgAttach msgAttach;
 	UINT uFileIndex(0);
 	UINT uFileNum(0);
-	int nOffset = 18;
+	int nOffset = RECORD_DFU_MSG_HEADER_OFFSET;
 
 	pOneMsg = &file_list_msg.result_msg.front();
 	convert_btol_uint32(&(*pOneMsg)[nOffset], uFileIndex);
@@ -446,261 +541,105 @@ bool CDfuMainFlow::PorocessFListResultMsg(DFUMESSAGE& file_list_msg)
 	return true;
 }
 
-bool CDfuMainFlow::ProcessFileResultMsg(DFUMESSAGE& file_msg)
+bool CDfuMainFlow::LaunchQueryNewFile()
 {
-	if (file_msg.result_msg.size() <= 0)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, 
-			"[ProcessFileResultMsg]read new file finish，but no result！");
-		return false;
-	}
+	DFUMESSAGE new_file_msg_buf;
+	DFU_COMMU_MSG newfile_msg;
+	int nTransMask = m_pApciHandler->Create_link_transmask();
 
-	DFU_COMMU_MSG* pOneMsg = NULL;
-	CDFUMsgAttach msgAttach;
-	UINT uDatablockNum(0);//数据块数目
-	int nMsgoffset = RECORD_DFU_MSG_HEADER_OFFSET;
-	comtradeHead head;
-	CreateComtrade com;
-	list<aiChannel> aichs;//模拟量通道
-	list<diChannel> dichs;//开关量通道
-	list<sampleInfo> samples;//采样段
-	list<list<short> > datas;//数据
-	aichs.clear();
-	dichs.clear();
-	samples.clear();
-	datas.clear();
+	CDFUMsgAttach msg_parser;
+	msg_parser.Attach(&newfile_msg);
 
-	try
-	{
-		head.revYear = 1991;
-		head.datType="ascii";
-		head.timemult=1.0;
+	msg_parser.SetMsgStartMask();
+	msg_parser.SetMsgTransMask(nTransMask);
+	msg_parser.SetMsgProtocolMask();
+	msg_parser.SetMsgReserve();
+	msg_parser.SetMsgFuncMask();
+	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_NEW_OSC_QUERY_VAR);
+	msg_parser.SetMsgEndFlag(true);
+	msg_parser.SetMsgLength();
+	msg_parser.SetEndMask();
 
-		GetOscInfo(head);//get osc info
+	new_file_msg_buf.nDfuCommandID = msg_parser.GetMsgCommand();
+	new_file_msg_buf.nInternalCommandID = -1;
+	new_file_msg_buf.nCommandNum = 1;
+	new_file_msg_buf.nMsgType = RECORD_DFU_MESSAGE_TYPE_OSC_LIST;
+	new_file_msg_buf.nTransMask = nTransMask;
+	new_file_msg_buf.bRecvEnd = false;
+	new_file_msg_buf.command_msg.push_back(newfile_msg);
+	new_file_msg_buf.bProcessed = false;
+	new_file_msg_buf.result_msg.clear();
 
-		vector<DFU_COMMU_MSG>::iterator itFile = file_msg.result_msg.begin();
-		for (; itFile != file_msg.result_msg.end(); itFile++)
-		{
-			pOneMsg = &*itFile;
-			msgAttach.Attach(pOneMsg);
-
-			AnalyzeFileMsgHeader(head, pOneMsg, nMsgoffset, uDatablockNum);//报文头
-			AnalyzeFileMsgSamples(samples, head.rateCount, pOneMsg, nMsgoffset);//采样段
-
-			for (UINT uNo = 0; uNo < uDatablockNum; uNo++)//数据块
-			{
-				list<short> data_val;
-				data_val.clear();
-
-				AnalyzeFileMsgAis(data_val, head.aiCount, pOneMsg, nMsgoffset);//模拟量
-				AnalyzeFileMsgDis(data_val, head.diCount, pOneMsg, nMsgoffset);//开关量
-
-				datas.push_back(data_val);
-			}
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[ProcessFileResultMsg]find unknown exception!");
-		return false;
-	}
-
-	com.setComtradeHead(head);//设置数据头
-	com.setSampleInfos(samples);//采样段
-	com.setAiChannels(aichs);//模拟量通道
-	com.setDiChannels(dichs);//开关量通道
-	com.setDatas(datas);//通道的值
-
-	com.create(m_pDfuCommuParamHandler->chFileSavePath, "test");
+	PushCommandToDfuApci(new_file_msg_buf);
 
 	return true;
 }
 
-bool CDfuMainFlow::GetOscInfo(comtradeHead& head)
+bool CDfuMainFlow::LaunchReadNewFile(UINT& uIndex)
 {
-	long lLen = 0;
-	auto_ptr<mongo::DBClientCursor> result;
-	m_pMongoAccessHandler->QueryData("runstatus_info", result);
-	string strFieldval = "";
-	CGECodeConvert code_convert;
-	char* pVal = NULL;
+	DFUMESSAGE file_msg_buf;
+	DFU_COMMU_MSG file_msg;
+	int nTransMask = m_pApciHandler->Create_link_transmask();
 
-	while (result->more())
-	{
-		mongo::BSONObj obj = result->next();
-		BSONForEach(e, obj)
-		{
-			if (strcmp(e.fieldName(), "devname") == 0)
-			{
-				strFieldval = e.String();
-				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
-				if (lLen != -1)
-				{
-					head.devName = pVal;
-				}
-			}
-			else if (strcmp(e.fieldName(), "station") == 0)
-			{
-				strFieldval = e.String();
-				lLen = code_convert.Utf82Gbk(strFieldval.c_str(), strFieldval.size(), pVal);
-				if (lLen != -1)
-				{
-					head.stationName = pVal;
-				}
-			}
+	CDFUMsgAttach msg_parser;
+	msg_parser.Attach(&file_msg);
 
-			if (NULL != pVal)
-			{
-				delete[] pVal;
-				pVal = NULL;
-			}
-		}
-	}
+	msg_parser.SetMsgStartMask();
+	msg_parser.SetMsgTransMask(nTransMask);
+	msg_parser.SetMsgProtocolMask();
+	msg_parser.SetMsgReserve();
+	msg_parser.SetMsgFuncMask();
+	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_OSC_FILE_READ_VAR);
+	msg_parser.SetMsgEndFlag(true);
+	msg_parser.SetFileIndex(uIndex);
+	msg_parser.SetMsgLength();
+	msg_parser.SetEndMask();
+
+	file_msg_buf.nDfuCommandID = msg_parser.GetMsgCommand();
+	file_msg_buf.nInternalCommandID = -1;
+	file_msg_buf.nCommandNum = 1;
+	file_msg_buf.nMsgType = RECORD_DFU_MESSAGE_TYPE_OSC_FILE;
+	file_msg_buf.nTransMask = nTransMask;
+	file_msg_buf.bRecvEnd = false;
+	file_msg_buf.command_msg.push_back(file_msg);
+	file_msg_buf.bProcessed = false;
+	file_msg_buf.result_msg.clear();
+
+	PushCommandToDfuApci(file_msg_buf);
 
 	return true;
 }
 
-bool CDfuMainFlow::AnalyzeFileMsgHeader(comtradeHead& head, DFU_COMMU_MSG* pMsg, int& nOffset, UINT& uDatablockNum)
+bool CDfuMainFlow::LaunchManualFile()
 {
-	uint16 uAnalogchannelNum(0);//模拟量通道数
-	uint16 uDigitalchannelNum(0);//开关量通道数
-	UINT uFilesecond(0);//录波时刻，秒
-	UINT uFilenanosecond(0);//录波时刻，纳秒
-	UINT uFaultsecond(0);//故障时刻，秒
-	UINT uFaultnanosecond(0);//故障时刻，纳秒
-	UINT uSamplesectionNum(0);//采样段数目
+	DFUMESSAGE manual_file_buf;
+	DFU_COMMU_MSG manual_file_msg;
+	int nTransMask = m_pApciHandler->Create_link_transmask();
 
-	try
-	{
-		convert_btol_uint16(&(*pMsg)[nOffset], uAnalogchannelNum);//模拟通道数目
-		head.aiCount += uAnalogchannelNum;
-		nOffset += 2;
+	CDFUMsgAttach msg_parser;
+	msg_parser.Attach(&manual_file_msg);
 
-		convert_btol_uint16(&(*pMsg)[nOffset], uAnalogchannelNum);//开关通道数目
-		head.diCount += uAnalogchannelNum;
-		nOffset += 2;
+	msg_parser.SetMsgStartMask();
+	msg_parser.SetMsgTransMask(nTransMask);
+	msg_parser.SetMsgProtocolMask();
+	msg_parser.SetMsgReserve();
+	msg_parser.SetMsgFuncMask();
+	msg_parser.SetMsgCommand(RECORD_COMMAND_CHAR_MANUAL_OSC_VAR);
+	msg_parser.SetMsgEndFlag(true);
+	msg_parser.SetMsgLength();
+	msg_parser.SetEndMask();
 
-		convert_btol_float32(&(*pMsg)[nOffset], head.primary);//模拟通道一次系数
-		nOffset += 4;
+	manual_file_buf.nDfuCommandID = msg_parser.GetMsgCommand();
+	manual_file_buf.nInternalCommandID = -1;
+	manual_file_buf.nCommandNum = 1;
+	manual_file_buf.nMsgType = RECORD_DFU_MESSAGE_TYPE_MANUAL_FILE;
+	manual_file_buf.nTransMask = nTransMask;
+	manual_file_buf.bRecvEnd = false;
+	manual_file_buf.command_msg.push_back(manual_file_msg);
+	manual_file_buf.bProcessed = false;
+	manual_file_buf.result_msg.clear();
 
-		convert_btol_float32(&(*pMsg)[nOffset], head.secondary);//模拟通道二次系数
-		nOffset += 4;
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uFilesecond);//录波时刻（秒）
-		nOffset += 4;
-		head.startTime = format_dfu_msg_time(uFilesecond);
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uFilenanosecond);//录波时刻（纳秒）
-		nOffset += 4;
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uFaultsecond);//故障时间（秒）
-		nOffset += 4;
-		head.faultTime = format_dfu_msg_time(uFaultsecond);
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uFilenanosecond);//故障时刻（纳秒）
-		nOffset += 4;
-
-		convert_btol_float32(&(*pMsg)[nOffset], head.lineFreq);//线路频率
-		nOffset += 4;
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uSamplesectionNum);//采样段数目
-		head.rateCount += uSamplesectionNum;
-		nOffset += 4;
-
-		convert_btol_uint32(&(*pMsg)[nOffset], uDatablockNum);//数据块数目
-		nOffset += 4;
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgHeader]analyze msg header exception！");
-		return false;
-	}
-
-	return true;
-}
-
-bool CDfuMainFlow::AnalyzeFileMsgSamples(list<sampleInfo>& samples, float uSampleNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	try
-	{
-		for (UINT uNo = 0; uNo < uSampleNum; uNo++)
-		{
-			sampleInfo sa;
-
-			convert_btol_float32(&(*pMsg)[nOffset], sa.rate);//采样率
-			nOffset += 4;
-
-			convert_btol_int32(&(*pMsg)[nOffset], sa.lastIndex);//此采用频率最后一个采样的序号
-			nOffset += 4;
-
-			samples.push_back(sa);
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgSamples]analyze msg samples exception！");
-		return false;
-	}
-
-	return true;
-}
-
-bool CDfuMainFlow::AnalyzeFileMsgAis(list<short>& data_vals, UINT uAiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	UINT uDival(0);
-
-	try
-	{
-		for (UINT uDataNo = 0; uDataNo < uAiNum; uDataNo++)//模拟量
-		{
-			//ConvertUint32BigedianToL(&(*pMsg)[nOffset], ai.index);
-			nOffset += 4;//模拟通道编号
-
-			convert_btol_uint32(&(*pMsg)[nOffset], uDival);//模拟通道编号
-			nOffset += 4;
-
-			data_vals.push_back(uDival);
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgAis]analyze msg ai exception！");
-		return false;
-	}
-
-	return true;
-}
-
-bool CDfuMainFlow::AnalyzeFileMsgDis(list<short>& data_vals, UINT uDiNum, DFU_COMMU_MSG* pMsg, int& nOffset)
-{
-	UINT uDiBlockNo = 0;
-	UINT uDival(0);
-	UINT uOneDival(0);
-	UINT uDiRealNum(0);
-	UINT uDataNo(0);
-
-	try
-	{
-		for (uDiBlockNo = 0; uDiBlockNo <= (uDiNum / 32); uDiBlockNo++)
-		{
-			convert_btol_uint32(&(*pMsg)[nOffset], uDival);
-			nOffset += 4;//开关量
-
-			uDiRealNum = (uDiBlockNo == (uDiNum / 32))?(uDiNum % 32):32;
-
-			for (uDataNo = 0; uDataNo < uDiRealNum; uDataNo++)
-			{
-				uOneDival = ((uDival >> uDataNo) & 0x1);
-
-				data_vals.push_back(uOneDival);
-			}
-		}
-	}
-	catch (...)
-	{
-		m_LogFile.FormatAdd(CLogFile::error, "[AnalyzeFileMsgDis]analyze msg di exception！");
-		return false;
-	}
+	PushCommandToDfuApci(manual_file_buf);
 
 	return true;
 }
